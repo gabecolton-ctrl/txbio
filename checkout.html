@@ -319,6 +319,37 @@
     });
   });
 
+  function sendOrderNotificationEmail(order) {
+    var addr = order.shippingAddress || {};
+    var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
+      .filter(Boolean).join(', ');
+    var itemsText = order.items.map(function (item) {
+      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — $' + (item.price * item.qty);
+    }).join('\n');
+
+    var formData = new FormData();
+    formData.append('_subject', 'New TXBioResearch Order — $' + order.total.toFixed(2));
+    formData.append('Payment Method', order.paymentMethod);
+    formData.append('Shipping Option', order.shippingOption);
+    formData.append('Shipping Address', addressText || '(none provided)');
+    formData.append('Items', itemsText);
+    formData.append('Subtotal', '$' + order.subtotal.toFixed(2));
+    formData.append('Shipping Cost', '$' + order.shipping.toFixed(2));
+    formData.append('Tax', '$' + order.tax.toFixed(2));
+    formData.append('Total', '$' + order.total.toFixed(2));
+    formData.append('Customer Notes', order.notes || '(none)');
+    formData.append('_captcha', 'false');
+
+    return fetch('https://formsubmit.co/txbioresearch@gmail.com', {
+      method: 'POST',
+      body: formData
+    }).catch(function (err) {
+      // Don't block the checkout flow if the email notification fails —
+      // the order is already saved in Firestore regardless.
+      console.error('Order notification email failed to send:', err);
+    });
+  }
+
   document.getElementById('order-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var submitBtn = e.target.querySelector('button[type="submit"]');
@@ -340,7 +371,7 @@
 
     Cart.getCart().then(function (items) {
       if (items.length === 0) return Promise.reject(new Error('Your cart is empty.'));
-      return Account.createOrder({
+      var orderData = {
         items: items,
         subtotal: totals.subtotal,
         shipping: totals.shipping,
@@ -351,7 +382,9 @@
         notes: notes,
         paymentMethod: paymentMethod,
         status: 'pending'
-      });
+      };
+      sendOrderNotificationEmail(orderData);
+      return Account.createOrder(orderData);
     }).then(function () {
       return Cart.clearCart();
     }).then(function () {
