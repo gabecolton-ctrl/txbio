@@ -255,6 +255,10 @@
     });
   }
 
+  var currentUserEmail = '';
+  document.addEventListener('userReady', function (e) {
+    currentUserEmail = e.detail.user.email || '';
+  });
   document.addEventListener('userReady', renderSummary);
   document.addEventListener('userReady', loadShippingAddress);
   document.getElementById('shipping-select').addEventListener('change', computeAndDisplayTotals);
@@ -329,6 +333,7 @@
 
     var formData = new FormData();
     formData.append('_subject', 'New TXBioResearch Order — $' + order.total.toFixed(2));
+    formData.append('Customer Email', currentUserEmail || '(unknown)');
     formData.append('Payment Method', order.paymentMethod);
     formData.append('Shipping Option', order.shippingOption);
     formData.append('Shipping Address', addressText || '(none provided)');
@@ -339,6 +344,7 @@
     formData.append('Total', '$' + order.total.toFixed(2));
     formData.append('Customer Notes', order.notes || '(none)');
     formData.append('_captcha', 'false');
+    formData.append('_replyto', currentUserEmail || '');
 
     return fetch('https://formsubmit.co/txbioresearch@gmail.com', {
       method: 'POST',
