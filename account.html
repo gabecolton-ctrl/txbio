@@ -276,10 +276,22 @@
         var itemsHtml = order.items.map(function (item) {
           return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + item.qty + '</td><td data-label="Subtotal">$' + (item.price * item.qty) + '</td></tr>';
         }).join('');
+        var breakdownHtml = '';
+        if (typeof order.shipping !== 'undefined') {
+          breakdownHtml =
+            '<table class="spec-table" style="margin-bottom:0;">' +
+            '<tr><td>Subtotal</td><td>$' + order.subtotal + '</td></tr>' +
+            '<tr><td>Shipping' + (order.shippingOption ? ' (' + order.shippingOption + ')' : '') + '</td><td>$' + order.shipping + '</td></tr>' +
+            '<tr><td>Tax</td><td>$' + order.tax + '</td></tr>' +
+            '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + order.total + '</td></tr>' +
+            '</table>';
+        } else {
+          breakdownHtml = '<p style="text-align:right; font-weight:700; margin-bottom:0;">Total: $' + order.total + '</p>';
+        }
         box.innerHTML =
           '<p style="margin-bottom:8px;"><strong>' + date + '</strong> &middot; Status: ' + (order.status || 'pending') + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
-          '<p style="text-align:right; font-weight:700; margin-bottom:0;">Total: $' + order.total + '</p>';
+          breakdownHtml;
         list.appendChild(box);
       });
     }).catch(function (err) {

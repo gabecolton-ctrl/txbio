@@ -76,7 +76,20 @@
           </thead>
           <tbody id="summary-rows"></tbody>
         </table>
-        <p style="text-align:right; font-size:1.2rem; font-weight:700; margin-bottom:0;">Total: <span id="summary-total">$0</span></p>
+
+        <label for="shipping-select" style="margin-top:16px;">Shipping</label>
+        <select id="shipping-select">
+          <option value="20">3-5 Business Days — $20</option>
+          <option value="25">3 Business Days — $25</option>
+          <option value="40">2nd Day — $40</option>
+        </select>
+
+        <table class="spec-table" style="margin-bottom:0;">
+          <tr><td>Subtotal</td><td id="summary-subtotal">$0</td></tr>
+          <tr><td>Shipping</td><td id="summary-shipping">$20</td></tr>
+          <tr><td>Tax (8.25%)</td><td id="summary-tax">$0</td></tr>
+          <tr><td style="font-weight:700; color:var(--bg-darker);">Total</td><td id="summary-total" style="font-weight:700; font-size:1.2rem;">$0</td></tr>
+        </table>
       </div>
     </section>
 
@@ -89,7 +102,7 @@
       <h2 style="font-size:1.3rem;">Payment Method</h2>
       <div class="checkbox-row" style="margin-bottom: 10px;">
         <input type="radio" name="payment-method" id="pm-inquiry" value="inquiry" checked style="width:auto; margin: 4px 8px 0 0;">
-        <label for="pm-inquiry" style="font-weight:600;">General Inquiry (we'll follow up on payment)</label>
+        <label for="pm-inquiry" style="font-weight:600;">Other Payment Method (we'll follow up on payment)</label>
       </div>
       <div class="checkbox-row" style="margin-bottom: 10px;">
         <input type="radio" name="payment-method" id="pm-btc" value="bitcoin" style="width:auto; margin: 4px 8px 0 0;">
@@ -168,39 +181,56 @@
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
 <script>
+  var TAX_RATE = 0.0825;
+  var currentSubtotal = 0;
+
+  function computeAndDisplayTotals() {
+    var shipping = parseFloat(document.getElementById('shipping-select').value) || 0;
+    var tax = Math.round(currentSubtotal * TAX_RATE * 100) / 100;
+    var total = currentSubtotal + shipping + tax;
+
+    document.getElementById('summary-subtotal').textContent = '$' + currentSubtotal.toFixed(2);
+    document.getElementById('summary-shipping').textContent = '$' + shipping.toFixed(2);
+    document.getElementById('summary-tax').textContent = '$' + tax.toFixed(2);
+    document.getElementById('summary-total').textContent = '$' + total.toFixed(2);
+
+    return { subtotal: currentSubtotal, shipping: shipping, tax: tax, total: total };
+  }
+
   function renderSummary() {
     var loading = document.getElementById('summary-loading');
     var emptyState = document.getElementById('summary-empty-state');
     var content = document.getElementById('summary-content');
     var rowsEl = document.getElementById('summary-rows');
-    var totalEl = document.getElementById('summary-total');
 
     Cart.getCart().then(function (items) {
       loading.style.display = 'none';
       if (items.length === 0) {
-        emptyState.style.display = '';
+        emptyState.style.display = 'block';
         content.style.display = 'none';
         return;
       }
-      content.style.display = '';
+      content.style.display = 'block';
       rowsEl.innerHTML = '';
-      var total = 0;
+      var subtotal = 0;
       items.forEach(function (item) {
-        var subtotal = item.price * item.qty;
-        total += subtotal;
+        var itemSubtotal = item.price * item.qty;
+        subtotal += itemSubtotal;
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td data-label="Product">' + item.name + '</td>' +
           '<td data-label="Pack Size">' + item.packSize + '</td>' +
           '<td data-label="Qty">' + item.qty + '</td>' +
-          '<td data-label="Subtotal">$' + subtotal + '</td>';
+          '<td data-label="Subtotal">$' + itemSubtotal + '</td>';
         rowsEl.appendChild(tr);
       });
-      totalEl.textContent = '$' + total;
+      currentSubtotal = subtotal;
+      computeAndDisplayTotals();
     });
   }
 
   document.addEventListener('userReady', renderSummary);
+  document.getElementById('shipping-select').addEventListener('change', computeAndDisplayTotals);
 
   document.querySelectorAll('input[name="payment-method"]').forEach(function (radio) {
     radio.addEventListener('change', function () {
@@ -216,18 +246,23 @@
     var submitBtn = e.target.querySelector('button[type="submit"]');
     var notes = document.getElementById('order-notes').value;
     var paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+    var shippingOption = document.getElementById('shipping-select');
+    var shippingLabel = shippingOption.options[shippingOption.selectedIndex].text;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
-    var orderTotal = 0;
+    var totals = computeAndDisplayTotals();
 
     Cart.getCart().then(function (items) {
       if (items.length === 0) return Promise.reject(new Error('Your cart is empty.'));
-      orderTotal = items.reduce(function (sum, i) { return sum + (i.price * i.qty); }, 0);
       return Account.createOrder({
         items: items,
-        total: orderTotal,
+        subtotal: totals.subtotal,
+        shipping: totals.shipping,
+        shippingOption: shippingLabel,
+        tax: totals.tax,
+        total: totals.total,
         notes: notes,
         paymentMethod: paymentMethod,
         status: 'pending'
@@ -241,7 +276,7 @@
 
       if (paymentMethod === 'bitcoin') {
         var btcAddress = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
-        document.getElementById('btc-amount-display').textContent = 'Order Total: $' + orderTotal + ' USD (send equivalent in BTC)';
+        document.getElementById('btc-amount-display').textContent = 'Order Total: $' + totals.total.toFixed(2) + ' USD (send equivalent in BTC)';
         document.getElementById('btc-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:' + btcAddress;
         document.getElementById('btc-instructions').style.display = 'block';
       } else if (paymentMethod === 'bank') {
