@@ -1,3 +1,4 @@
+// Highlight the current page in the nav
 document.addEventListener('DOMContentLoaded', function () {
   var path = window.location.pathname.split('/').pop() || 'index.html';
   document.querySelectorAll('nav a').forEach(function (link) {

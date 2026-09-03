@@ -4,7 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Product Catalog | TXBioResearch</title>
-<meta name="description" content="TXBioResearch peptide catalog for laboratory research use only. Not for human or animal consumption.">
+<meta name="description" content="TXBioResearch peptide catalog for laboratory research use only. Not for human or animal consumption. Access restricted to registered researchers.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -13,22 +14,30 @@
 
 <header>
   <div class="header-inner">
-    <div class="logo">TX<span>Bio</span>Research</div>
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
     <nav>
       <ul>
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
-        <li><a href="services.html">Products</a></li>
+        <li><a href="services.html" class="active">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
       </ul>
     </nav>
   </div>
 </header>
 
-<main>
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
   <section>
     <h2>Research Peptide Catalog</h2>
-    <p class="lead">All items below are sold exclusively for laboratory research purposes. Prices shown are placeholders &mdash; update with your actual pricing before publishing.</p>
+    <div class="section-divider"></div>
+    <p class="lead">All items below are sold exclusively for laboratory research purposes to verified researchers and institutions.</p>
   </section>
 
   <section class="notice">
@@ -37,39 +46,161 @@
   </section>
 
   <section>
-    <div class="catalog-wrap">
-      <table class="catalog-table">
-        <thead>
-          <tr>
-            <th>Product</th>
-            <th>Pack Size</th>
-            <th>Price</th>
-            <th>Intended Use</th>
-          </tr>
-        </thead>
-        <tbody>
-          <tr><td>Retatrutide (Reta)</td><td>10x 5mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Retatrutide (Reta)</td><td>30x 15mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>GLOW Blend</td><td>10x 70mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Tesamorelin</td><td>10x 10mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Tesamorelin</td><td>20x 20mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Vitamin B-12</td><td>10x 10mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Ipamorelin</td><td>10x 10mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Glutathione</td><td>10x 1500mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>IGF-1</td><td>30x 100mcg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>HCG</td><td>10x 5000iu</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>HCG</td><td>10x 5000iu</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Semax</td><td>10x 10mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>MOTS-c</td><td>10x 20mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Lipo-C</td><td>20x vial</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>NAD+</td><td>20x 1000mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>Bacteriostatic Water</td><td>20x 10ml</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>5-Amino-1MQ</td><td>10x 10mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-          <tr><td>KLOW Blend</td><td>20x 80mg</td><td class="price">$0.00</td><td class="roa-tag">Research Use Only</td></tr>
-        </tbody>
-      </table>
+    <div class="product-grid">
+      <div class="product-card">
+        <div class="product-card-top">Metabolic Research Peptide</div>
+        <div class="product-card-body">
+          <h3>Retatrutide</h3>
+          <p class="product-card-spec">10 x 5mg</p>
+          <p class="product-card-price">$60</p>
+          <a href="products/retatrutide-5mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Metabolic Research Peptide</div>
+        <div class="product-card-body">
+          <h3>Retatrutide</h3>
+          <p class="product-card-spec">30 x 15mg</p>
+          <p class="product-card-price">$90</p>
+          <a href="products/retatrutide-15mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Combination Blend</div>
+        <div class="product-card-body">
+          <h3>GLOW Blend</h3>
+          <p class="product-card-spec">10 x 70mg</p>
+          <p class="product-card-price">$70</p>
+          <a href="products/glow-blend-70mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">GHRH Peptide</div>
+        <div class="product-card-body">
+          <h3>Tesamorelin</h3>
+          <p class="product-card-spec">10 x 10mg</p>
+          <p class="product-card-price">$80</p>
+          <a href="products/tesamorelin-10mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">GHRH Peptide</div>
+        <div class="product-card-body">
+          <h3>Tesamorelin</h3>
+          <p class="product-card-spec">20 x 20mg</p>
+          <p class="product-card-price">$160</p>
+          <a href="products/tesamorelin-20mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Reagent</div>
+        <div class="product-card-body">
+          <h3>Vitamin B-12</h3>
+          <p class="product-card-spec">10 x 10mg</p>
+          <p class="product-card-price">$55</p>
+          <a href="products/vitamin-b12-10mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">GH Secretagogue Peptide</div>
+        <div class="product-card-body">
+          <h3>Ipamorelin</h3>
+          <p class="product-card-spec">10 x 10mg</p>
+          <p class="product-card-price">$65</p>
+          <a href="products/ipamorelin-10mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Antioxidant Reagent</div>
+        <div class="product-card-body">
+          <h3>Glutathione</h3>
+          <p class="product-card-spec">10 x 1500mg</p>
+          <p class="product-card-price">$80</p>
+          <a href="products/glutathione-1500mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Growth Factor Peptide</div>
+        <div class="product-card-body">
+          <h3>IGF-1</h3>
+          <p class="product-card-spec">30 x 100mcg</p>
+          <p class="product-card-price">$65</p>
+          <a href="products/igf-1-100mcg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Hormone Reagent</div>
+        <div class="product-card-body">
+          <h3>HCG</h3>
+          <p class="product-card-spec">10 x 5000iu</p>
+          <p class="product-card-price">$70</p>
+          <a href="products/hcg-5000iu.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Neuropeptide</div>
+        <div class="product-card-body">
+          <h3>Semax</h3>
+          <p class="product-card-spec">10 x 10mg</p>
+          <p class="product-card-price">$75</p>
+          <a href="products/semax-10mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Mitochondrial Peptide</div>
+        <div class="product-card-body">
+          <h3>MOTS-c</h3>
+          <p class="product-card-spec">10 x 20mg</p>
+          <p class="product-card-price">$75</p>
+          <a href="products/mots-c-20mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Lipotropic Blend</div>
+        <div class="product-card-body">
+          <h3>Lipo-C</h3>
+          <p class="product-card-spec">20 vials</p>
+          <p class="product-card-price">$90</p>
+          <a href="products/lipo-c.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Coenzyme Reagent</div>
+        <div class="product-card-body">
+          <h3>NAD+</h3>
+          <p class="product-card-spec">20 x 1000mg</p>
+          <p class="product-card-price">$50</p>
+          <a href="products/nad-1000mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Reconstitution Solvent</div>
+        <div class="product-card-body">
+          <h3>Bacteriostatic Water</h3>
+          <p class="product-card-spec">20 x 10ml</p>
+          <p class="product-card-price">$10</p>
+          <a href="products/bac-water-10ml.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Small Molecule Compound</div>
+        <div class="product-card-body">
+          <h3>5-Amino-1MQ</h3>
+          <p class="product-card-spec">10 x 10mg</p>
+          <p class="product-card-price">$70</p>
+          <a href="products/5-amino-1mq-10mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Combination Blend</div>
+        <div class="product-card-body">
+          <h3>KLOW Blend</h3>
+          <p class="product-card-spec">20 x 80mg</p>
+          <p class="product-card-price">$125</p>
+          <a href="products/klow-blend-80mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
     </div>
-    <p style="font-size:0.85rem; color:var(--text-light); margin-top:12px;">Pricing shown for reference only and is subject to change. Contact us for current pricing, certificates of analysis, and bulk/institutional orders.</p>
   </section>
 
   <section id="terms" class="notice">
@@ -93,6 +224,13 @@
   </div>
 </footer>
 
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
 </body>
 </html>
