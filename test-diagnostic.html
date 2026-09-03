@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html>
+<head><title>Storage Test</title></head>
+<body style="font-family: sans-serif; padding: 20px; font-size: 20px;">
+<h1>Diagnostic Test</h1>
+<div id="result">Testing...</div>
+<script>
+  var result = document.getElementById('result');
+  var lines = [];
+  try {
+    sessionStorage.setItem('test', '1');
+    var val = sessionStorage.getItem('test');
+    lines.push('sessionStorage: WORKS (value=' + val + ')');
+  } catch (e) {
+    lines.push('sessionStorage: BLOCKED - ' + e.message);
+  }
+  try {
+    localStorage.setItem('test', '1');
+    lines.push('localStorage: WORKS');
+  } catch (e) {
+    lines.push('localStorage: BLOCKED - ' + e.message);
+  }
+  lines.push('JavaScript is running: YES');
+  lines.push('User agent: ' + navigator.userAgent);
+  result.innerHTML = lines.join('<br><br>');
+</script>
+</body>
+</html>
