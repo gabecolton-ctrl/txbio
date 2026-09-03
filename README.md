@@ -156,3 +156,45 @@ now (the cart is cleared on submit, not saved to an "orders" collection).
 If you want a record of inquiries even before payment is wired up, ask —
 that's a small addition (save to a `/orders` collection instead of just
 clearing the cart).
+
+## My Account Page & Order History (added)
+
+New page: `account.html` — lets a signed-in user manage their personal info,
+shipping address, and view their order history. Submitting an order on
+`checkout.html` now saves it to Firestore (previously it only cleared the cart).
+
+**IMPORTANT — Firestore rules must be updated in Firebase Console:**
+
+The rules you published earlier only covered `/carts/{userId}`. With the
+account and order features, you need to add rules for `/users/{userId}` and
+`/orders/{orderId}` too. Go to Firebase Console → Firestore Database → Rules,
+replace everything with:
+
+```
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /carts/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+    match /orders/{orderId} {
+      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
+      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
+      allow update, delete: if false;
+    }
+  }
+}
+```
+
+Publish, and orders/account will work. Until you do this, submitting an
+order or saving account info will fail with a permission error.
+
+**Viewing all orders as the business owner:** right now, each customer can
+only see their own orders (correct for their privacy) — but there's no
+"admin view" for you to see all orders across all customers in one place.
+The only way to see everything currently is manually in Firebase Console →
+Firestore Database → Data → `orders` collection. If you want a proper admin
+dashboard on the site itself, that's a separate build — ask if you want it.

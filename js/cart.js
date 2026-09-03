@@ -13,13 +13,22 @@ var Cart = (function () {
     return db;
   }
 
+  function getCurrentUser() {
+    // Prefer the live Firebase Auth user over our cached reference, in case
+    // setUser() hasn't been called yet (e.g. a click fires before the
+    // onAuthStateChanged callback that wires up Cart has run).
+    if (firebase.auth().currentUser) return firebase.auth().currentUser;
+    return currentUser;
+  }
+
   function getCartRef(uid) {
     return ensureDb().collection('carts').doc(uid);
   }
 
   function getCart() {
-    if (!currentUser) return Promise.resolve([]);
-    return getCartRef(currentUser.uid).get().then(function (doc) {
+    var user = getCurrentUser();
+    if (!user) return Promise.resolve([]);
+    return getCartRef(user.uid).get().then(function (doc) {
       if (doc.exists && doc.data().items) {
         return doc.data().items;
       }
@@ -28,8 +37,9 @@ var Cart = (function () {
   }
 
   function saveCart(items) {
-    if (!currentUser) return Promise.reject('Not signed in');
-    return getCartRef(currentUser.uid).set({ items: items, updatedAt: new Date().toISOString() });
+    var user = getCurrentUser();
+    if (!user) return Promise.reject(new Error('Not signed in yet — please wait a moment and try again.'));
+    return getCartRef(user.uid).set({ items: items, updatedAt: new Date().toISOString() });
   }
 
   function addItem(product, qty) {
@@ -81,10 +91,17 @@ var Cart = (function () {
     });
   }
 
+  function withTimeout(promise, ms, message) {
+    var timeout = new Promise(function (resolve, reject) {
+      setTimeout(function () { reject(new Error(message || 'Request timed out. Please try again.')); }, ms);
+    });
+    return Promise.race([promise, timeout]);
+  }
+
   return {
     setUser: setUser,
     getCart: getCart,
-    addItem: addItem,
+    addItem: function (product, qty) { return withTimeout(addItem(product, qty), 10000, 'Adding to cart is taking too long. Please check your connection and try again.'); },
     updateQty: updateQty,
     removeItem: removeItem,
     clearCart: clearCart,

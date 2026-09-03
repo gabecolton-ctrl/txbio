@@ -109,6 +109,7 @@ nav a.nav-cta {
 }
 nav a.nav-cta:hover { background: var(--mint-dark); }
 .nav-cart { position: relative; display: none; }
+.nav-myaccount { display: none; }
 .nav-cart-badge {
   position: absolute;
   top: -8px;
@@ -157,6 +158,17 @@ nav a.nav-cta:hover { background: var(--mint-dark); }
   margin-left: 12px;
 }
 .btn-outline:hover { border-color: var(--mint); color: var(--mint); text-decoration: none; }
+
+.btn-outline-light {
+  display: inline-block;
+  background: transparent;
+  color: var(--bg-dark);
+  border: 1px solid var(--bg-dark);
+  padding: 12px 28px;
+  border-radius: 4px;
+  font-weight: 600;
+}
+.btn-outline-light:hover { background: var(--bg-dark); color: var(--mint); text-decoration: none; }
 
 main { max-width: 1160px; margin: 0 auto; padding: 55px 20px; }
 section { margin-bottom: 55px; }

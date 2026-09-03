@@ -6,6 +6,7 @@ document.addEventListener('DOMContentLoaded', function () {
     firebase.initializeApp(firebaseConfig);
   }
   var acctLink = document.getElementById('nav-account-link');
+  var myAccountLink = document.getElementById('nav-myaccount-link');
   var cartLink = document.getElementById('nav-cart-link');
   var cartBadge = document.getElementById('nav-cart-badge');
   var loginPath = window.location.pathname.indexOf('/products/') !== -1 ? '../login.html' : 'login.html';
@@ -22,6 +23,10 @@ document.addEventListener('DOMContentLoaded', function () {
             window.location.href = indexPath;
           });
         };
+      }
+      if (myAccountLink) {
+        var myAccountLi = myAccountLink.closest('li');
+        if (myAccountLi) myAccountLi.style.display = '';
       }
       if (cartLink) {
         var cartLi = cartLink.closest('li');
@@ -42,6 +47,10 @@ document.addEventListener('DOMContentLoaded', function () {
         acctLink.textContent = 'Researcher Login';
         acctLink.href = loginPath;
         acctLink.onclick = null;
+      }
+      if (myAccountLink) {
+        var signedOutMyAccountLi = myAccountLink.closest('li');
+        if (signedOutMyAccountLi) signedOutMyAccountLi.style.display = 'none';
       }
       if (cartLink) {
         var signedOutLi = cartLink.closest('li');

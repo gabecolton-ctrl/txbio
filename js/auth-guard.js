@@ -23,10 +23,12 @@ document.addEventListener('DOMContentLoaded', function () {
   function showContent(user) {
     resolved = true;
     if (window.Cart) Cart.setUser(user);
+    if (window.Account) Account.setUser(user);
     if (loadingEl) loadingEl.style.display = 'none';
     if (mainContent) mainContent.style.display = '';
     document.dispatchEvent(new CustomEvent('userReady', { detail: { user: user } }));
   }
+
 
   function goToLogin() {
     resolved = true;

@@ -24,6 +24,7 @@
     <nav>
       <ul>
         <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Products</a></li>
@@ -106,6 +107,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
+<script src="js/account.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
@@ -147,14 +149,32 @@
 
   document.getElementById('order-form').addEventListener('submit', function (e) {
     e.preventDefault();
-    // No payment processor connected yet — this simply clears the cart and
-    // shows a confirmation. Order details currently are NOT emailed anywhere
-    // automatically; see README for how to wire this to email or a processor.
-    Cart.clearCart().then(function () {
+    var submitBtn = e.target.querySelector('button[type="submit"]');
+    var notes = document.getElementById('order-notes').value;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    Cart.getCart().then(function (items) {
+      if (items.length === 0) return Promise.reject(new Error('Your cart is empty.'));
+      var total = items.reduce(function (sum, i) { return sum + (i.price * i.qty); }, 0);
+      return Account.createOrder({
+        items: items,
+        total: total,
+        notes: notes,
+        status: 'pending'
+      });
+    }).then(function () {
+      return Cart.clearCart();
+    }).then(function () {
       document.getElementById('summary-content').style.display = 'none';
       document.getElementById('order-success').style.display = '';
       var badge = document.getElementById('nav-cart-badge');
       if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+    }).catch(function (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Order Inquiry';
+      alert('Could not submit order: ' + err.message);
     });
   });
 </script>
