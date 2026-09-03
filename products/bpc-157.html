@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retatrutide | TXBioResearch</title>
-<meta name="description" content="Retatrutide research peptide, available in multiple dosages. For laboratory research use only. Not intended for human or animal consumption.">
+<title>BPC 157 | TXBioResearch</title>
+<meta name="description" content="BPC 157 research peptide, available in multiple dosages. For laboratory research use only. Not intended for human or animal consumption.">
 <link rel="icon" type="image/png" href="../images/logo-icon.png">
 <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -59,21 +59,17 @@
 
   <div class="product-hero">
     <div class="product-media">
-      <img src="../images/logo-icon.png" alt="Retatrutide research peptide vial placeholder">
+      <img src="../images/logo-icon.png" alt="BPC 157 research peptide vial placeholder">
     </div>
     <div class="product-info">
-      <h1>Retatrutide</h1>
-      <p class="product-subtitle">Metabolic Research Peptide</p>
-      <p class="product-price" id="selected-price">$50</p>
+      <h1>BPC 157</h1>
+      <p class="product-subtitle">Research Compound</p>
+      <p class="product-price" id="selected-price">$25</p>
 
       <label for="dose-select" style="margin-bottom:6px;">Dosage</label>
       <select id="dose-select">
-        <option value="5">5mg &mdash; $50</option>
-        <option value="10">10mg &mdash; $80</option>
-        <option value="15">15mg &mdash; $105</option>
-        <option value="20">20mg &mdash; $125</option>
-        <option value="30">30mg &mdash; $150</option>
-        <option value="60">60mg &mdash; $225</option>
+        <option value="5">5mg &mdash; $25</option>
+        <option value="10">10mg &mdash; $31</option>
       </select>
 
       <table class="spec-table">
@@ -101,7 +97,7 @@
 
   <section>
     <h2>Research Overview</h2>
-    <p>Retatrutide is a triple-agonist peptide studied in metabolic and endocrine research settings, most commonly in in-vitro and preclinical models investigating receptor activity and energy metabolism pathways.</p>
+    <p>BPC-157 is a synthetic peptide studied in laboratory research related to tissue repair and gastrointestinal protection pathways.</p>
   </section>
 
   <section>
@@ -126,7 +122,7 @@
 
 <script>
   var THIS_PRODUCT = {
-    slug: "retatrutide",
+    slug: "bpc-157",
   };
 </script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
@@ -140,7 +136,7 @@
 <script src="../js/main.js"></script>
 <script src="../js/nav-toggle.js"></script>
 <script>
-  var DOSE_PRICES = { "5": 50, "10": 80, "15": 105, "20": 125, "30": 150, "60": 225 };
+  var DOSE_PRICES = { "5": 25, "10": 31 };
   var doseSelect = document.getElementById('dose-select');
   var priceEl = document.getElementById('selected-price');
 
@@ -159,8 +155,8 @@
       var dose = doseSelect.value;
       var qty = parseInt(qtyInput.value, 10) || 1;
       var product = {
-        slug: 'retatrutide-' + dose + 'mg',
-        name: 'Retatrutide',
+        slug: 'bpc-157-' + dose + 'mg',
+        name: 'BPC 157',
         packSize: '1 vial x ' + dose + 'mg',
         price: DOSE_PRICES[dose]
       };

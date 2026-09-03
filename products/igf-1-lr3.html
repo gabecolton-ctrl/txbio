@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Retatrutide | TXBioResearch</title>
-<meta name="description" content="Retatrutide research peptide, available in multiple dosages. For laboratory research use only. Not intended for human or animal consumption.">
+<title>IGF-1 LR3 (1 vial x 100mcg) | TXBioResearch</title>
+<meta name="description" content="IGF-1 LR3 research peptide, 1 vial x 100mcg. For laboratory research use only. Not intended for human or animal consumption.">
 <link rel="icon" type="image/png" href="../images/logo-icon.png">
 <link rel="stylesheet" href="../css/style.css">
 </head>
@@ -41,7 +41,7 @@
         <li><a href="../about.html">About</a></li>
         <li><a href="../services.html" class="active">Products</a></li>
         <li><a href="../contact.html">Contact</a></li>
-      </ul>
+            </ul>
     </nav>
   </div>
 </header>
@@ -59,25 +59,15 @@
 
   <div class="product-hero">
     <div class="product-media">
-      <img src="../images/logo-icon.png" alt="Retatrutide research peptide vial placeholder">
+      <img src="../images/logo-icon.png" alt="IGF-1 LR3 research peptide vial placeholder">
     </div>
     <div class="product-info">
-      <h1>Retatrutide</h1>
-      <p class="product-subtitle">Metabolic Research Peptide</p>
-      <p class="product-price" id="selected-price">$50</p>
-
-      <label for="dose-select" style="margin-bottom:6px;">Dosage</label>
-      <select id="dose-select">
-        <option value="5">5mg &mdash; $50</option>
-        <option value="10">10mg &mdash; $80</option>
-        <option value="15">15mg &mdash; $105</option>
-        <option value="20">20mg &mdash; $125</option>
-        <option value="30">30mg &mdash; $150</option>
-        <option value="60">60mg &mdash; $225</option>
-      </select>
+      <h1>IGF-1 LR3</h1>
+      <p class="product-subtitle">Research Compound &middot; 1 vial x 100mcg</p>
+      <p class="product-price">$27</p>
 
       <table class="spec-table">
-        <tr><td>Pack Size</td><td>1 vial, dosage selected above</td></tr>
+        <tr><td>Pack Size</td><td>1 vial x 100mcg</td></tr>
         <tr><td>Form</td><td>Lyophilized powder</td></tr>
         <tr><td>Purity</td><td>&ge;98% (HPLC)</td></tr>
         <tr><td>Storage</td><td>Store lyophilized powder at -20&deg;C. Once reconstituted, refrigerate at 2-8&deg;C and use within the timeframe indicated by your lab protocol.</td></tr>
@@ -101,7 +91,7 @@
 
   <section>
     <h2>Research Overview</h2>
-    <p>Retatrutide is a triple-agonist peptide studied in metabolic and endocrine research settings, most commonly in in-vitro and preclinical models investigating receptor activity and energy metabolism pathways.</p>
+    <p>IGF-1 LR3 is a long-acting analog of Insulin-like Growth Factor 1, studied extensively in cell proliferation and signaling pathway research.</p>
   </section>
 
   <section>
@@ -124,67 +114,22 @@
   </div>
 </footer>
 
-<script>
-  var THIS_PRODUCT = {
-    slug: "retatrutide",
-  };
-</script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
+<script>
+  var THIS_PRODUCT = {
+    slug: "igf-1-lr3",
+  };
+</script>
 <script src="../js/firebase-config.js"></script>
 <script src="../js/cart.js"></script>
 <script src="../js/products.js"></script>
+<script src="../js/product-page.js"></script>
 <script src="../js/nav-auth.js"></script>
 <script src="../js/auth-guard.js"></script>
 <script src="../js/main.js"></script>
 <script src="../js/nav-toggle.js"></script>
-<script>
-  var DOSE_PRICES = { "5": 50, "10": 80, "15": 105, "20": 125, "30": 150, "60": 225 };
-  var doseSelect = document.getElementById('dose-select');
-  var priceEl = document.getElementById('selected-price');
-
-  function updatePrice() {
-    var dose = doseSelect.value;
-    priceEl.textContent = '$' + DOSE_PRICES[dose];
-  }
-  doseSelect.addEventListener('change', updatePrice);
-
-  document.addEventListener('DOMContentLoaded', function () {
-    var btn = document.getElementById('add-to-cart-btn');
-    var qtyInput = document.getElementById('qty-input');
-    var msg = document.getElementById('add-to-cart-msg');
-
-    btn.addEventListener('click', function () {
-      var dose = doseSelect.value;
-      var qty = parseInt(qtyInput.value, 10) || 1;
-      var product = {
-        slug: 'retatrutide-' + dose + 'mg',
-        name: 'Retatrutide',
-        packSize: '1 vial x ' + dose + 'mg',
-        price: DOSE_PRICES[dose]
-      };
-      btn.disabled = true;
-      btn.textContent = 'Adding...';
-      Cart.addItem(product, qty).then(function () {
-        btn.disabled = false;
-        btn.textContent = 'Add to Cart';
-        msg.style.display = 'block';
-        setTimeout(function () { msg.style.display = 'none'; }, 2500);
-        return Cart.getItemCount();
-      }).then(function (count) {
-        var badge = document.getElementById('floating-cart-badge');
-        if (badge) {
-          badge.textContent = count;
-          badge.style.display = count > 0 ? 'flex' : 'none';
-        }
-      }).catch(function (err) {
-        btn.disabled = false;
-        btn.textContent = 'Add to Cart';
-        alert('Could not add to cart: ' + (err.message || err));
-      });
-    });
-  });
-</script>
 </body>
 </html>

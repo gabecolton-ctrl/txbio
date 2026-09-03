@@ -9,18 +9,6 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div id="splash-screen">
-  <img src="images/logo-icon.png" alt="TXBioResearch">
-  <div class="splash-wordmark">Texas Advanced BioResearch</div>
-</div>
-<script src="js/splash.js"></script>
-<script>
-  // Inline, synchronous check: if the splash already played this session,
-  // remove it immediately before paint to avoid any flash on internal nav.
-  if (sessionStorage.getItem('txbio_splash_shown')) {
-    document.write('<style>#splash-screen{display:none!important}</style>');
-  }
-</script>
 
 <div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
 
@@ -41,15 +29,11 @@
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
             </ul>
     </nav>
   </div>
 </header>
-<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
-  &#128722;
-  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
-</a>
-
 
 <div class="hero">
   <h1>Research Peptides for Laboratory Use</h1>

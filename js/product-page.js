@@ -1,8 +1,8 @@
-// product-page.js -- wires the Add to Cart button on individual product pages.
+// product-page.js — wires the Add to Cart button on individual product pages.
 // Expects window.THIS_PRODUCT.slug to be set, and PRODUCTS array from products.js loaded.
 //
 // The click listener is attached as soon as the DOM is ready, independent of
-// auth/userReady timing -- this avoids a race where the button silently never
+// auth/userReady timing — this avoids a race where the button silently never
 // becomes clickable if userReady fires at an unexpected moment. Auth state is
 // checked fresh at the moment of the click instead.
 

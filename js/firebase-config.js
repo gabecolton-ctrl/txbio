@@ -1,5 +1,5 @@
 // Firebase configuration for TXBioResearch
-// This apiKey is safe to expose publicly -- Firebase web API keys are not secret.
+// This apiKey is safe to expose publicly — Firebase web API keys are not secret.
 const firebaseConfig = {
   apiKey: "AIzaSyA33cUP6AqKGmgCCOgwzilLnLQJJ23a5V8",
   authDomain: "tx-bio.firebaseapp.com",
