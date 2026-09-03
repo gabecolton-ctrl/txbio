@@ -69,6 +69,32 @@
 
   <div id="summary-content" style="display:none;">
     <section>
+      <h2 style="font-size:1.3rem;">Shipping Address</h2>
+      <div id="checkout-address-display" class="card" style="max-width:400px; margin-bottom:20px;">
+        <p id="checkout-address-text" style="margin-bottom:16px; color:var(--text);">No address on file yet.</p>
+        <button type="button" id="checkout-address-edit-btn" class="btn-outline-light">Edit for This Order</button>
+      </div>
+      <div id="checkout-address-form" style="display:none; margin-bottom:20px;">
+        <label for="checkout-address1">Address Line 1</label>
+        <input type="text" id="checkout-address1">
+
+        <label for="checkout-address2">Address Line 2 (optional)</label>
+        <input type="text" id="checkout-address2">
+
+        <label for="checkout-city">City</label>
+        <input type="text" id="checkout-city">
+
+        <label for="checkout-state">State</label>
+        <input type="text" id="checkout-state">
+
+        <label for="checkout-zip">ZIP Code</label>
+        <input type="text" id="checkout-zip">
+
+        <button type="button" id="checkout-address-done-btn" class="btn-outline-light">Done</button>
+      </div>
+    </section>
+
+    <section>
       <div class="order-summary-box">
         <table class="cart-table" style="margin-bottom: 10px;">
           <thead>
@@ -230,7 +256,59 @@
   }
 
   document.addEventListener('userReady', renderSummary);
+  document.addEventListener('userReady', loadShippingAddress);
   document.getElementById('shipping-select').addEventListener('change', computeAndDisplayTotals);
+
+  var checkoutAddress = {};
+
+  function renderAddressDisplay(profile) {
+    var el = document.getElementById('checkout-address-text');
+    var hasAddress = profile.addressLine1 || profile.city || profile.state || profile.zip;
+    if (!hasAddress) {
+      el.textContent = 'No address on file yet. Click below to add one for this order.';
+      return;
+    }
+    var lines = [];
+    if (profile.addressLine1) lines.push(profile.addressLine1);
+    if (profile.addressLine2) lines.push(profile.addressLine2);
+    var cityStateZip = [profile.city, profile.state].filter(Boolean).join(', ') + (profile.zip ? ' ' + profile.zip : '');
+    if (cityStateZip.trim()) lines.push(cityStateZip.trim());
+    el.innerHTML = lines.join('<br>');
+  }
+
+  function loadShippingAddress() {
+    Account.getProfile().then(function (profile) {
+      if (!profile) profile = {};
+      checkoutAddress = profile;
+      document.getElementById('checkout-address1').value = profile.addressLine1 || '';
+      document.getElementById('checkout-address2').value = profile.addressLine2 || '';
+      document.getElementById('checkout-city').value = profile.city || '';
+      document.getElementById('checkout-state').value = profile.state || '';
+      document.getElementById('checkout-zip').value = profile.zip || '';
+      renderAddressDisplay(profile);
+    });
+  }
+
+  var checkoutAddrDisplay = document.getElementById('checkout-address-display');
+  var checkoutAddrForm = document.getElementById('checkout-address-form');
+
+  document.getElementById('checkout-address-edit-btn').addEventListener('click', function () {
+    checkoutAddrDisplay.style.display = 'none';
+    checkoutAddrForm.style.display = 'block';
+  });
+
+  document.getElementById('checkout-address-done-btn').addEventListener('click', function () {
+    checkoutAddress = {
+      addressLine1: document.getElementById('checkout-address1').value.trim(),
+      addressLine2: document.getElementById('checkout-address2').value.trim(),
+      city: document.getElementById('checkout-city').value.trim(),
+      state: document.getElementById('checkout-state').value.trim(),
+      zip: document.getElementById('checkout-zip').value.trim()
+    };
+    renderAddressDisplay(checkoutAddress);
+    checkoutAddrForm.style.display = 'none';
+    checkoutAddrDisplay.style.display = 'block';
+  });
 
   document.querySelectorAll('input[name="payment-method"]').forEach(function (radio) {
     radio.addEventListener('change', function () {
@@ -249,6 +327,12 @@
     var shippingOption = document.getElementById('shipping-select');
     var shippingLabel = shippingOption.options[shippingOption.selectedIndex].text;
 
+    var hasAddress = checkoutAddress.addressLine1 || checkoutAddress.city || checkoutAddress.state || checkoutAddress.zip;
+    if (!hasAddress) {
+      alert('Please add a shipping address before submitting your order.');
+      return;
+    }
+
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
@@ -263,6 +347,7 @@
         shippingOption: shippingLabel,
         tax: totals.tax,
         total: totals.total,
+        shippingAddress: checkoutAddress,
         notes: notes,
         paymentMethod: paymentMethod,
         status: 'pending'

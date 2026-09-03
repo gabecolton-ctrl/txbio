@@ -288,8 +288,21 @@
         } else {
           breakdownHtml = '<p style="text-align:right; font-weight:700; margin-bottom:0;">Total: $' + order.total + '</p>';
         }
+        var addressHtml = '';
+        if (order.shippingAddress) {
+          var addr = order.shippingAddress;
+          var addrLines = [];
+          if (addr.addressLine1) addrLines.push(addr.addressLine1);
+          if (addr.addressLine2) addrLines.push(addr.addressLine2);
+          var addrCityStateZip = [addr.city, addr.state].filter(Boolean).join(', ') + (addr.zip ? ' ' + addr.zip : '');
+          if (addrCityStateZip.trim()) addrLines.push(addrCityStateZip.trim());
+          if (addrLines.length > 0) {
+            addressHtml = '<p style="font-size:0.9rem; color:var(--text-light); margin-bottom:10px;"><strong>Ship to:</strong> ' + addrLines.join(', ') + '</p>';
+          }
+        }
         box.innerHTML =
           '<p style="margin-bottom:8px;"><strong>' + date + '</strong> &middot; Status: ' + (order.status || 'pending') + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
+          addressHtml +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
           breakdownHtml;
         list.appendChild(box);
