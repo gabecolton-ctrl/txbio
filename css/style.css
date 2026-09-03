@@ -146,6 +146,7 @@ nav a.nav-cta:hover { background: var(--mint-dark); }
   border: 2px solid #fff;
 }
 .nav-myaccount { display: none; }
+.nav-admin { display: none; }
 .nav-cart-badge {
   position: absolute;
   top: -8px;
