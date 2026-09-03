@@ -9,6 +9,18 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  // Inline, synchronous check: if the splash already played this session,
+  // remove it immediately before paint to avoid any flash on internal nav.
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
 
 <div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
 
@@ -25,15 +37,20 @@
       <ul>
         <li><a href="#" id="nav-account-link">Researcher Login</a></li>
         <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html" class="active">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
-        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
             </ul>
     </nav>
   </div>
 </header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
 
 <div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
 
@@ -61,138 +78,561 @@
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Combination Blend</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>GLOW Blend</h3>
-          <p class="product-card-spec">1 x 70mg</p>
-          <p class="product-card-price">$70</p>
-          <a href="products/glow-blend-70mg.html" class="product-card-link">View Details</a>
+          <h3>L-carnitine 600mg</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$24</p>
+          <a href="products/l-carnitine-600mg.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">GHRH Peptide</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>Tesamorelin</h3>
-          <p class="product-card-spec">1 x 10mg</p>
-          <p class="product-card-price">$80</p>
-          <a href="products/tesamorelin-10mg.html" class="product-card-link">View Details</a>
+          <h3>Cagrisema (2.5mg+2.5mg)</h3>
+          <p class="product-card-spec">1 vial x 5mg</p>
+          <p class="product-card-price">$46</p>
+          <a href="products/cagrisema-2-5mg-2-5mg.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">GHRH Peptide</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>Tesamorelin</h3>
-          <p class="product-card-spec">1 x 20mg</p>
-          <p class="product-card-price">$160</p>
-          <a href="products/tesamorelin-20mg.html" class="product-card-link">View Details</a>
+          <h3>Cagrisema(5mg+5mg)</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$89</p>
+          <a href="products/cagrisema-5mg-5mg.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Research Reagent</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>Vitamin B-12</h3>
-          <p class="product-card-spec">1 x 10mg</p>
-          <p class="product-card-price">$55</p>
-          <a href="products/vitamin-b12-10mg.html" class="product-card-link">View Details</a>
+          <h3>Retatrutide 5mg+cagrilintide 5mg</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$84</p>
+          <a href="products/retatrutide-5mg-cagrilintide-5mg.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">GH Secretagogue Peptide</div>
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Retatrutide 20mg + Tirzepatide 40mg</h3>
+          <p class="product-card-spec">1 vial x 60mg</p>
+          <p class="product-card-price">$157</p>
+          <a href="products/retatrutide-20mg-tirzepatide-40mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Lemon Bottle</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$35</p>
+          <a href="products/lemon-bottle.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>AOD9604</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$89</p>
+          <a href="products/aod9604.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Cagrilintide</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$121</p>
+          <a href="products/cagrilintide.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>B12</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$18</p>
+          <a href="products/b12.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Lipo-C with B12</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$31</p>
+          <a href="products/lipo-c-with-b12.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Lipo-C(FatBLaster)</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$31</p>
+          <a href="products/lipo-c-fatblaster.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>CJC1295 with DAC</h3>
+          <p class="product-card-spec">1 vial x 5mg</p>
+          <p class="product-card-price">$85</p>
+          <a href="products/cjc1295-with-dac.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>CJC 1295(without DAC)5mg+IPA 5mg</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$58</p>
+          <a href="products/cjc-1295-without-dac-5mg-ipa-5mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
           <h3>Ipamorelin</h3>
-          <p class="product-card-spec">1 x 10mg</p>
-          <p class="product-card-price">$65</p>
-          <a href="products/ipamorelin-10mg.html" class="product-card-link">View Details</a>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$40</p>
+          <a href="products/ipamorelin.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Antioxidant Reagent</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>Glutathione</h3>
-          <p class="product-card-spec">1 x 1500mg</p>
-          <p class="product-card-price">$80</p>
-          <a href="products/glutathione-1500mg.html" class="product-card-link">View Details</a>
+          <h3>IGF-1 LR3</h3>
+          <p class="product-card-spec">1 vial x 100mcg</p>
+          <p class="product-card-price">$27</p>
+          <a href="products/igf-1-lr3.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Growth Factor Peptide</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>IGF-1</h3>
-          <p class="product-card-spec">1 x 100mcg</p>
-          <p class="product-card-price">$65</p>
-          <a href="products/igf-1-100mcg.html" class="product-card-link">View Details</a>
+          <h3>SUPER Human Blend</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$35</p>
+          <a href="products/super-human-blend.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Hormone Reagent</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>HCG</h3>
-          <p class="product-card-spec">1 x 5000iu</p>
-          <p class="product-card-price">$70</p>
-          <a href="products/hcg-5000iu.html" class="product-card-link">View Details</a>
+          <h3>BPC 5mg+TB5mg</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$53</p>
+          <a href="products/bpc-5mg-tb5mg.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Neuropeptide</div>
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>BPC 10mg+TB10mg</h3>
+          <p class="product-card-spec">1 vial x 20mg</p>
+          <p class="product-card-price">$106</p>
+          <a href="products/bpc-10mg-tb10mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>BPC 15mg+TB15mg</h3>
+          <p class="product-card-spec">1 vial x 30mg</p>
+          <p class="product-card-price">$139</p>
+          <a href="products/bpc-15mg-tb15mg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Epithalon</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$25</p>
+          <a href="products/epithalon.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Thymosin alpha 1</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$89</p>
+          <a href="products/thymosin-alpha-1.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>KLOW blend</h3>
+          <p class="product-card-spec">1 vial x 80mg</p>
+          <p class="product-card-price">$130</p>
+          <a href="products/klow-blend.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>LL37</h3>
+          <p class="product-card-spec">1 vial x 5mg</p>
+          <p class="product-card-price">$53</p>
+          <a href="products/ll37.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Thymalin/Thymulin</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$40</p>
+          <a href="products/thymalin-thymulin.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Humanin</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$146</p>
+          <a href="products/humanin.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
           <h3>Semax</h3>
-          <p class="product-card-spec">1 x 10mg</p>
-          <p class="product-card-price">$75</p>
-          <a href="products/semax-10mg.html" class="product-card-link">View Details</a>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$33</p>
+          <a href="products/semax.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Mitochondrial Peptide</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>MOTS-c</h3>
-          <p class="product-card-spec">1 x 20mg</p>
-          <p class="product-card-price">$75</p>
-          <a href="products/mots-c-20mg.html" class="product-card-link">View Details</a>
+          <h3>Selank</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$33</p>
+          <a href="products/selank.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Lipotropic Blend</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>Lipo-C</h3>
-          <p class="product-card-spec">1 vial</p>
-          <p class="product-card-price">$90</p>
-          <a href="products/lipo-c.html" class="product-card-link">View Details</a>
+          <h3>Semax 10mg+Selank 10mg</h3>
+          <p class="product-card-spec">1 vial x 20mg</p>
+          <p class="product-card-price">$61</p>
+          <a href="products/semax-10mg-selank-10mg.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Coenzyme Reagent</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>NAD+</h3>
-          <p class="product-card-spec">1 x 1000mg</p>
-          <p class="product-card-price">$50</p>
-          <a href="products/nad-1000mg.html" class="product-card-link">View Details</a>
+          <h3>Dihexa</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$44</p>
+          <a href="products/dihexa.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Reconstitution Solvent</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>Bacteriostatic Water</h3>
-          <p class="product-card-spec">1 x 10ml</p>
-          <p class="product-card-price">$10</p>
-          <a href="products/bac-water-10ml.html" class="product-card-link">View Details</a>
+          <h3>ARA290 (Cibinetide)</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$38</p>
+          <a href="products/ara290-cibinetide.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Small Molecule Compound</div>
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>cerebrolysin</h3>
+          <p class="product-card-spec">1 vial x 60mg</p>
+          <p class="product-card-price">$35</p>
+          <a href="products/cerebrolysin.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>PT141</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$44</p>
+          <a href="products/pt141.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Kisspeptin-10</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$56</p>
+          <a href="products/kisspeptin-10.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Melanotan I</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$31</p>
+          <a href="products/melanotan-i.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Melanotan II</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$31</p>
+          <a href="products/melanotan-ii.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>AHK-CU</h3>
+          <p class="product-card-spec">1 vial x 100mg</p>
+          <p class="product-card-price">$38</p>
+          <a href="products/ahk-cu.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>GLOW blend</h3>
+          <p class="product-card-spec">1 vial x 70mg</p>
+          <p class="product-card-price">$120</p>
+          <a href="products/glow-blend.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Botulinum toxin</h3>
+          <p class="product-card-spec">1 vial x 100iu</p>
+          <p class="product-card-price">$159</p>
+          <a href="products/botulinum-toxin.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Cartalax</h3>
+          <p class="product-card-spec">1 vial x 20mg</p>
+          <p class="product-card-price">$61</p>
+          <a href="products/cartalax.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>pinealon</h3>
+          <p class="product-card-spec">1 vial x 10mg</p>
+          <p class="product-card-price">$38</p>
+          <a href="products/pinealon.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Acetic Acid Water</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$7</p>
+          <a href="products/acetic-acid-water.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Sterile water</h3>
+          <p class="product-card-spec">1 vial x 10ml</p>
+          <p class="product-card-price">$4</p>
+          <a href="products/sterile-water.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>SLU-PP-332 capsule</h3>
+          <p class="product-card-spec">1 bottle x 100 capsules, 500mcg each</p>
+          <p class="product-card-price">$25</p>
+          <a href="products/slu-pp-332-capsule.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Semaglutide</h3>
+          <p class="product-card-spec">5mg &ndash; 20mg, multiple dosages</p>
+          <p class="product-card-price">From $20</p>
+          <a href="products/semaglutide.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Tirzepatide</h3>
+          <p class="product-card-spec">5mg &ndash; 60mg, multiple dosages</p>
+          <p class="product-card-price">From $25</p>
+          <a href="products/tirzepatide.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
           <h3>5-Amino-1MQ</h3>
-          <p class="product-card-spec">1 x 10mg</p>
-          <p class="product-card-price">$70</p>
-          <a href="products/5-amino-1mq-10mg.html" class="product-card-link">View Details</a>
+          <p class="product-card-spec">10mg &ndash; 50mg, multiple dosages</p>
+          <p class="product-card-price">From $32</p>
+          <a href="products/5-amino-1mq.html" class="product-card-link">View Details</a>
         </div>
       </div>
       <div class="product-card">
-        <div class="product-card-top">Combination Blend</div>
+        <div class="product-card-top">Research Compound</div>
         <div class="product-card-body">
-          <h3>KLOW Blend</h3>
-          <p class="product-card-spec">1 x 80mg</p>
-          <p class="product-card-price">$125</p>
-          <a href="products/klow-blend-80mg.html" class="product-card-link">View Details</a>
+          <h3>CJC 1295(without DAC)</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $40</p>
+          <a href="products/cjc-1295-without-dac.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Tesamorelin</h3>
+          <p class="product-card-spec">10mg &ndash; 20mg, multiple dosages</p>
+          <p class="product-card-price">From $98</p>
+          <a href="products/tesamorelin.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Sermorelin Acetate</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $38</p>
+          <a href="products/sermorelin-acetate.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>BPC 157</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $25</p>
+          <a href="products/bpc-157.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>TB500 Thymosin Beta-4</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $42</p>
+          <a href="products/tb500-thymosin-beta-4.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Nad+</h3>
+          <p class="product-card-spec">100mg &ndash; 1000mg, multiple dosages</p>
+          <p class="product-card-price">From $24</p>
+          <a href="products/nad-plus.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>MOTS-c (Human)</h3>
+          <p class="product-card-spec">10mg &ndash; 40mg, multiple dosages</p>
+          <p class="product-card-price">From $38</p>
+          <a href="products/mots-c-human.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>SS-31</h3>
+          <p class="product-card-spec">10mg &ndash; 50mg, multiple dosages</p>
+          <p class="product-card-price">From $47</p>
+          <a href="products/ss-31.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>KPV</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $22</p>
+          <a href="products/kpv.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>VIP</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $49</p>
+          <a href="products/vip.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>DSIP</h3>
+          <p class="product-card-spec">5mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $31</p>
+          <a href="products/dsip.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>HCG</h3>
+          <p class="product-card-spec">5000iu &ndash; 10000iu, multiple dosages</p>
+          <p class="product-card-price">From $42</p>
+          <a href="products/hcg.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Oxytocin</h3>
+          <p class="product-card-spec">2mg &ndash; 10mg, multiple dosages</p>
+          <p class="product-card-price">From $22</p>
+          <a href="products/oxytocin.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>GHK-Cu</h3>
+          <p class="product-card-spec">50mg &ndash; 100mg, multiple dosages</p>
+          <p class="product-card-price">From $19</p>
+          <a href="products/ghk-cu.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>Glutathione</h3>
+          <p class="product-card-spec">600mg &ndash; 1500mg, multiple dosages</p>
+          <p class="product-card-price">From $31</p>
+          <a href="products/glutathione.html" class="product-card-link">View Details</a>
+        </div>
+      </div>
+      <div class="product-card">
+        <div class="product-card-top">Research Compound</div>
+        <div class="product-card-body">
+          <h3>bac.water</h3>
+          <p class="product-card-spec">3ml &ndash; 10ml, multiple dosages</p>
+          <p class="product-card-price">From $7</p>
+          <a href="products/bac-water.html" class="product-card-link">View Details</a>
         </div>
       </div>
     </div>

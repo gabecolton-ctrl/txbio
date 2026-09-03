@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inventory Management | TXBioResearch</title>
+<meta name="description" content="Admin inventory management for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Products</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section>
+    <h2>Inventory Management</h2>
+    <div class="section-divider"></div>
+    <p class="lead">Set stock quantities for each product. Leave a product untracked (blank) to treat it as always in stock with no backorder limit.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <div id="inventory-save-msg" style="display:none; color:var(--mint-dark); font-weight:600; margin-bottom:16px;">Saved.</div>
+      <div class="catalog-wrap">
+        <table class="catalog-table" id="inventory-table">
+          <thead>
+            <tr><th>Product</th><th>Current Stock</th><th>Set New Qty</th><th></th></tr>
+          </thead>
+          <tbody id="inventory-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <strong>Research Use Only:</strong>
+      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+    </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
+    <div class="footer-bottom">
+      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var ALL_PRODUCTS = [
+  { slug: "5-amino-1mq", name: "5-Amino-1MQ" },
+  { slug: "ahk-cu", name: "AHK-CU" },
+  { slug: "aod9604", name: "AOD9604" },
+  { slug: "ara290-cibinetide", name: "ARA290 (Cibinetide)" },
+  { slug: "acetic-acid-water", name: "Acetic Acid Water" },
+  { slug: "b12", name: "B12" },
+  { slug: "bpc-10mg-tb10mg", name: "BPC 10mg+TB10mg" },
+  { slug: "bpc-157", name: "BPC 157" },
+  { slug: "bpc-15mg-tb15mg", name: "BPC 15mg+TB15mg" },
+  { slug: "bpc-5mg-tb5mg", name: "BPC 5mg+TB5mg" },
+  { slug: "bac-water", name: "Bacteriostatic Water" },
+  { slug: "botulinum-toxin", name: "Botulinum toxin" },
+  { slug: "cjc-1295-without-dac", name: "CJC 1295(without DAC)" },
+  { slug: "cjc-1295-without-dac-5mg-ipa-5mg", name: "CJC 1295(without DAC)5mg+IPA 5mg" },
+  { slug: "cjc1295-with-dac", name: "CJC1295 with DAC" },
+  { slug: "cagrilintide", name: "Cagrilintide" },
+  { slug: "cagrisema-2-5mg-2-5mg", name: "Cagrisema (2.5mg+2.5mg)" },
+  { slug: "cagrisema-5mg-5mg", name: "Cagrisema(5mg+5mg)" },
+  { slug: "cartalax", name: "Cartalax" },
+  { slug: "dsip", name: "DSIP" },
+  { slug: "dihexa", name: "Dihexa" },
+  { slug: "epithalon", name: "Epithalon" },
+  { slug: "ghk-cu", name: "GHK-Cu" },
+  { slug: "glow-blend", name: "GLOW blend" },
+  { slug: "glutathione", name: "Glutathione" },
+  { slug: "hcg", name: "HCG" },
+  { slug: "humanin", name: "Humanin" },
+  { slug: "igf-1-lr3", name: "IGF-1 LR3" },
+  { slug: "ipamorelin", name: "Ipamorelin" },
+  { slug: "klow-blend", name: "KLOW blend" },
+  { slug: "kpv", name: "KPV" },
+  { slug: "kisspeptin-10", name: "Kisspeptin-10" },
+  { slug: "l-carnitine-600mg", name: "L-carnitine 600mg" },
+  { slug: "ll37", name: "LL37" },
+  { slug: "lemon-bottle", name: "Lemon Bottle" },
+  { slug: "lipo-c", name: "Lipo-C" },
+  { slug: "lipo-c-fatblaster", name: "Lipo-C (FatBlaster)" },
+  { slug: "lipo-c-with-b12", name: "Lipo-C with B12" },
+  { slug: "mots-c-human", name: "MOTS-c (Human)" },
+  { slug: "melanotan-i", name: "Melanotan I" },
+  { slug: "melanotan-ii", name: "Melanotan II" },
+  { slug: "nad-plus", name: "Nad+" },
+  { slug: "oxytocin", name: "Oxytocin" },
+  { slug: "pt141", name: "PT141" },
+  { slug: "retatrutide", name: "Retatrutide" },
+  { slug: "retatrutide-20mg-tirzepatide-40mg", name: "Retatrutide 20mg + Tirzepatide 40mg" },
+  { slug: "retatrutide-5mg-cagrilintide-5mg", name: "Retatrutide 5mg+cagrilintide 5mg" },
+  { slug: "slu-pp-332-capsule", name: "SLU-PP-332 capsule" },
+  { slug: "ss-31", name: "SS-31" },
+  { slug: "super-human-blend", name: "SUPER Human Blend" },
+  { slug: "selank", name: "Selank" },
+  { slug: "semaglutide", name: "Semaglutide" },
+  { slug: "semax", name: "Semax" },
+  { slug: "semax-10mg-selank-10mg", name: "Semax 10mg+Selank 10mg" },
+  { slug: "sermorelin-acetate", name: "Sermorelin Acetate" },
+  { slug: "sterile-water", name: "Sterile water" },
+  { slug: "tb500-thymosin-beta-4", name: "TB500 Thymosin Beta-4" },
+  { slug: "tesamorelin", name: "Tesamorelin" },
+  { slug: "thymalin-thymulin", name: "Thymalin/Thymulin" },
+  { slug: "thymosin-alpha-1", name: "Thymosin alpha 1" },
+  { slug: "tirzepatide", name: "Tirzepatide" },
+  { slug: "vip", name: "VIP" },
+  { slug: "cerebrolysin", name: "cerebrolysin" },
+  { slug: "pinealon", name: "pinealon" }
+  ];
+
+  document.addEventListener('userReady', function (e) {
+    var user = e.detail.user;
+    if (user.email !== ADMIN_EMAIL) {
+      document.getElementById('admin-denied').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-content').style.display = 'block';
+    loadInventoryTable();
+  });
+
+  function loadInventoryTable() {
+    Inventory.getAllStock().then(function (stockMap) {
+      var rowsEl = document.getElementById('inventory-rows');
+      rowsEl.innerHTML = '';
+      ALL_PRODUCTS.forEach(function (product) {
+        var currentQty = stockMap.hasOwnProperty(product.slug) ? stockMap[product.slug] : null;
+        var displayQty = currentQty === null ? 'Untracked (always in stock)' : currentQty;
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + product.name + '</td>' +
+          '<td>' + displayQty + '</td>' +
+          '<td><input type="number" min="0" placeholder="Set qty" data-slug="' + product.slug + '" style="margin-bottom:0; width:100px;"></td>' +
+          '<td><button type="button" class="btn" data-save-slug="' + product.slug + '" style="padding:8px 16px; font-size:0.85rem;">Save</button></td>';
+        rowsEl.appendChild(tr);
+      });
+
+      rowsEl.querySelectorAll('button[data-save-slug]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var slug = btn.getAttribute('data-save-slug');
+          var input = rowsEl.querySelector('input[data-slug="' + slug + '"]');
+          var qty = parseInt(input.value, 10);
+          if (isNaN(qty) || qty < 0) {
+            alert('Please enter a valid quantity (0 or more).');
+            return;
+          }
+          btn.disabled = true;
+          btn.textContent = 'Saving...';
+          Inventory.setStock(slug, qty).then(function () {
+            btn.disabled = false;
+            btn.textContent = 'Save';
+            var msg = document.getElementById('inventory-save-msg');
+            msg.style.display = 'block';
+            setTimeout(function () { msg.style.display = 'none'; }, 2000);
+            loadInventoryTable();
+          }).catch(function (err) {
+            btn.disabled = false;
+            btn.textContent = 'Save';
+            alert('Could not save: ' + err.message);
+          });
+        });
+      });
+    });
+  }
+</script>
+</body>
+</html>

@@ -14,11 +14,21 @@ service cloud.firestore {
 
     // Orders — a user can create an order for themselves, and read only
     // orders where they are the owner. Orders are not editable or
-    // deletable once created (immutable order history).
+    // deletable once created (immutable order history), except by the
+    // admin account (for backorder/fulfillment status updates).
     match /orders/{orderId} {
       allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow update, delete: if false;
+      allow read: if request.auth != null &&
+        (request.auth.uid == resource.data.userId || request.auth.token.email == 'gabecolton@gmail.com');
+      allow update: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
+      allow delete: if false;
+    }
+
+    // Inventory/stock counts — anyone signed in can read (to check stock
+    // at checkout), but only the admin account can write (update counts).
+    match /inventory/{productSlug} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
     }
   }
 }

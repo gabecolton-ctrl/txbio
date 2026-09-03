@@ -9,6 +9,18 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  // Inline, synchronous check: if the splash already played this session,
+  // remove it immediately before paint to avoid any flash on internal nav.
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
 
 <div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
 
@@ -25,15 +37,20 @@
       <ul>
         <li><a href="#" id="nav-account-link">Researcher Login</a></li>
         <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
-        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
             </ul>
     </nav>
   </div>
 </header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
 
 <div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
 
@@ -53,6 +70,32 @@
 
   <div id="summary-content" style="display:none;">
     <section>
+      <h2 style="font-size:1.3rem;">Shipping Address</h2>
+      <div id="checkout-address-display" class="card" style="max-width:400px; margin-bottom:20px;">
+        <p id="checkout-address-text" style="margin-bottom:16px; color:var(--text);">No address on file yet.</p>
+        <button type="button" id="checkout-address-edit-btn" class="btn-outline-light">Edit for This Order</button>
+      </div>
+      <div id="checkout-address-form" style="display:none; margin-bottom:20px;">
+        <label for="checkout-address1">Address Line 1</label>
+        <input type="text" id="checkout-address1">
+
+        <label for="checkout-address2">Address Line 2 (optional)</label>
+        <input type="text" id="checkout-address2">
+
+        <label for="checkout-city">City</label>
+        <input type="text" id="checkout-city">
+
+        <label for="checkout-state">State</label>
+        <input type="text" id="checkout-state">
+
+        <label for="checkout-zip">ZIP Code</label>
+        <input type="text" id="checkout-zip">
+
+        <button type="button" id="checkout-address-done-btn" class="btn-outline-light">Done</button>
+      </div>
+    </section>
+
+    <section>
       <div class="order-summary-box">
         <table class="cart-table" style="margin-bottom: 10px;">
           <thead>
@@ -60,13 +103,42 @@
           </thead>
           <tbody id="summary-rows"></tbody>
         </table>
-        <p style="text-align:right; font-size:1.2rem; font-weight:700; margin-bottom:0;">Total: <span id="summary-total">$0</span></p>
+
+        <label for="shipping-select" style="margin-top:16px;">Shipping</label>
+        <select id="shipping-select">
+          <option value="20">3-5 Business Days — $20</option>
+          <option value="25">3 Business Days — $25</option>
+          <option value="40">2nd Day — $40</option>
+        </select>
+
+        <table class="spec-table" style="margin-bottom:0;">
+          <tr><td>Subtotal</td><td id="summary-subtotal">$0</td></tr>
+          <tr><td>Shipping</td><td id="summary-shipping">$20</td></tr>
+          <tr><td>Tax (8.25%)</td><td id="summary-tax">$0</td></tr>
+          <tr><td style="font-weight:700; color:var(--bg-darker);">Total</td><td id="summary-total" style="font-weight:700; font-size:1.2rem;">$0</td></tr>
+        </table>
       </div>
     </section>
 
     <section class="notice">
       <strong>Before you submit:</strong>
       <p>By submitting this order inquiry, you certify that you are ordering on behalf of a laboratory, research institution, or qualified researcher, for laboratory research use only, and not for personal, human, or animal consumption.</p>
+    </section>
+
+    <section>
+      <h2 style="font-size:1.3rem;">Payment Method</h2>
+      <div class="checkbox-row" style="margin-bottom: 10px;">
+        <input type="radio" name="payment-method" id="pm-inquiry" value="inquiry" checked style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-inquiry" style="font-weight:600;">Other Payment Method (we'll follow up on payment)</label>
+      </div>
+      <div class="checkbox-row" style="margin-bottom: 10px;">
+        <input type="radio" name="payment-method" id="pm-btc" value="bitcoin" style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-btc" style="font-weight:600;">Pay with Bitcoin</label>
+      </div>
+      <div class="checkbox-row" style="margin-bottom: 20px;">
+        <input type="radio" name="payment-method" id="pm-bank" value="bank" style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-bank" style="font-weight:600;">Bank Transfer</label>
+      </div>
     </section>
 
     <section>
@@ -77,14 +149,40 @@
           <input type="checkbox" id="order-confirm" required>
           <label for="order-confirm">I certify this order is for laboratory research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
         </div>
-        <button type="submit" class="btn">Submit Order Inquiry</button>
+        <button type="submit" class="btn" id="order-submit-btn">Submit Order Inquiry</button>
       </form>
     </section>
+  </div>
+
+  <div id="btc-instructions" class="order-success" style="display:none;">
+    <h2>Pay with Bitcoin</h2>
+    <p>Send the exact amount below to complete your order. Once payment is confirmed on the blockchain, we'll process and ship your order.</p>
+    <div id="btc-backorder-notice" class="notice" style="display:none; text-align:left;"></div>
+    <p style="font-weight:700; font-size:1.3rem;" id="btc-amount-display"></p>
+    <div style="display:flex; justify-content:center; margin: 16px 0;">
+      <img id="btc-qr" src="" alt="Bitcoin payment QR code" style="width:200px; height:200px;">
+    </div>
+    <p style="font-size:0.85rem; word-break:break-all; background:#fff; padding:10px; border-radius:4px; border:1px solid var(--grey-border);">3LUok9839v13tLejLzaex4iucW3QeAaDU2</p>
+    <p style="font-size:0.85rem; color:var(--text-light);">Your order inquiry has been recorded. Email us at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with your transaction ID once sent, and we'll confirm and ship promptly.</p>
+    <a href="services.html" class="btn" style="margin-top:10px;">Back to Catalog</a>
+  </div>
+
+  <div id="bank-instructions" class="order-success" style="display:none;">
+    <h2>Bank Transfer Details</h2>
+    <p>Use the details below to complete your transfer. Once received, we'll process and ship your order.</p>
+    <div id="bank-backorder-notice" class="notice" style="display:none; text-align:left;"></div>
+    <table class="spec-table" style="max-width:400px; margin: 0 auto 16px;">
+      <tr><td>Account Number</td><td>218386587884</td></tr>
+      <tr><td>Routing Number</td><td>101019644</td></tr>
+    </table>
+    <p style="font-size:0.85rem; color:var(--text-light);">Your order inquiry has been recorded. Email us at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with your transfer confirmation once sent, and we'll confirm and ship promptly.</p>
+    <a href="services.html" class="btn" style="margin-top:10px;">Back to Catalog</a>
   </div>
 
   <div id="order-success" class="order-success" style="display:none;">
     <h2>Order Inquiry Received</h2>
     <p>Thank you &mdash; our team will follow up by email to confirm details and arrange payment and fulfillment.</p>
+    <div id="inquiry-backorder-notice" class="notice" style="display:none; text-align:left;"></div>
     <a href="services.html" class="btn">Back to Catalog</a>
   </div>
 </main>
@@ -108,69 +206,262 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/account.js"></script>
+<script src="js/inventory.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
 <script>
+  var TAX_RATE = 0.0825;
+  var currentSubtotal = 0;
+
+  function computeAndDisplayTotals() {
+    var shipping = parseFloat(document.getElementById('shipping-select').value) || 0;
+    var tax = Math.round(currentSubtotal * TAX_RATE * 100) / 100;
+    var total = currentSubtotal + shipping + tax;
+
+    document.getElementById('summary-subtotal').textContent = '$' + currentSubtotal.toFixed(2);
+    document.getElementById('summary-shipping').textContent = '$' + shipping.toFixed(2);
+    document.getElementById('summary-tax').textContent = '$' + tax.toFixed(2);
+    document.getElementById('summary-total').textContent = '$' + total.toFixed(2);
+
+    return { subtotal: currentSubtotal, shipping: shipping, tax: tax, total: total };
+  }
+
   function renderSummary() {
     var loading = document.getElementById('summary-loading');
     var emptyState = document.getElementById('summary-empty-state');
     var content = document.getElementById('summary-content');
     var rowsEl = document.getElementById('summary-rows');
-    var totalEl = document.getElementById('summary-total');
 
     Cart.getCart().then(function (items) {
       loading.style.display = 'none';
       if (items.length === 0) {
-        emptyState.style.display = '';
+        emptyState.style.display = 'block';
         content.style.display = 'none';
         return;
       }
-      content.style.display = '';
+      content.style.display = 'block';
       rowsEl.innerHTML = '';
-      var total = 0;
+      var subtotal = 0;
       items.forEach(function (item) {
-        var subtotal = item.price * item.qty;
-        total += subtotal;
+        var itemSubtotal = item.price * item.qty;
+        subtotal += itemSubtotal;
         var tr = document.createElement('tr');
         tr.innerHTML =
-          '<td>' + item.name + '</td>' +
-          '<td>' + item.packSize + '</td>' +
-          '<td>' + item.qty + '</td>' +
-          '<td>$' + subtotal + '</td>';
+          '<td data-label="Product">' + item.name + '</td>' +
+          '<td data-label="Pack Size">' + item.packSize + '</td>' +
+          '<td data-label="Qty">' + item.qty + '</td>' +
+          '<td data-label="Subtotal">$' + itemSubtotal + '</td>';
         rowsEl.appendChild(tr);
       });
-      totalEl.textContent = '$' + total;
+      currentSubtotal = subtotal;
+      computeAndDisplayTotals();
     });
   }
 
+  var currentUserEmail = '';
+  document.addEventListener('userReady', function (e) {
+    currentUserEmail = e.detail.user.email || '';
+  });
   document.addEventListener('userReady', renderSummary);
+  document.addEventListener('userReady', loadShippingAddress);
+  document.getElementById('shipping-select').addEventListener('change', computeAndDisplayTotals);
+
+  var checkoutAddress = {};
+
+  function renderAddressDisplay(profile) {
+    var el = document.getElementById('checkout-address-text');
+    var hasAddress = profile.addressLine1 || profile.city || profile.state || profile.zip;
+    if (!hasAddress) {
+      el.textContent = 'No address on file yet. Click below to add one for this order.';
+      return;
+    }
+    var lines = [];
+    if (profile.addressLine1) lines.push(profile.addressLine1);
+    if (profile.addressLine2) lines.push(profile.addressLine2);
+    var cityStateZip = [profile.city, profile.state].filter(Boolean).join(', ') + (profile.zip ? ' ' + profile.zip : '');
+    if (cityStateZip.trim()) lines.push(cityStateZip.trim());
+    el.innerHTML = lines.join('<br>');
+  }
+
+  function loadShippingAddress() {
+    Account.getProfile().then(function (profile) {
+      if (!profile) profile = {};
+      checkoutAddress = profile;
+      document.getElementById('checkout-address1').value = profile.addressLine1 || '';
+      document.getElementById('checkout-address2').value = profile.addressLine2 || '';
+      document.getElementById('checkout-city').value = profile.city || '';
+      document.getElementById('checkout-state').value = profile.state || '';
+      document.getElementById('checkout-zip').value = profile.zip || '';
+      renderAddressDisplay(profile);
+    });
+  }
+
+  var checkoutAddrDisplay = document.getElementById('checkout-address-display');
+  var checkoutAddrForm = document.getElementById('checkout-address-form');
+
+  document.getElementById('checkout-address-edit-btn').addEventListener('click', function () {
+    checkoutAddrDisplay.style.display = 'none';
+    checkoutAddrForm.style.display = 'block';
+  });
+
+  document.getElementById('checkout-address-done-btn').addEventListener('click', function () {
+    checkoutAddress = {
+      addressLine1: document.getElementById('checkout-address1').value.trim(),
+      addressLine2: document.getElementById('checkout-address2').value.trim(),
+      city: document.getElementById('checkout-city').value.trim(),
+      state: document.getElementById('checkout-state').value.trim(),
+      zip: document.getElementById('checkout-zip').value.trim()
+    };
+    renderAddressDisplay(checkoutAddress);
+    checkoutAddrForm.style.display = 'none';
+    checkoutAddrDisplay.style.display = 'block';
+  });
+
+  document.querySelectorAll('input[name="payment-method"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      var btn = document.getElementById('order-submit-btn');
+      if (radio.value === 'bitcoin') btn.textContent = 'Submit & Show Bitcoin Payment Details';
+      else if (radio.value === 'bank') btn.textContent = 'Submit & Show Bank Transfer Details';
+      else btn.textContent = 'Submit Order Inquiry';
+    });
+  });
+
+  function sendOrderNotificationEmail(order) {
+    var addr = order.shippingAddress || {};
+    var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
+      .filter(Boolean).join(', ');
+    var itemsText = order.items.map(function (item) {
+      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — $' + (item.price * item.qty);
+    }).join('\n');
+
+    var formData = new FormData();
+    formData.append('_subject', 'New TXBioResearch Order — $' + order.total.toFixed(2));
+    formData.append('Customer Email', currentUserEmail || '(unknown)');
+    formData.append('Payment Method', order.paymentMethod);
+    formData.append('Shipping Option', order.shippingOption);
+    formData.append('Shipping Address', addressText || '(none provided)');
+    formData.append('Items', itemsText);
+    formData.append('Subtotal', '$' + order.subtotal.toFixed(2));
+    formData.append('Shipping Cost', '$' + order.shipping.toFixed(2));
+    formData.append('Tax', '$' + order.tax.toFixed(2));
+    formData.append('Total', '$' + order.total.toFixed(2));
+    formData.append('Customer Notes', order.notes || '(none)');
+    formData.append('_captcha', 'false');
+    formData.append('_replyto', currentUserEmail || '');
+
+    return fetch('https://formsubmit.co/txbioresearch@gmail.com', {
+      method: 'POST',
+      body: formData
+    }).catch(function (err) {
+      // Don't block the checkout flow if the email notification fails —
+      // the order is already saved in Firestore regardless.
+      console.error('Order notification email failed to send:', err);
+    });
+  }
 
   document.getElementById('order-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var submitBtn = e.target.querySelector('button[type="submit"]');
     var notes = document.getElementById('order-notes').value;
+    var paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
+    var shippingOption = document.getElementById('shipping-select');
+    var shippingLabel = shippingOption.options[shippingOption.selectedIndex].text;
+
+    var hasAddress = checkoutAddress.addressLine1 || checkoutAddress.city || checkoutAddress.state || checkoutAddress.zip;
+    if (!hasAddress) {
+      alert('Please add a shipping address before submitting your order.');
+      return;
+    }
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
+    var totals = computeAndDisplayTotals();
+
     Cart.getCart().then(function (items) {
       if (items.length === 0) return Promise.reject(new Error('Your cart is empty.'));
-      var total = items.reduce(function (sum, i) { return sum + (i.price * i.qty); }, 0);
-      return Account.createOrder({
-        items: items,
-        total: total,
-        notes: notes,
-        status: 'pending'
+
+      // Check and decrement stock for each item, tracking any backorders.
+      var stockPromises = items.map(function (item) {
+        return Inventory.decrementStock(item.slug, item.qty).then(function (result) {
+          return {
+            item: item,
+            fulfilled: result.fulfilled,
+            backordered: result.backordered
+          };
+        });
       });
-    }).then(function () {
-      return Cart.clearCart();
-    }).then(function () {
+
+      return Promise.all(stockPromises).then(function (stockResults) {
+        var hasBackorder = stockResults.some(function (r) { return r.backordered > 0; });
+        var itemsWithStock = items.map(function (item, i) {
+          return Object.assign({}, item, {
+            fulfilled: stockResults[i].fulfilled,
+            backordered: stockResults[i].backordered
+          });
+        });
+
+        var orderData = {
+          items: itemsWithStock,
+          subtotal: totals.subtotal,
+          shipping: totals.shipping,
+          shippingOption: shippingLabel,
+          tax: totals.tax,
+          total: totals.total,
+          shippingAddress: checkoutAddress,
+          notes: notes,
+          paymentMethod: paymentMethod,
+          hasBackorder: hasBackorder,
+          status: 'pending'
+        };
+        sendOrderNotificationEmail(orderData);
+        return Account.createOrder(orderData).then(function () {
+          return orderData;
+        });
+      });
+    }).then(function (orderData) {
+      return Cart.clearCart().then(function () { return orderData; });
+    }).then(function (orderData) {
       document.getElementById('summary-content').style.display = 'none';
-      document.getElementById('order-success').style.display = '';
-      var badge = document.getElementById('nav-cart-badge');
+      var badge = document.getElementById('floating-cart-badge');
       if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+
+      var backorderedItems = orderData.items.filter(function (i) { return i.backordered > 0; });
+      var backorderText = '';
+      if (backorderedItems.length > 0) {
+        var lines = backorderedItems.map(function (i) {
+          return i.name + ' (' + i.packSize + '): ' + i.fulfilled + ' available now, ' + i.backordered + ' on backorder';
+        });
+        backorderText = '<strong>Partial Backorder Notice:</strong><p>' + lines.join('</p><p>') + '</p><p>We will ship available items first and follow up on backordered quantities separately.</p>';
+      }
+
+      if (paymentMethod === 'bitcoin') {
+        var btcAddress = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
+        document.getElementById('btc-amount-display').textContent = 'Order Total: $' + totals.total.toFixed(2) + ' USD (send equivalent in BTC)';
+        document.getElementById('btc-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:' + btcAddress;
+        if (backorderText) {
+          var btcNotice = document.getElementById('btc-backorder-notice');
+          btcNotice.innerHTML = backorderText;
+          btcNotice.style.display = 'block';
+        }
+        document.getElementById('btc-instructions').style.display = 'block';
+      } else if (paymentMethod === 'bank') {
+        if (backorderText) {
+          var bankNotice = document.getElementById('bank-backorder-notice');
+          bankNotice.innerHTML = backorderText;
+          bankNotice.style.display = 'block';
+        }
+        document.getElementById('bank-instructions').style.display = 'block';
+      } else {
+        if (backorderText) {
+          var inquiryNotice = document.getElementById('inquiry-backorder-notice');
+          inquiryNotice.innerHTML = backorderText;
+          inquiryNotice.style.display = 'block';
+        }
+        document.getElementById('order-success').style.display = 'block';
+      }
     }).catch(function (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Order Inquiry';
@@ -178,5 +469,6 @@
     });
   });
 </script>
+
 </body>
 </html>
