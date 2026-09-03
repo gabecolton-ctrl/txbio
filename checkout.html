@@ -86,6 +86,22 @@
     </section>
 
     <section>
+      <h2 style="font-size:1.3rem;">Payment Method</h2>
+      <div class="checkbox-row" style="margin-bottom: 10px;">
+        <input type="radio" name="payment-method" id="pm-inquiry" value="inquiry" checked style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-inquiry" style="font-weight:600;">General Inquiry (we'll follow up on payment)</label>
+      </div>
+      <div class="checkbox-row" style="margin-bottom: 10px;">
+        <input type="radio" name="payment-method" id="pm-btc" value="bitcoin" style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-btc" style="font-weight:600;">Pay with Bitcoin</label>
+      </div>
+      <div class="checkbox-row" style="margin-bottom: 20px;">
+        <input type="radio" name="payment-method" id="pm-bank" value="bank" style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-bank" style="font-weight:600;">Bank Transfer</label>
+      </div>
+    </section>
+
+    <section>
       <form id="order-form">
         <label for="order-notes">Notes for our team (optional)</label>
         <textarea id="order-notes" placeholder="Shipping address, institution PO number, timing needs, etc."></textarea>
@@ -93,9 +109,32 @@
           <input type="checkbox" id="order-confirm" required>
           <label for="order-confirm">I certify this order is for laboratory research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
         </div>
-        <button type="submit" class="btn">Submit Order Inquiry</button>
+        <button type="submit" class="btn" id="order-submit-btn">Submit Order Inquiry</button>
       </form>
     </section>
+  </div>
+
+  <div id="btc-instructions" class="order-success" style="display:none;">
+    <h2>Pay with Bitcoin</h2>
+    <p>Send the exact amount below to complete your order. Once payment is confirmed on the blockchain, we'll process and ship your order.</p>
+    <p style="font-weight:700; font-size:1.3rem;" id="btc-amount-display"></p>
+    <div style="display:flex; justify-content:center; margin: 16px 0;">
+      <img id="btc-qr" src="" alt="Bitcoin payment QR code" style="width:200px; height:200px;">
+    </div>
+    <p style="font-size:0.85rem; word-break:break-all; background:#fff; padding:10px; border-radius:4px; border:1px solid var(--grey-border);">3LUok9839v13tLejLzaex4iucW3QeAaDU2</p>
+    <p style="font-size:0.85rem; color:var(--text-light);">Your order inquiry has been recorded. Email us at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with your transaction ID once sent, and we'll confirm and ship promptly.</p>
+    <a href="services.html" class="btn" style="margin-top:10px;">Back to Catalog</a>
+  </div>
+
+  <div id="bank-instructions" class="order-success" style="display:none;">
+    <h2>Bank Transfer Details</h2>
+    <p>Use the details below to complete your transfer. Once received, we'll process and ship your order.</p>
+    <table class="spec-table" style="max-width:400px; margin: 0 auto 16px;">
+      <tr><td>Account Number</td><td>218386587884</td></tr>
+      <tr><td>Routing Number</td><td>101019644</td></tr>
+    </table>
+    <p style="font-size:0.85rem; color:var(--text-light);">Your order inquiry has been recorded. Email us at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with your transfer confirmation once sent, and we'll confirm and ship promptly.</p>
+    <a href="services.html" class="btn" style="margin-top:10px;">Back to Catalog</a>
   </div>
 
   <div id="order-success" class="order-success" style="display:none;">
@@ -163,30 +202,53 @@
 
   document.addEventListener('userReady', renderSummary);
 
+  document.querySelectorAll('input[name="payment-method"]').forEach(function (radio) {
+    radio.addEventListener('change', function () {
+      var btn = document.getElementById('order-submit-btn');
+      if (radio.value === 'bitcoin') btn.textContent = 'Submit & Show Bitcoin Payment Details';
+      else if (radio.value === 'bank') btn.textContent = 'Submit & Show Bank Transfer Details';
+      else btn.textContent = 'Submit Order Inquiry';
+    });
+  });
+
   document.getElementById('order-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var submitBtn = e.target.querySelector('button[type="submit"]');
     var notes = document.getElementById('order-notes').value;
+    var paymentMethod = document.querySelector('input[name="payment-method"]:checked').value;
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
 
+    var orderTotal = 0;
+
     Cart.getCart().then(function (items) {
       if (items.length === 0) return Promise.reject(new Error('Your cart is empty.'));
-      var total = items.reduce(function (sum, i) { return sum + (i.price * i.qty); }, 0);
+      orderTotal = items.reduce(function (sum, i) { return sum + (i.price * i.qty); }, 0);
       return Account.createOrder({
         items: items,
-        total: total,
+        total: orderTotal,
         notes: notes,
+        paymentMethod: paymentMethod,
         status: 'pending'
       });
     }).then(function () {
       return Cart.clearCart();
     }).then(function () {
       document.getElementById('summary-content').style.display = 'none';
-      document.getElementById('order-success').style.display = '';
       var badge = document.getElementById('floating-cart-badge');
       if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+
+      if (paymentMethod === 'bitcoin') {
+        var btcAddress = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
+        document.getElementById('btc-amount-display').textContent = 'Order Total: $' + orderTotal + ' USD (send equivalent in BTC)';
+        document.getElementById('btc-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:' + btcAddress;
+        document.getElementById('btc-instructions').style.display = 'block';
+      } else if (paymentMethod === 'bank') {
+        document.getElementById('bank-instructions').style.display = 'block';
+      } else {
+        document.getElementById('order-success').style.display = 'block';
+      }
     }).catch(function (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Order Inquiry';
@@ -194,5 +256,6 @@
     });
   });
 </script>
+
 </body>
 </html>

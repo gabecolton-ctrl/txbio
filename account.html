@@ -277,7 +277,7 @@
           return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + item.qty + '</td><td data-label="Subtotal">$' + (item.price * item.qty) + '</td></tr>';
         }).join('');
         box.innerHTML =
-          '<p style="margin-bottom:8px;"><strong>' + date + '</strong> &middot; Status: ' + (order.status || 'pending') + '</p>' +
+          '<p style="margin-bottom:8px;"><strong>' + date + '</strong> &middot; Status: ' + (order.status || 'pending') + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
           '<p style="text-align:right; font-weight:700; margin-bottom:0;">Total: $' + order.total + '</p>';
         list.appendChild(box);
