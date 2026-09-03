@@ -26,18 +26,18 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (myAccountLink) {
         var myAccountLi = myAccountLink.closest('li');
-        if (myAccountLi) myAccountLi.style.display = '';
+        if (myAccountLi) myAccountLi.style.display = 'list-item';
       }
       if (cartLink) {
         var cartLi = cartLink.closest('li');
-        if (cartLi) cartLi.style.display = '';
-        cartLink.style.display = '';
+        if (cartLi) cartLi.style.display = 'list-item';
+        cartLink.style.display = 'inline';
         if (window.Cart) {
           Cart.setUser(user);
           Cart.getItemCount().then(function (count) {
             if (cartBadge) {
               cartBadge.textContent = count;
-              cartBadge.style.display = count > 0 ? '' : 'none';
+              cartBadge.style.display = count > 0 ? 'block' : 'none';
             }
           });
         }

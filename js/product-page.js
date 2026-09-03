@@ -23,7 +23,7 @@ document.addEventListener('userReady', function () {
       var badge = document.getElementById('nav-cart-badge');
       if (badge) {
         badge.textContent = count;
-        badge.style.display = count > 0 ? '' : 'none';
+        badge.style.display = count > 0 ? 'block' : 'none';
       }
     }).catch(function (err) {
       btn.disabled = false;
