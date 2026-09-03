@@ -20,10 +20,10 @@ document.addEventListener('userReady', function () {
       setTimeout(function () { msg.style.display = 'none'; }, 2500);
       return Cart.getItemCount();
     }).then(function (count) {
-      var badge = document.getElementById('nav-cart-badge');
+      var badge = document.getElementById('floating-cart-badge');
       if (badge) {
         badge.textContent = count;
-        badge.style.display = count > 0 ? 'block' : 'none';
+        badge.style.display = count > 0 ? 'flex' : 'none';
       }
     }).catch(function (err) {
       btn.disabled = false;

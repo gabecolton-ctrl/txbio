@@ -9,6 +9,18 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  // Inline, synchronous check: if the splash already played this session,
+  // remove it immediately before paint to avoid any flash on internal nav.
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
 
 <div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
 
@@ -29,11 +41,15 @@
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
-        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
       </ul>
     </nav>
   </div>
 </header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
 
 <div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
 
@@ -57,7 +73,20 @@
       <label for="profile-email">Email</label>
       <input type="email" id="profile-email" disabled style="background:#f0f0f0; color:var(--text-light);">
 
-      <h3 style="margin-top:24px;">Shipping Address</h3>
+      <button type="submit" class="btn">Save Info</button>
+    </form>
+  </section>
+
+  <section>
+    <h2>Shipping Address</h2>
+    <div id="address-message" style="display:none; color:var(--mint-dark); font-weight:600; font-size:0.9rem; margin-bottom:14px;">Saved.</div>
+
+    <div id="address-display" class="card" style="max-width:400px;">
+      <p id="address-display-text" style="margin-bottom:16px; color:var(--text);">No address on file yet.</p>
+      <button type="button" id="address-edit-btn" class="btn-outline-light">Edit Address</button>
+    </div>
+
+    <form id="address-form" style="display:none;">
       <label for="profile-address1">Address Line 1</label>
       <input type="text" id="profile-address1">
 
@@ -73,7 +102,8 @@
       <label for="profile-zip">ZIP Code</label>
       <input type="text" id="profile-zip">
 
-      <button type="submit" class="btn">Save Info</button>
+      <button type="submit" class="btn">Save Address</button>
+      <button type="button" id="address-cancel-btn" class="btn-outline-light" style="margin-left:10px;">Cancel</button>
     </form>
   </section>
 
@@ -112,12 +142,15 @@
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
 <script>
+  var currentProfile = {};
+
   document.addEventListener('userReady', function (e) {
     var user = e.detail.user;
     document.getElementById('profile-email').value = user.email || '';
 
     Account.getProfile().then(function (profile) {
       if (!profile) return;
+      currentProfile = profile;
       document.getElementById('profile-name').value = profile.name || '';
       document.getElementById('profile-institution').value = profile.institution || '';
       document.getElementById('profile-address1').value = profile.addressLine1 || '';
@@ -125,10 +158,26 @@
       document.getElementById('profile-city').value = profile.city || '';
       document.getElementById('profile-state').value = profile.state || '';
       document.getElementById('profile-zip').value = profile.zip || '';
+      renderAddressDisplay(profile);
     });
 
     renderOrders();
   });
+
+  function renderAddressDisplay(profile) {
+    var el = document.getElementById('address-display-text');
+    var hasAddress = profile.addressLine1 || profile.city || profile.state || profile.zip;
+    if (!hasAddress) {
+      el.textContent = 'No address on file yet.';
+      return;
+    }
+    var lines = [];
+    if (profile.addressLine1) lines.push(profile.addressLine1);
+    if (profile.addressLine2) lines.push(profile.addressLine2);
+    var cityStateZip = [profile.city, profile.state].filter(Boolean).join(', ') + (profile.zip ? ' ' + profile.zip : '');
+    if (cityStateZip.trim()) lines.push(cityStateZip.trim());
+    el.innerHTML = lines.map(function (l) { return l; }).join('<br>');
+  }
 
   document.getElementById('profile-form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -139,7 +188,48 @@
 
     var profile = {
       name: document.getElementById('profile-name').value.trim(),
-      institution: document.getElementById('profile-institution').value.trim(),
+      institution: document.getElementById('profile-institution').value.trim()
+    };
+
+    Account.saveProfile(profile).then(function () {
+      btn.disabled = false;
+      btn.textContent = 'Save Info';
+      msg.style.display = 'block';
+      setTimeout(function () { msg.style.display = 'none'; }, 2500);
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Save Info';
+      alert('Could not save: ' + err.message);
+    });
+  });
+
+  var addressDisplay = document.getElementById('address-display');
+  var addressForm = document.getElementById('address-form');
+
+  document.getElementById('address-edit-btn').addEventListener('click', function () {
+    addressDisplay.style.display = 'none';
+    addressForm.style.display = 'block';
+  });
+
+  document.getElementById('address-cancel-btn').addEventListener('click', function () {
+    // Reset fields back to last saved values
+    document.getElementById('profile-address1').value = currentProfile.addressLine1 || '';
+    document.getElementById('profile-address2').value = currentProfile.addressLine2 || '';
+    document.getElementById('profile-city').value = currentProfile.city || '';
+    document.getElementById('profile-state').value = currentProfile.state || '';
+    document.getElementById('profile-zip').value = currentProfile.zip || '';
+    addressForm.style.display = 'none';
+    addressDisplay.style.display = 'block';
+  });
+
+  document.getElementById('address-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = e.target.querySelector('button[type="submit"]');
+    var msg = document.getElementById('address-message');
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    var addressFields = {
       addressLine1: document.getElementById('profile-address1').value.trim(),
       addressLine2: document.getElementById('profile-address2').value.trim(),
       city: document.getElementById('profile-city').value.trim(),
@@ -147,15 +237,19 @@
       zip: document.getElementById('profile-zip').value.trim()
     };
 
-    Account.saveProfile(profile).then(function () {
+    Account.saveProfile(addressFields).then(function () {
+      currentProfile = Object.assign({}, currentProfile, addressFields);
+      renderAddressDisplay(currentProfile);
       btn.disabled = false;
-      btn.textContent = 'Save Info';
-      msg.style.display = '';
+      btn.textContent = 'Save Address';
+      addressForm.style.display = 'none';
+      addressDisplay.style.display = 'block';
+      msg.style.display = 'block';
       setTimeout(function () { msg.style.display = 'none'; }, 2500);
     }).catch(function (err) {
       btn.disabled = false;
-      btn.textContent = 'Save Info';
-      alert('Could not save: ' + err.message);
+      btn.textContent = 'Save Address';
+      alert('Could not save address: ' + err.message);
     });
   });
 
@@ -167,12 +261,12 @@
     Account.getOrderHistory().then(function (orders) {
       loading.style.display = 'none';
       if (orders.length === 0) {
-        empty.style.display = '';
+        empty.style.display = 'block';
         list.style.display = 'none';
         return;
       }
       empty.style.display = 'none';
-      list.style.display = '';
+      list.style.display = 'block';
       list.innerHTML = '';
       orders.forEach(function (order) {
         var date = new Date(order.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
@@ -180,7 +274,7 @@
         box.className = 'order-summary-box';
         box.style.marginBottom = '18px';
         var itemsHtml = order.items.map(function (item) {
-          return '<tr><td>' + item.name + '</td><td>' + item.packSize + '</td><td>' + item.qty + '</td><td>$' + (item.price * item.qty) + '</td></tr>';
+          return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + item.qty + '</td><td data-label="Subtotal">$' + (item.price * item.qty) + '</td></tr>';
         }).join('');
         box.innerHTML =
           '<p style="margin-bottom:8px;"><strong>' + date + '</strong> &middot; Status: ' + (order.status || 'pending') + '</p>' +
