@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contact | TXBioResearch</title>
+<meta name="description" content="Contact Texas Advanced BioResearch for research peptide orders, certificates of analysis, and institutional inquiries.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Products</a></li>
+        <li><a href="contact.html" class="active">Contact</a></li>
+        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
+            </ul>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <section>
+    <h2>Contact Us</h2>
+    <div class="section-divider"></div>
+    <p class="lead">For order inquiries, certificates of analysis, bulk pricing, or institutional accounts, reach out using the form below or contact us directly.</p>
+  </section>
+
+  <section>
+    <div class="card-grid" style="margin-bottom: 30px;">
+      <div class="card">
+        <h3>Email</h3>
+        <p><a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a></p>
+      </div>
+      <div class="card">
+        <h3>Location</h3>
+        <p>Dallas, TX</p>
+      </div>
+      <div class="card">
+        <h3>Hours</h3>
+        <p>Mon&ndash;Fri, 9am&ndash;5pm CT</p>
+      </div>
+    </div>
+
+    <form action="#" method="POST">
+      <label for="name">Name</label>
+      <input type="text" id="name" name="name" required>
+
+      <label for="org">Institution / Lab Name</label>
+      <input type="text" id="org" name="org" required>
+
+      <label for="email">Email</label>
+      <input type="email" id="email" name="email" required>
+
+      <label for="message">Message / Order Inquiry</label>
+      <textarea id="message" name="message" required></textarea>
+
+      <div class="checkbox-row">
+        <input type="checkbox" id="confirm" name="confirm" required>
+        <label for="confirm">I confirm I am contacting TXBioResearch on behalf of a laboratory or research institution, for research use only, and not for personal, human, or animal consumption.</label>
+      </div>
+
+      <button type="submit" class="btn">Send Inquiry</button>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <img src="images/logo-icon.png" alt="TXBioResearch">
+        <span>Texas Advanced BioResearch</span>
+      </div>
+      <div class="footer-links">
+        <a href="index.html">Home</a>
+        <a href="about.html">About</a>
+        <a href="services.html">Products</a>
+        <a href="contact.html">Contact</a>
+        <a href="login.html">Researcher Login</a>
+        <a href="terms.html">Terms &amp; Conditions</a>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <strong>Research Use Only:</strong>
+      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims regarding the safety or efficacy of these compounds for any use outside of laboratory research. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+    </div>
+    <div class="footer-bottom">
+      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+</body>
+</html>

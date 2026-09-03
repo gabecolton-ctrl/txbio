@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Order Summary | TXBioResearch</title>
+<meta name="description" content="Review and submit your research order inquiry to TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Products</a></li>
+        <li><a href="contact.html">Contact</a></li>
+        <li class="nav-cart"><a href="cart.html" id="nav-cart-link">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
+            </ul>
+    </nav>
+  </div>
+</header>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section>
+    <h2>Order Summary</h2>
+    <div class="section-divider"></div>
+    <p class="lead">This is a summary of your requested order. We do not process live payments on this site yet &mdash; submitting below sends an order inquiry to our team, and we'll follow up directly to arrange payment and fulfillment.</p>
+  </section>
+
+  <section id="summary-loading" class="cart-empty">Loading your order&hellip;</section>
+
+  <section id="summary-empty-state" class="cart-empty" style="display:none;">
+    <p>Your cart is empty.</p>
+    <a href="services.html" class="btn">Browse Products</a>
+  </section>
+
+  <div id="summary-content" style="display:none;">
+    <section>
+      <div class="order-summary-box">
+        <table class="cart-table" style="margin-bottom: 10px;">
+          <thead>
+            <tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr>
+          </thead>
+          <tbody id="summary-rows"></tbody>
+        </table>
+        <p style="text-align:right; font-size:1.2rem; font-weight:700; margin-bottom:0;">Total: <span id="summary-total">$0</span></p>
+      </div>
+    </section>
+
+    <section class="notice">
+      <strong>Before you submit:</strong>
+      <p>By submitting this order inquiry, you certify that you are ordering on behalf of a laboratory, research institution, or qualified researcher, for laboratory research use only, and not for personal, human, or animal consumption.</p>
+    </section>
+
+    <section>
+      <form id="order-form">
+        <label for="order-notes">Notes for our team (optional)</label>
+        <textarea id="order-notes" placeholder="Shipping address, institution PO number, timing needs, etc."></textarea>
+        <div class="checkbox-row" style="margin-bottom: 20px;">
+          <input type="checkbox" id="order-confirm" required>
+          <label for="order-confirm">I certify this order is for laboratory research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
+        </div>
+        <button type="submit" class="btn">Submit Order Inquiry</button>
+      </form>
+    </section>
+  </div>
+
+  <div id="order-success" class="order-success" style="display:none;">
+    <h2>Order Inquiry Received</h2>
+    <p>Thank you &mdash; our team will follow up by email to confirm details and arrange payment and fulfillment.</p>
+    <a href="services.html" class="btn">Back to Catalog</a>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <strong>Research Use Only:</strong>
+      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+    </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
+    <div class="footer-bottom">
+      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/account.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  function renderSummary() {
+    var loading = document.getElementById('summary-loading');
+    var emptyState = document.getElementById('summary-empty-state');
+    var content = document.getElementById('summary-content');
+    var rowsEl = document.getElementById('summary-rows');
+    var totalEl = document.getElementById('summary-total');
+
+    Cart.getCart().then(function (items) {
+      loading.style.display = 'none';
+      if (items.length === 0) {
+        emptyState.style.display = '';
+        content.style.display = 'none';
+        return;
+      }
+      content.style.display = '';
+      rowsEl.innerHTML = '';
+      var total = 0;
+      items.forEach(function (item) {
+        var subtotal = item.price * item.qty;
+        total += subtotal;
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + item.name + '</td>' +
+          '<td>' + item.packSize + '</td>' +
+          '<td>' + item.qty + '</td>' +
+          '<td>$' + subtotal + '</td>';
+        rowsEl.appendChild(tr);
+      });
+      totalEl.textContent = '$' + total;
+    });
+  }
+
+  document.addEventListener('userReady', renderSummary);
+
+  document.getElementById('order-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var submitBtn = e.target.querySelector('button[type="submit"]');
+    var notes = document.getElementById('order-notes').value;
+
+    submitBtn.disabled = true;
+    submitBtn.textContent = 'Submitting...';
+
+    Cart.getCart().then(function (items) {
+      if (items.length === 0) return Promise.reject(new Error('Your cart is empty.'));
+      var total = items.reduce(function (sum, i) { return sum + (i.price * i.qty); }, 0);
+      return Account.createOrder({
+        items: items,
+        total: total,
+        notes: notes,
+        status: 'pending'
+      });
+    }).then(function () {
+      return Cart.clearCart();
+    }).then(function () {
+      document.getElementById('summary-content').style.display = 'none';
+      document.getElementById('order-success').style.display = '';
+      var badge = document.getElementById('nav-cart-badge');
+      if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+    }).catch(function (err) {
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Submit Order Inquiry';
+      alert('Could not submit order: ' + err.message);
+    });
+  });
+</script>
+</body>
+</html>
