@@ -24,6 +24,8 @@ document.addEventListener('DOMContentLoaded', function () {
         };
       }
       if (cartLink) {
+        var cartLi = cartLink.closest('li');
+        if (cartLi) cartLi.style.display = '';
         cartLink.style.display = '';
         if (window.Cart) {
           Cart.setUser(user);
@@ -41,7 +43,11 @@ document.addEventListener('DOMContentLoaded', function () {
         acctLink.href = loginPath;
         acctLink.onclick = null;
       }
-      if (cartLink) cartLink.style.display = 'none';
+      if (cartLink) {
+        var signedOutLi = cartLink.closest('li');
+        if (signedOutLi) signedOutLi.style.display = 'none';
+        cartLink.style.display = 'none';
+      }
     }
   });
 });

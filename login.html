@@ -18,6 +18,9 @@
       <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
       <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
     </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
     <nav>
       <ul>
         <li><a href="index.html">Home</a></li>
@@ -60,7 +63,7 @@
       <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
       <div class="checkbox-row" style="margin-bottom:18px;">
         <input type="checkbox" id="signup-confirm" required>
-        <label for="signup-confirm">I certify I am registering on behalf of a laboratory, research institution, or qualified researcher, for research use only.</label>
+        <label for="signup-confirm">I certify I am registering on behalf of a laboratory, research institution, or qualified researcher, for research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a>.</label>
       </div>
       <button type="submit" class="btn" style="width:100%;">Create Account</button>
     </form>
@@ -73,6 +76,7 @@
       <strong>Research Use Only:</strong>
       <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
     </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
     <div class="footer-bottom">
       &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
     </div>
@@ -84,6 +88,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
 <script>
   firebase.initializeApp(firebaseConfig);
 
@@ -140,10 +145,25 @@
   formSignup.addEventListener('submit', function (e) {
     e.preventDefault();
     clearError();
-    var name = document.getElementById('signup-name').value;
-    var org = document.getElementById('signup-org').value;
-    var email = document.getElementById('signup-email').value;
+    var name = document.getElementById('signup-name').value.trim();
+    var org = document.getElementById('signup-org').value.trim();
+    var email = document.getElementById('signup-email').value.trim();
     var password = document.getElementById('signup-password').value;
+    var confirmChecked = document.getElementById('signup-confirm').checked;
+
+    if (!name || !org || !email || !password) {
+      showError('Please fill out all fields before creating an account.');
+      return;
+    }
+    if (password.length < 6) {
+      showError('Password must be at least 6 characters.');
+      return;
+    }
+    if (!confirmChecked) {
+      showError('You must certify your research use and agree to the Terms & Conditions to register.');
+      return;
+    }
+
     firebase.auth().createUserWithEmailAndPassword(email, password)
       .then(function (cred) {
         return cred.user.updateProfile({ displayName: name + ' — ' + org });

@@ -18,15 +18,18 @@
       <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
       <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
     </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
     <nav>
       <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
         <li class="nav-cart"><a href="cart.html" id="nav-cart-link" class="active">Cart <span id="nav-cart-badge" class="nav-cart-badge">0</span></a></li>
-        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
-      </ul>
+            </ul>
     </nav>
   </div>
 </header>
@@ -79,6 +82,7 @@
       <strong>Research Use Only:</strong>
       <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
     </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
     <div class="footer-bottom">
       &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
     </div>
@@ -93,6 +97,7 @@
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
 <script>
   function renderCart() {
     var loading = document.getElementById('cart-loading');
