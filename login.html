@@ -9,6 +9,18 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  // Inline, synchronous check: if the splash already played this session,
+  // remove it immediately before paint to avoid any flash on internal nav.
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
 
 <div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
 
