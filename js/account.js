@@ -46,13 +46,33 @@ var Account = (function () {
     return ensureDb().collection('users').doc(user.uid).set(profile, { merge: true });
   }
 
+  function generateOrderNumber() {
+    var chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'; // no ambiguous chars (0/O, 1/I)
+    var random = '';
+    for (var i = 0; i < 6; i++) {
+      random += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    return 'TXB-' + random;
+  }
+
   function createOrder(order) {
     var user = getCurrentUser();
     if (!user) return Promise.reject(new Error('Not signed in yet — please wait a moment and try again.'));
     order.userId = user.uid;
     order.userEmail = user.email || '';
     order.createdAt = new Date().toISOString();
-    return ensureDb().collection('orders').add(order);
+    order.orderNumber = generateOrderNumber();
+    return ensureDb().collection('orders').add(order).then(function (docRef) {
+      return { docRef: docRef, orderNumber: order.orderNumber };
+    });
+  }
+
+  function isFirstOrder() {
+    var user = getCurrentUser();
+    if (!user) return Promise.resolve(true);
+    return ensureDb().collection('orders').where('userId', '==', user.uid).limit(1).get().then(function (snapshot) {
+      return snapshot.empty;
+    });
   }
 
   function getOrderHistory() {
@@ -86,6 +106,7 @@ var Account = (function () {
     getProfile: getProfile,
     saveProfile: function (profile) { return withTimeout(saveProfile(profile), 10000, 'Saving your info is taking too long. Please check your connection and try again.'); },
     createOrder: function (order) { return withTimeout(createOrder(order), 10000, 'Submitting your order is taking too long. Please check your connection and try again.'); },
+    isFirstOrder: function () { return withTimeout(isFirstOrder(), 10000, 'Checking order history is taking too long. Please try again.'); },
     getOrderHistory: getOrderHistory
   };
 })();

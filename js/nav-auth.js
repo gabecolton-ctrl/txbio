@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', function () {
   var acctLink = document.getElementById('nav-account-link');
   var myAccountLink = document.getElementById('nav-myaccount-link');
   var adminLink = document.getElementById('nav-admin-link');
+  var adminPromosLink = document.getElementById('nav-admin-promos-link');
   var floatingCart = document.getElementById('floating-cart-btn');
   var floatingCartBadge = document.getElementById('floating-cart-badge');
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
@@ -34,6 +35,10 @@ document.addEventListener('DOMContentLoaded', function () {
         var adminLi = adminLink.closest('li');
         if (adminLi) adminLi.style.display = 'list-item';
       }
+      if (adminPromosLink && user.email === ADMIN_EMAIL) {
+        var adminPromosLi = adminPromosLink.closest('li');
+        if (adminPromosLi) adminPromosLi.style.display = 'list-item';
+      }
       if (floatingCart) {
         floatingCart.style.display = 'flex';
         if (window.Cart) {
@@ -59,6 +64,10 @@ document.addEventListener('DOMContentLoaded', function () {
       if (adminLink) {
         var signedOutAdminLi = adminLink.closest('li');
         if (signedOutAdminLi) signedOutAdminLi.style.display = 'none';
+      }
+      if (adminPromosLink) {
+        var signedOutAdminPromosLi = adminPromosLink.closest('li');
+        if (signedOutAdminPromosLi) signedOutAdminPromosLi.style.display = 'none';
       }
       if (floatingCart) {
         floatingCart.style.display = 'none';

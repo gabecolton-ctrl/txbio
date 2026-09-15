@@ -30,5 +30,13 @@ service cloud.firestore {
       allow read: if request.auth != null;
       allow write: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
     }
+
+    // Promo codes — anyone signed in can read (to validate a code at
+    // checkout), but only the admin account can create/edit/delete codes
+    // or update their usage stats.
+    match /promoCodes/{code} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
+    }
   }
 }

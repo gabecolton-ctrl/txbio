@@ -1,0 +1,243 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Promo Codes | TXBioResearch</title>
+<meta name="description" content="Admin promo code management for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo Codes</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Products</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section>
+    <h2>Promo Codes</h2>
+    <div class="section-divider"></div>
+    <p class="lead">Create and manage discount codes. Track how many times each code has been used and the total amount discounted.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <h3>Add / Edit a Code</h3>
+      <form id="promo-form">
+        <label for="promo-code-field">Code</label>
+        <input type="text" id="promo-code-field" placeholder="e.g. FIRST20" style="text-transform:uppercase;" required>
+
+        <label for="promo-discount-field">Discount Percent</label>
+        <input type="number" id="promo-discount-field" min="1" max="100" placeholder="e.g. 20" required>
+
+        <label for="promo-type-field">Applies To</label>
+        <select id="promo-type-field">
+          <option value="always">Any Order</option>
+          <option value="first-order">First Order Only</option>
+          <option value="repeat-order">Repeat Orders Only (not first)</option>
+        </select>
+
+        <div class="checkbox-row" style="margin-bottom: 20px;">
+          <input type="checkbox" id="promo-active-field" checked>
+          <label for="promo-active-field">Active</label>
+        </div>
+
+        <button type="submit" class="btn">Save Code</button>
+      </form>
+      <div id="promo-save-msg" style="display:none; color:var(--mint-dark); font-weight:600; margin-top:14px;">Saved.</div>
+    </section>
+
+    <section>
+      <h3>Existing Codes</h3>
+      <div id="promo-loading" class="cart-empty">Loading codes&hellip;</div>
+      <div id="promo-empty" class="cart-empty" style="display:none;">
+        <p>No promo codes yet. Create one above.</p>
+      </div>
+      <div class="catalog-wrap" id="promo-table-wrap" style="display:none;">
+        <table class="catalog-table" id="promo-table">
+          <thead>
+            <tr><th>Code</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
+          </thead>
+          <tbody id="promo-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <strong>Research Use Only:</strong>
+      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+    </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
+    <div class="footer-bottom">
+      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/promos.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var editingCode = null;
+
+  document.addEventListener('userReady', function (e) {
+    var user = e.detail.user;
+    if (user.email !== ADMIN_EMAIL) {
+      document.getElementById('admin-denied').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-content').style.display = 'block';
+    loadPromoTable();
+  });
+
+  function typeLabel(type) {
+    if (type === 'first-order') return 'First Order Only';
+    if (type === 'repeat-order') return 'Repeat Orders Only';
+    return 'Any Order';
+  }
+
+  function loadPromoTable() {
+    var loading = document.getElementById('promo-loading');
+    var empty = document.getElementById('promo-empty');
+    var tableWrap = document.getElementById('promo-table-wrap');
+    var rowsEl = document.getElementById('promo-rows');
+
+    Promos.getAllCodes().then(function (codes) {
+      loading.style.display = 'none';
+      if (codes.length === 0) {
+        empty.style.display = 'block';
+        tableWrap.style.display = 'none';
+        return;
+      }
+      empty.style.display = 'none';
+      tableWrap.style.display = 'block';
+      rowsEl.innerHTML = '';
+
+      codes.sort(function (a, b) { return a.code < b.code ? -1 : 1; });
+
+      codes.forEach(function (promo) {
+        var tr = document.createElement('tr');
+        tr.innerHTML =
+          '<td>' + promo.code + '</td>' +
+          '<td>' + promo.discountPercent + '%</td>' +
+          '<td>' + typeLabel(promo.type) + '</td>' +
+          '<td>' + (promo.active ? 'Active' : 'Inactive') + '</td>' +
+          '<td>' + (promo.timesUsed || 0) + '</td>' +
+          '<td>$' + (promo.totalDiscounted || 0).toFixed(2) + '</td>' +
+          '<td><a href="#" data-edit-code="' + promo.code + '" style="margin-right:12px;">Edit</a><a href="#" data-delete-code="' + promo.code + '" style="color:var(--danger);">Delete</a></td>';
+        rowsEl.appendChild(tr);
+
+        tr.querySelector('[data-edit-code]').addEventListener('click', function (ev) {
+          ev.preventDefault();
+          document.getElementById('promo-code-field').value = promo.code;
+          document.getElementById('promo-discount-field').value = promo.discountPercent;
+          document.getElementById('promo-type-field').value = promo.type;
+          document.getElementById('promo-active-field').checked = promo.active;
+          editingCode = promo.code;
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
+        tr.querySelector('[data-delete-code]').addEventListener('click', function (ev) {
+          ev.preventDefault();
+          if (!confirm('Delete promo code ' + promo.code + '? This cannot be undone.')) return;
+          Promos.deleteCode(promo.code).then(loadPromoTable).catch(function (err) {
+            alert('Could not delete: ' + err.message);
+          });
+        });
+      });
+    }).catch(function (err) {
+      loading.textContent = 'Could not load promo codes: ' + err.message;
+    });
+  }
+
+  document.getElementById('promo-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = e.target.querySelector('button[type="submit"]');
+    var code = document.getElementById('promo-code-field').value.trim().toUpperCase();
+    var discount = parseInt(document.getElementById('promo-discount-field').value, 10);
+    var type = document.getElementById('promo-type-field').value;
+    var active = document.getElementById('promo-active-field').checked;
+
+    if (!code || isNaN(discount) || discount < 1 || discount > 100) {
+      alert('Please enter a valid code and a discount percent between 1 and 100.');
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = 'Saving...';
+
+    Promos.createOrUpdateCode(code, discount, type, active).then(function () {
+      btn.disabled = false;
+      btn.textContent = 'Save Code';
+      var msg = document.getElementById('promo-save-msg');
+      msg.style.display = 'block';
+      setTimeout(function () { msg.style.display = 'none'; }, 2000);
+      document.getElementById('promo-form').reset();
+      document.getElementById('promo-active-field').checked = true;
+      editingCode = null;
+      loadPromoTable();
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Save Code';
+      alert('Could not save: ' + err.message);
+    });
+  });
+</script>
+</body>
+</html>
