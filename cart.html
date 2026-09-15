@@ -38,6 +38,7 @@
         <li><a href="#" id="nav-account-link">Researcher Login</a></li>
         <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
         <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo Codes</a></li>
         <li><a href="index.html">Home</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="services.html">Products</a></li>
@@ -55,6 +56,15 @@
 <div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
 
 <main id="gated-content" style="display:none;">
+  <div id="bac-water-modal" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(7,12,10,0.7); align-items:center; justify-content:center; padding:20px;">
+    <div style="background:#fff; border-radius:8px; max-width:420px; width:100%; padding:28px; text-align:center;">
+      <h3 style="margin-bottom:12px;">Need Bacteriostatic Water?</h3>
+      <p style="color:var(--text-light); font-size:0.92rem; margin-bottom:20px;">Your cart includes lyophilized powder products, which require bacteriostatic water for reconstitution. Would you like to add some to your order?</p>
+      <button type="button" id="bac-water-add-btn" class="btn" style="width:100%; margin-bottom:10px;">Add Bacteriostatic Water</button>
+      <button type="button" id="bac-water-dismiss-btn" class="btn-outline-light" style="width:100%; text-align:center;">No Thanks</button>
+    </div>
+  </div>
+
   <section>
     <h2>Your Cart</h2>
     <div class="section-divider"></div>
@@ -117,6 +127,8 @@
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
 <script>
+  var bacWaterPromptShown = false;
+
   function renderCart() {
     var loading = document.getElementById('cart-loading');
     var emptyState = document.getElementById('cart-empty-state');
@@ -127,12 +139,12 @@
     Cart.getCart().then(function (items) {
       loading.style.display = 'none';
       if (items.length === 0) {
-        emptyState.style.display = '';
+        emptyState.style.display = 'block';
         cartContent.style.display = 'none';
         return;
       }
       emptyState.style.display = 'none';
-      cartContent.style.display = '';
+      cartContent.style.display = 'block';
       rowsEl.innerHTML = '';
       var total = 0;
       items.forEach(function (item) {
@@ -162,8 +174,39 @@
           Cart.removeItem(link.getAttribute('data-remove-slug')).then(renderCart);
         });
       });
+
+      // Prompt about bac water once per page load, only if the cart has
+      // powder products and doesn't already include bac water.
+      if (!bacWaterPromptShown && cartHasPowderProduct(items) && !cartHasBacWater(items)) {
+        bacWaterPromptShown = true;
+        document.getElementById('bac-water-modal').style.display = 'flex';
+      }
     });
   }
+
+  document.getElementById('bac-water-dismiss-btn').addEventListener('click', function () {
+    document.getElementById('bac-water-modal').style.display = 'none';
+  });
+
+  document.getElementById('bac-water-add-btn').addEventListener('click', function () {
+    var btn = document.getElementById('bac-water-add-btn');
+    btn.disabled = true;
+    btn.textContent = 'Adding...';
+    var bacWaterProduct = {
+      slug: 'bac-water-10ml',
+      name: 'Bacteriostatic Water',
+      packSize: '1 vial x 10ml',
+      price: 20
+    };
+    Cart.addItem(bacWaterProduct, 1).then(function () {
+      document.getElementById('bac-water-modal').style.display = 'none';
+      renderCart();
+    }).catch(function (err) {
+      btn.disabled = false;
+      btn.textContent = 'Add Bacteriostatic Water';
+      alert('Could not add: ' + (err.message || err));
+    });
+  });
 
   document.addEventListener('userReady', renderCart);
 </script>
