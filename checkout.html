@@ -411,7 +411,8 @@
     }).join('\n');
 
     var formData = new FormData();
-    formData.append('_subject', 'New TXBioResearch Order — $' + order.total.toFixed(2));
+    formData.append('_subject', 'New TXBioResearch Order ' + (order.orderNumber ? '#' + order.orderNumber : '') + ' — $' + order.total.toFixed(2));
+    formData.append('Order Number', order.orderNumber || '(unknown)');
     formData.append('Customer Email', currentUserEmail || '(unknown)');
     formData.append('Payment Method', order.paymentMethod);
     formData.append('Shipping Option', order.shippingOption);
@@ -492,9 +493,9 @@
           hasBackorder: hasBackorder,
           status: 'pending'
         };
-        sendOrderNotificationEmail(orderData);
         return Account.createOrder(orderData).then(function (result) {
           orderData.orderNumber = result.orderNumber;
+          sendOrderNotificationEmail(orderData);
           return orderData;
         });
       });
