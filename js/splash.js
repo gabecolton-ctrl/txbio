@@ -10,7 +10,7 @@
   }
   sessionStorage.setItem(SESSION_KEY, '1');
 
-  document.addEventListener('DOMContentLoaded', function () {
+  function runSplashTimer() {
     var splash = document.getElementById('splash-screen');
     if (!splash) return;
 
@@ -22,5 +22,15 @@
         splash.remove();
       }, 1000);
     }, 2000);
-  });
+  }
+
+  // If DOMContentLoaded has already fired by the time this script runs,
+  // the listener below would never call back — so check readyState first
+  // and run immediately in that case instead of waiting for an event that
+  // has already happened.
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', runSplashTimer);
+  } else {
+    runSplashTimer();
+  }
 })();
