@@ -436,6 +436,51 @@
     });
   }
 
+  function sendCustomerConfirmationEmail(order) {
+    if (!currentUserEmail) return Promise.resolve();
+
+    var addr = order.shippingAddress || {};
+    var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
+      .filter(Boolean).join(', ');
+    var itemsText = order.items.map(function (item) {
+      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — $' + (item.price * item.qty);
+    }).join('\n');
+
+    var paymentInstructions = '';
+    if (order.paymentMethod === 'bitcoin') {
+      paymentInstructions = 'Please send payment to the Bitcoin address shown on your confirmation screen, then email orders@txbioresearch.com with your transaction ID.';
+    } else if (order.paymentMethod === 'bank') {
+      paymentInstructions = 'Please complete your bank transfer using the details shown on your confirmation screen, then email orders@txbioresearch.com with your transfer confirmation.';
+    } else {
+      paymentInstructions = 'Our team will follow up by email shortly to confirm details and arrange payment.';
+    }
+
+    var formData = new FormData();
+    formData.append('_subject', 'Your TXBioResearch Order Confirmation #' + (order.orderNumber || ''));
+    formData.append('_captcha', 'false');
+    formData.append('_template', 'box');
+    formData.append('Order Number', order.orderNumber || '');
+    formData.append('Order Summary', itemsText);
+    formData.append('Subtotal', '$' + order.subtotal.toFixed(2));
+    formData.append('Shipping', '$' + order.shipping.toFixed(2));
+    if (order.discount > 0) {
+      formData.append('Discount', '-$' + order.discount.toFixed(2) + (order.promoCode ? ' (' + order.promoCode + ')' : ''));
+    }
+    formData.append('Tax', '$' + order.tax.toFixed(2));
+    formData.append('Total', '$' + order.total.toFixed(2));
+    formData.append('Shipping Address', addressText || '(not provided)');
+    formData.append('Next Steps', paymentInstructions);
+    formData.append('Questions', 'Reply to this email or contact orders@txbioresearch.com');
+
+    return fetch('https://formsubmit.co/' + currentUserEmail, {
+      method: 'POST',
+      body: formData
+    }).catch(function (err) {
+      // Don't block checkout if this fails — the order is already saved.
+      console.error('Customer confirmation email failed to send:', err);
+    });
+  }
+
   document.getElementById('order-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var submitBtn = e.target.querySelector('button[type="submit"]');
@@ -496,6 +541,7 @@
         return Account.createOrder(orderData).then(function (result) {
           orderData.orderNumber = result.orderNumber;
           sendOrderNotificationEmail(orderData);
+          sendCustomerConfirmationEmail(orderData);
           return orderData;
         });
       });
