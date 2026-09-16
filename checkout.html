@@ -423,12 +423,12 @@
     formData.append('Tax', '$' + order.tax.toFixed(2));
     formData.append('Total', '$' + order.total.toFixed(2));
     formData.append('Customer Notes', order.notes || '(none)');
-    formData.append('_captcha', 'false');
     formData.append('_replyto', currentUserEmail || '');
 
-    return fetch('https://formsubmit.co/txbioresearch@gmail.com', {
+    return fetch('https://formspree.io/f/mbglrayg', {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: { 'Accept': 'application/json' }
     }).catch(function (err) {
       // Don't block the checkout flow if the email notification fails —
       // the order is already saved in Firestore regardless.
@@ -456,9 +456,11 @@
     }
 
     var formData = new FormData();
+    // Formspree's autoresponder sends to whatever address is in a field
+    // named "email" — this is what makes the confirmation go to the actual
+    // customer rather than a fixed address.
+    formData.append('email', currentUserEmail);
     formData.append('_subject', 'Your TXBioResearch Order Confirmation #' + (order.orderNumber || ''));
-    formData.append('_captcha', 'false');
-    formData.append('_template', 'box');
     formData.append('Order Number', order.orderNumber || '');
     formData.append('Order Summary', itemsText);
     formData.append('Subtotal', '$' + order.subtotal.toFixed(2));
@@ -472,9 +474,10 @@
     formData.append('Next Steps', paymentInstructions);
     formData.append('Questions', 'Reply to this email or contact orders@txbioresearch.com');
 
-    return fetch('https://formsubmit.co/' + currentUserEmail, {
+    return fetch('https://formspree.io/f/xqpazdqy', {
       method: 'POST',
-      body: formData
+      body: formData,
+      headers: { 'Accept': 'application/json' }
     }).catch(function (err) {
       // Don't block checkout if this fails — the order is already saved.
       console.error('Customer confirmation email failed to send:', err);
