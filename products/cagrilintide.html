@@ -138,6 +138,27 @@
 <script src="../js/cart.js"></script>
 <script src="../js/products.js"></script>
 <script src="../js/product-page.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    var results = [];
+    var btn = document.getElementById('add-to-cart-btn');
+    results.push('btn found: ' + (!!btn));
+    results.push('window.THIS_PRODUCT exists: ' + (!!window.THIS_PRODUCT));
+    if (window.THIS_PRODUCT) {
+      results.push('THIS_PRODUCT.slug: ' + THIS_PRODUCT.slug);
+    }
+    results.push('window.PRODUCTS exists: ' + (!!window.PRODUCTS));
+    if (window.PRODUCTS) {
+      results.push('PRODUCTS.length: ' + PRODUCTS.length);
+      var found = PRODUCTS.find(function (p) { return p.slug === THIS_PRODUCT.slug; });
+      results.push('Matching product found: ' + (!!found));
+    }
+    var diagDiv = document.createElement('div');
+    diagDiv.style.cssText = 'position:fixed; bottom:0; left:0; right:0; background:blue; color:white; padding:15px; z-index:99999; font-size:12px; word-wrap:break-word;';
+    diagDiv.textContent = 'DIAGNOSTIC: ' + results.join(' | ');
+    document.body.appendChild(diagDiv);
+  });
+</script>
 <script src="../js/nav-auth.js"></script>
 <script src="../js/auth-guard.js"></script>
 <script src="../js/main.js"></script>
