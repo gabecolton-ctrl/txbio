@@ -94,6 +94,25 @@ var Account = (function () {
       });
   }
 
+  function getAllOrders() {
+    return ensureDb().collection('orders')
+      .get()
+      .then(function (snapshot) {
+        var orders = [];
+        snapshot.forEach(function (doc) {
+          orders.push(Object.assign({ id: doc.id }, doc.data()));
+        });
+        orders.sort(function (a, b) {
+          return new Date(b.createdAt) - new Date(a.createdAt);
+        });
+        return orders;
+      });
+  }
+
+  function updateOrderStatus(orderId, status) {
+    return ensureDb().collection('orders').doc(orderId).update({ status: status });
+  }
+
   function withTimeout(promise, ms, message) {
     var timeout = new Promise(function (resolve, reject) {
       setTimeout(function () { reject(new Error(message || 'Request timed out. Please try again.')); }, ms);
@@ -107,6 +126,8 @@ var Account = (function () {
     saveProfile: function (profile) { return withTimeout(saveProfile(profile), 10000, 'Saving your info is taking too long. Please check your connection and try again.'); },
     createOrder: function (order) { return withTimeout(createOrder(order), 10000, 'Submitting your order is taking too long. Please check your connection and try again.'); },
     isFirstOrder: function () { return withTimeout(isFirstOrder(), 10000, 'Checking order history is taking too long. Please try again.'); },
-    getOrderHistory: getOrderHistory
+    getOrderHistory: getOrderHistory,
+    getAllOrders: function () { return withTimeout(getAllOrders(), 10000, 'Loading orders is taking too long. Please try again.'); },
+    updateOrderStatus: function (orderId, status) { return withTimeout(updateOrderStatus(orderId, status), 10000, 'Updating order status is taking too long. Please try again.'); }
   };
 })();

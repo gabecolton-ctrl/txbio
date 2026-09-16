@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Orders | TXBioResearch</title>
+<meta name="description" content="Admin order management for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo Codes</a></li>
+        <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Products</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section>
+    <h2>Orders</h2>
+    <div class="section-divider"></div>
+    <p class="lead">View and manage all orders placed on the site.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+        <input type="text" id="order-search-input" placeholder="Search by order #, email, or status" style="flex:1; min-width:220px; margin-bottom:0;">
+      </div>
+      <div id="orders-loading" class="cart-empty">Loading orders&hellip;</div>
+      <div id="orders-empty" class="cart-empty" style="display:none;">
+        <p>No orders found.</p>
+      </div>
+      <div id="orders-list"></div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <strong>Research Use Only:</strong>
+      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+    </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
+    <div class="footer-bottom">
+      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/account.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var allOrders = [];
+  var STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+
+  document.addEventListener('userReady', function (e) {
+    var user = e.detail.user;
+    if (user.email !== ADMIN_EMAIL) {
+      document.getElementById('admin-denied').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-content').style.display = 'block';
+    loadOrders();
+  });
+
+  function loadOrders() {
+    var loading = document.getElementById('orders-loading');
+    Account.getAllOrders().then(function (orders) {
+      allOrders = orders;
+      loading.style.display = 'none';
+      renderOrders(allOrders);
+    }).catch(function (err) {
+      loading.textContent = 'Could not load orders: ' + err.message;
+    });
+  }
+
+  function renderOrders(orders) {
+    var listEl = document.getElementById('orders-list');
+    var emptyEl = document.getElementById('orders-empty');
+    listEl.innerHTML = '';
+
+    if (orders.length === 0) {
+      emptyEl.style.display = 'block';
+      return;
+    }
+    emptyEl.style.display = 'none';
+
+    orders.forEach(function (order) {
+      var date = order.createdAt ? new Date(order.createdAt).toLocaleString(undefined, { year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'Unknown date';
+      var itemsHtml = (order.items || []).map(function (item) {
+        var qtyDisplay = item.qty;
+        if (typeof item.backordered === 'number' && item.backordered > 0) {
+          qtyDisplay = item.qty + ' (' + item.fulfilled + ' shipped, ' + item.backordered + ' backordered)';
+        }
+        return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + qtyDisplay + '</td><td data-label="Subtotal">$' + (item.price * item.qty).toFixed(2) + '</td></tr>';
+      }).join('');
+
+      var addr = order.shippingAddress || {};
+      var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
+        .filter(Boolean).join(', ') || '(no address provided)';
+
+      var statusOptionsHtml = STATUS_OPTIONS.map(function (s) {
+        var selected = (order.status || 'pending') === s ? ' selected' : '';
+        return '<option value="' + s + '"' + selected + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+      }).join('');
+
+      var box = document.createElement('div');
+      box.className = 'order-summary-box';
+      box.style.marginBottom = '18px';
+      box.setAttribute('data-order-id', order.id);
+      box.setAttribute('data-search-text', [
+        order.orderNumber, order.userEmail, order.status, addressText
+      ].filter(Boolean).join(' ').toLowerCase());
+
+      box.innerHTML =
+        '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">' +
+          '<div>' +
+            '<strong>Order #' + (order.orderNumber || order.id) + '</strong><br>' +
+            '<span style="color:var(--text-light); font-size:0.9rem;">' + date + '</span>' +
+          '</div>' +
+          '<div style="text-align:right;">' +
+            '<div style="font-size:0.85rem; color:var(--text-light);">' + (order.userEmail || 'unknown') + '</div>' +
+            '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
+          '</div>' +
+        '</div>' +
+        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + '</p>' +
+        '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
+        '<div style="overflow-x:auto;">' +
+          '<table class="cart-table" style="margin-bottom:10px;">' +
+            '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
+            '<tbody>' + itemsHtml + '</tbody>' +
+          '</table>' +
+        '</div>' +
+        '<table class="spec-table" style="max-width:320px; margin-left:auto; margin-bottom:0;">' +
+          '<tr><td>Subtotal</td><td>$' + (order.subtotal || 0).toFixed(2) + '</td></tr>' +
+          '<tr><td>Shipping</td><td>$' + (order.shipping || 0).toFixed(2) + '</td></tr>' +
+          (order.discount > 0 ? '<tr><td>Discount</td><td>-$' + order.discount.toFixed(2) + '</td></tr>' : '') +
+          '<tr><td>Tax</td><td>$' + (order.tax || 0).toFixed(2) + '</td></tr>' +
+          '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + (order.total || 0).toFixed(2) + '</td></tr>' +
+        '</table>';
+
+      listEl.appendChild(box);
+    });
+
+    listEl.querySelectorAll('.order-status-select').forEach(function (select) {
+      select.addEventListener('change', function () {
+        var orderId = select.getAttribute('data-order-id');
+        var newStatus = select.value;
+        select.disabled = true;
+        Account.updateOrderStatus(orderId, newStatus).then(function () {
+          select.disabled = false;
+          var order = allOrders.find(function (o) { return o.id === orderId; });
+          if (order) order.status = newStatus;
+        }).catch(function (err) {
+          select.disabled = false;
+          alert('Could not update status: ' + err.message);
+        });
+      });
+    });
+  }
+
+  document.getElementById('order-search-input').addEventListener('input', function () {
+    var query = this.value.trim().toLowerCase();
+    if (!query) {
+      renderOrders(allOrders);
+      return;
+    }
+    var filtered = allOrders.filter(function (order) {
+      var searchText = [order.orderNumber, order.userEmail, order.status].filter(Boolean).join(' ').toLowerCase();
+      return searchText.indexOf(query) !== -1;
+    });
+    renderOrders(filtered);
+  });
+</script>
+</body>
+</html>
