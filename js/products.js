@@ -1,5 +1,5 @@
 // products.js — shared product data for TXBioResearch catalog and detail pages
-const PRODUCTS = [
+var PRODUCTS = [
   {
     slug: "5-amino-1mq",
     name: "5-Amino-1MQ",
