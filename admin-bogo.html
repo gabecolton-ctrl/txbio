@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BOGO Products | TXBioResearch</title>
+<meta name="description" content="Admin BOGO (buy one get one free) product management for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link">
+      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
+      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul>
+        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo Codes</a></li>
+        <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li class="nav-admin"><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+        <li><a href="index.html">Home</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="services.html">Products</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  &#128722;
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section>
+    <h2>BOGO Products</h2>
+    <div class="section-divider"></div>
+    <p class="lead">Toggle which products are eligible for automatic buy-one-get-one-free pricing. This applies at checkout with no promo code needed &mdash; every second unit of an eligible product is free (qty 2 = 1 free, qty 4 = 2 free, etc.).</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+        <input type="text" id="bogo-search-input" placeholder="Search products" style="flex:1; min-width:220px; margin-bottom:0;">
+      </div>
+      <div id="bogo-save-msg" style="display:none; color:var(--mint-dark); font-weight:600; margin-bottom:14px;">Saved.</div>
+      <div class="catalog-wrap">
+        <table class="catalog-table" id="bogo-table">
+          <thead>
+            <tr><th>Product</th><th>BOGO Eligible</th></tr>
+          </thead>
+          <tbody id="bogo-rows"></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-disclaimer">
+      <strong>Research Use Only:</strong>
+      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+    </div>
+    <p style="text-align:center; margin-bottom:16px;"><a href="terms.html">Terms &amp; Conditions</a></p>
+    <div class="footer-bottom">
+      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
+    </div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/bogo.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var allProducts = [
+  { slug: "5-amino-1mq", name: "5-Amino-1MQ" },
+  { slug: "acetic-acid-water", name: "Acetic Acid Water" },
+  { slug: "ahk-cu", name: "AHK-CU" },
+  { slug: "aod9604", name: "AOD9604" },
+  { slug: "ara290-cibinetide", name: "ARA290 (Cibinetide)" },
+  { slug: "b12", name: "B12" },
+  { slug: "bac-water", name: "Bacteriostatic Water" },
+  { slug: "botulinum-toxin", name: "Botulinum toxin" },
+  { slug: "bpc-10mg-tb10mg", name: "BPC 10mg+TB10mg" },
+  { slug: "bpc-157", name: "BPC 157" },
+  { slug: "bpc-15mg-tb15mg", name: "BPC 15mg+TB15mg" },
+  { slug: "bpc-5mg-tb5mg", name: "BPC 5mg+TB5mg" },
+  { slug: "cagrilintide", name: "Cagrilintide" },
+  { slug: "cagrisema-2-5mg-2-5mg", name: "Cagrisema (2.5mg+2.5mg)" },
+  { slug: "cagrisema-5mg-5mg", name: "Cagrisema(5mg+5mg)" },
+  { slug: "cartalax", name: "Cartalax" },
+  { slug: "cerebrolysin", name: "cerebrolysin" },
+  { slug: "cjc-1295-without-dac-5mg-ipa-5mg", name: "CJC 1295(without DAC)5mg+IPA 5mg" },
+  { slug: "cjc-1295-without-dac", name: "CJC 1295(without DAC)" },
+  { slug: "cjc1295-with-dac", name: "CJC1295 with DAC" },
+  { slug: "dihexa", name: "Dihexa" },
+  { slug: "dsip", name: "DSIP" },
+  { slug: "epithalon", name: "Epithalon" },
+  { slug: "ghk-cu", name: "GHK-Cu" },
+  { slug: "glow-blend", name: "GLOW blend" },
+  { slug: "glutathione", name: "Glutathione" },
+  { slug: "hcg", name: "HCG" },
+  { slug: "humanin", name: "Humanin" },
+  { slug: "igf-1-lr3", name: "IGF-1 LR3" },
+  { slug: "ipamorelin", name: "Ipamorelin" },
+  { slug: "kisspeptin-10", name: "Kisspeptin-10" },
+  { slug: "klow-blend", name: "KLOW blend" },
+  { slug: "kpv", name: "KPV" },
+  { slug: "l-carnitine-600mg", name: "L-carnitine 600mg" },
+  { slug: "lemon-bottle", name: "Lemon Bottle" },
+  { slug: "lipo-c-fatblaster", name: "Lipo-C (FatBlaster)" },
+  { slug: "lipo-c-with-b12", name: "Lipo-C with B12" },
+  { slug: "lipo-c", name: "Lipo-C" },
+  { slug: "ll37", name: "LL37" },
+  { slug: "melanotan-i", name: "Melanotan I" },
+  { slug: "melanotan-ii", name: "Melanotan II" },
+  { slug: "mots-c-human", name: "MOTS-c (Human)" },
+  { slug: "nad-plus", name: "Nad+" },
+  { slug: "oxytocin", name: "Oxytocin" },
+  { slug: "pinealon", name: "pinealon" },
+  { slug: "pt141", name: "PT141" },
+  { slug: "r-3", name: "R-3" },
+  { slug: "retatrutide-20mg-tirzepatide-40mg", name: "Retatrutide 20mg + Tirzepatide 40mg" },
+  { slug: "retatrutide-5mg-cagrilintide-5mg", name: "Retatrutide 5mg+cagrilintide 5mg" },
+  { slug: "selank", name: "Selank" },
+  { slug: "semaglutide", name: "Semaglutide" },
+  { slug: "semax-10mg-selank-10mg", name: "Semax 10mg+Selank 10mg" },
+  { slug: "semax", name: "Semax" },
+  { slug: "sermorelin-acetate", name: "Sermorelin Acetate" },
+  { slug: "slu-pp-332-capsule", name: "SLU-PP-332 capsule" },
+  { slug: "ss-31", name: "SS-31" },
+  { slug: "sterile-water", name: "Sterile water" },
+  { slug: "super-human-blend", name: "SUPER Human Blend" },
+  { slug: "tb500-thymosin-beta-4", name: "TB500 Thymosin Beta-4" },
+  { slug: "tesamorelin", name: "Tesamorelin" },
+  { slug: "thymalin-thymulin", name: "Thymalin/Thymulin" },
+  { slug: "thymosin-alpha-1", name: "Thymosin alpha 1" },
+  { slug: "tirzepatide", name: "Tirzepatide" },
+  { slug: "vip", name: "VIP" },
+  ];
+  var currentSettings = {};
+
+  document.addEventListener('userReady', function (e) {
+    var user = e.detail.user;
+    if (user.email !== ADMIN_EMAIL) {
+      document.getElementById('admin-denied').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-content').style.display = 'block';
+    loadBogoTable();
+  });
+
+  function loadBogoTable() {
+    Bogo.getAllBogoSettings().then(function (settings) {
+      currentSettings = settings;
+      renderRows(allProducts);
+    }).catch(function (err) {
+      document.getElementById('bogo-rows').innerHTML = '<tr><td colspan="2">Could not load: ' + err.message + '</td></tr>';
+    });
+  }
+
+  function renderRows(products) {
+    var rowsEl = document.getElementById('bogo-rows');
+    rowsEl.innerHTML = '';
+    products.forEach(function (product) {
+      var isActive = !!currentSettings[product.slug];
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + product.name + '</td>' +
+        '<td><label class="checkbox-row" style="margin-bottom:0;"><input type="checkbox" data-slug="' + product.slug + '"' + (isActive ? ' checked' : '') + '> <span>Eligible</span></label></td>';
+      rowsEl.appendChild(tr);
+    });
+
+    rowsEl.querySelectorAll('input[type="checkbox"]').forEach(function (checkbox) {
+      checkbox.addEventListener('change', function () {
+        var slug = checkbox.getAttribute('data-slug');
+        var active = checkbox.checked;
+        checkbox.disabled = true;
+        Bogo.setBogoEligibility(slug, active).then(function () {
+          checkbox.disabled = false;
+          currentSettings[slug] = active;
+          var msg = document.getElementById('bogo-save-msg');
+          msg.style.display = 'block';
+          setTimeout(function () { msg.style.display = 'none'; }, 1500);
+        }).catch(function (err) {
+          checkbox.disabled = false;
+          checkbox.checked = !active;
+          alert('Could not save: ' + err.message);
+        });
+      });
+    });
+  }
+
+  document.getElementById('bogo-search-input').addEventListener('input', function () {
+    var query = this.value.trim().toLowerCase();
+    if (!query) {
+      renderRows(allProducts);
+      return;
+    }
+    var filtered = allProducts.filter(function (p) {
+      return p.name.toLowerCase().indexOf(query) !== -1 || p.slug.toLowerCase().indexOf(query) !== -1;
+    });
+    renderRows(filtered);
+  });
+</script>
+</body>
+</html>

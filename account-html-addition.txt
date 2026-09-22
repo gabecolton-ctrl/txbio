@@ -1,0 +1,19 @@
+=== OPTIONAL: account.html order history display ===
+
+Wherever the order history rendering shows the promo code discount line
+(look for something checking order.discount and order.promoCode), add a
+similar block right after it for BOGO:
+
+  if (order.bogoDiscount > 0) {
+    // Build a line like: "BOGO Discount: -$60.00 (2 free units of BPC 157)"
+    var bogoLines = (order.bogoBreakdown || []).map(function (b) {
+      return b.freeUnits + ' free unit(s) of ' + b.name;
+    }).join(', ');
+    // append this to whatever HTML string is being built for that order's
+    // summary, following the exact same pattern used for the discount line
+  }
+
+This is purely a display enhancement — orders already correctly SAVE the
+bogoDiscount and bogoBreakdown fields regardless (built into checkout.html
+already), so this only affects whether the customer sees it broken out
+nicely in their order history. Not required for BOGO to function.
