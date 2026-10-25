@@ -393,7 +393,6 @@ P = {
  'semax': dict(compounds=['semax']),
  'semax-10mg-selank-10mg': dict(compounds=['semax', 'selank'], blend='10mg Semax + 10mg Selank per vial'),
  'sermorelin-acetate': dict(compounds=['sermorelin'], note='Supplied as the acetate salt.'),
- 'slu-pp-332-capsule': dict(compounds=['slu-pp-332']),
  'ss-31': dict(compounds=['ss-31']),
  'tb500-thymosin-beta-4': dict(compounds=['tb-500', 'thymosin-beta-4'], choose='tb-500'),
  'tesamorelin': dict(compounds=['tesamorelin']),
