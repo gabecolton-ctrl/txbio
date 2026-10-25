@@ -772,3 +772,29 @@ main.legal li strong, main.legal section:not(.page-head) p strong { color: var(-
 .status-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--line); color: var(--frost); background: var(--raised); }
 .status-pill.status-shipped, .status-pill.status-delivered { color: var(--ink); background: var(--mint); border-color: var(--mint); }
 .status-pill.status-cancelled { color: var(--alert); background: var(--alert-wash); border-color: rgba(242, 134, 122, 0.35); }
+
+/* ---------- BOGO badges (js/bogo-badges.js) ---------- */
+.bogo-badge {
+  display: inline-block;
+  vertical-align: middle;
+  font-family: var(--sans);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1;
+  padding: 5px 8px;
+  border-radius: 999px;
+  color: var(--ink);
+  background: var(--mint);
+}
+.product-card-top { position: relative; }
+.product-card-top .bogo-badge { position: absolute; top: 10px; left: 10px; font-size: 0.75rem; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35); }
+.product-card.is-bogo { border-color: rgba(94, 234, 212, 0.35); }
+.bogo-card-note { margin: 2px 0 0; font-size: 0.82rem; font-weight: 600; color: var(--mint); }
+.product-info h1 .bogo-badge { margin-left: 12px; font-size: 0.8rem; position: relative; top: -6px; }
+.bogo-product-note { margin: -12px 0 22px; padding: 10px 14px; font-size: 0.9rem; color: var(--muted); background: var(--mint-wash); border: 1px solid rgba(94, 234, 212, 0.3); border-radius: var(--radius-sm); }
+.bogo-product-note strong { color: var(--mint); }
+.bogo-filter { background: none; cursor: pointer; font-family: var(--sans); color: var(--mint); border-color: rgba(94, 234, 212, 0.45); }
+.bogo-filter[aria-pressed="true"] { background: var(--mint); color: var(--ink); border-color: var(--mint); }
+body.bogo-only .product-card:not(.is-bogo) { display: none; }
+body.bogo-only section[id]:not(:has(.product-card.is-bogo)):not(#terms) { display: none; }
