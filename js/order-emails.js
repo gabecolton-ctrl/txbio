@@ -113,20 +113,26 @@ var OrderEmails = (function () {
     }).then(function () { return true; });
   }
 
-  // Shipped notice, sent when the admin marks an order shipped.
+  // Shipped notice. The admin page sends it from the browser when an order is
+  // marked shipped; tools/shipment-tracker sends the same email through the
+  // EmailJS REST API when UPS first scans the package.
+  function shippedParams(order, trackingNumber) {
+    return {
+      to_email: order.userEmail,
+      order_number: order.orderNumber || '',
+      items: itemsText(order.items),
+      shipping_address: addressText(order.shippingAddress) || 'the address on your order',
+      tracking_number: trackingNumber || 'Not provided',
+      tracking_line: (trackingNumber ? 'Tracking number: ' + trackingNumber : 'We’ll send tracking details if they become available.') +
+        '\n\nView your order: ' + orderUrl(order),
+      order_url: orderUrl(order)
+    };
+  }
+
   function sendShipped(order, trackingNumber) {
     if (!isConfigured() || !order.userEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(CONFIG.serviceId, CONFIG.shippedTemplateId, {
-        to_email: order.userEmail,
-        order_number: order.orderNumber || '',
-        items: itemsText(order.items),
-        shipping_address: addressText(order.shippingAddress) || 'the address on your order',
-        tracking_number: trackingNumber || 'Not provided',
-        tracking_line: (trackingNumber ? 'Tracking number: ' + trackingNumber : 'We’ll send tracking details if they become available.') +
-          '\n\nView your order: ' + orderUrl(order),
-        order_url: orderUrl(order)
-      });
+      return emailjs.send(CONFIG.serviceId, CONFIG.shippedTemplateId, shippedParams(order, trackingNumber));
     }).then(function () { return true; });
   }
 
@@ -155,6 +161,11 @@ var OrderEmails = (function () {
     canSendCancelled: canSendCancelled,
     sendCancelled: sendCancelled,
     sendConfirmation: sendConfirmation,
-    sendShipped: sendShipped
+    sendShipped: sendShipped,
+    shippedParams: shippedParams,
+    CONFIG: CONFIG
   };
 })();
+
+// Lets tools/shipment-tracker (Node) reuse the same email content and IDs.
+if (typeof module !== 'undefined' && module.exports) module.exports = OrderEmails;

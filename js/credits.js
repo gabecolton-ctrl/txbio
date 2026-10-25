@@ -150,3 +150,6 @@ var Credits = (function () {
     addSpendToBatch: addSpendToBatch
   };
 })();
+
+// Lets tools/shipment-tracker (Node) use the same commission math.
+if (typeof module !== 'undefined' && module.exports) module.exports = Credits;

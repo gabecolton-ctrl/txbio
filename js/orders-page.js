@@ -8,6 +8,7 @@
     pending: 'Order received',
     confirmed: 'Confirmed',
     processing: 'Preparing to ship',
+    'label-created': 'Label created',
     shipped: 'Shipped',
     delivered: 'Delivered',
     cancelled: 'Cancelled'
