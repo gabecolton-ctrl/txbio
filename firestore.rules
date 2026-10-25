@@ -20,9 +20,11 @@ service cloud.firestore {
       allow read, write: if signedIn() && request.auth.uid == userId;
     }
 
-    // Each user's profile info (name, org, address) — only they can read/write it.
+    // Each user's profile info (name, org, address) — only they can write it;
+    // they and the admin (Customers page) can read it.
     match /users/{userId} {
-      allow read, write: if signedIn() && request.auth.uid == userId;
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if signedIn() && request.auth.uid == userId;
     }
 
     // Orders — a user can create an order for themselves and read only their

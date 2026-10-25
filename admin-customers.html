@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Customers | TXBioResearch</title>
+<meta name="description" content="Admin customer accounts and store credit for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul class="nav-primary">
+        <li><a href="services.html">Catalog</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+        <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li class="nav-admin"><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My account</a></li>
+        <li><a href="login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section class="page-head">
+    <h1>Customers</h1>
+    <p class="lead">Every account, its orders, and its store credit. Give or remove store credit from a customer&rsquo;s details.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access restricted</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <input type="text" id="customer-search" placeholder="Search by name, institution, or email" autocomplete="off" style="max-width:480px;">
+      <div id="customers-loading" class="cart-empty">Loading customers&hellip;</div>
+      <div id="customers-empty" class="cart-empty" style="display:none;"><p>No customers yet.</p></div>
+      <div id="customers-wrap" class="catalog-wrap" style="display:none;">
+        <table class="catalog-table">
+          <thead><tr><th>Customer</th><th>Email</th><th>Joined</th><th>Orders</th><th>Total spent</th><th>Store credit</th></tr></thead>
+          <tbody id="customer-rows"></tbody>
+        </table>
+      </div>
+      <p class="tracking-status" style="margin-top:12px;">Accounts that signed up before this page existed appear after their next sign-in or order.</p>
+    </section>
+
+    <section id="customer-detail" style="display:none;">
+      <a href="#" id="customer-back" class="back-link">&larr; All customers</a>
+      <div class="order-summary-box" style="max-width:none;">
+        <div style="display:flex; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+          <div>
+            <h2 id="cd-name" style="margin-bottom:4px;"></h2>
+            <p id="cd-sub" style="color:var(--text-light); margin:0;"></p>
+          </div>
+          <div style="text-align:right;">
+            <p style="color:var(--text-light); margin:0; font-size:0.88rem;">Store credit</p>
+            <p id="cd-balance" style="font-family:var(--serif); font-size:2rem; margin:0; color:var(--text);">$0.00</p>
+          </div>
+        </div>
+        <table class="spec-table" id="cd-facts" style="max-width:560px;"></table>
+
+        <h3 style="margin-top:8px;">Give or remove store credit</h3>
+        <form id="credit-form" style="max-width:none;">
+          <div class="tracking-controls" style="margin-bottom:10px;">
+            <select id="credit-direction" style="flex:0 0 180px; margin:0;">
+              <option value="add">Add credit</option>
+              <option value="remove">Remove credit</option>
+            </select>
+            <input type="number" id="credit-amount" min="0.01" step="0.01" placeholder="Amount in $" style="flex:0 0 160px; margin:0;" required>
+            <input type="text" id="credit-note" placeholder="Note shown to the customer (optional)" style="flex:1 1 220px; margin:0;" maxlength="140">
+            <button type="submit" class="btn" id="credit-submit">Save</button>
+          </div>
+          <p class="tracking-status" id="credit-status"></p>
+        </form>
+
+        <h3 style="margin-top:24px;">Orders</h3>
+        <div id="cd-orders"></div>
+
+        <h3 style="margin-top:24px;">Store credit history</h3>
+        <div id="cd-credit"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
+      </div>
+      <div class="footer-links">
+        <a href="services.html">Catalog</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="login.html">Researcher login</a>
+        <a href="terms.html">Terms &amp; conditions</a>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
+    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/account.js"></script>
+<script src="js/credits.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  // Customers: built from three sources, keyed by lowercased email.
+  //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
+  //   orders        every order (admin can read all)
+  //   credits/{email} store credit balance and history
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var customers = [];
+  var current = null;
+
+  function esc(v) {
+    return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+  }
+  function fmtDate(iso) {
+    return iso ? new Date(iso).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+  }
+  function money(n) { return '$' + Number(n || 0).toFixed(2); }
+
+  document.addEventListener('userReady', function (e) {
+    if (e.detail.user.email !== ADMIN_EMAIL) {
+      document.getElementById('admin-denied').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-content').style.display = 'block';
+    loadCustomers();
+  });
+
+  function loadCustomers() {
+    var db = firebase.firestore();
+    var loading = document.getElementById('customers-loading');
+    loading.style.display = '';
+    Promise.all([
+      db.collection('users').get(),
+      db.collection('orders').get(),
+      db.collection('credits').get()
+    ]).then(function (res) {
+      var byEmail = {};
+      function get(email) {
+        var k = String(email || '').trim().toLowerCase();
+        if (!k) return null;
+        if (!byEmail[k]) byEmail[k] = { email: k, uid: '', name: '', institution: '', profile: null, createdAt: '', lastSignInAt: '', orders: [], credit: null };
+        return byEmail[k];
+      }
+      res[0].forEach(function (d) {
+        var u = d.data(); var c = get(u.email);
+        if (!c) return;
+        c.uid = d.id; c.profile = u;
+        // Older accounts: fall back to the "Name — Institution" saved at sign-up.
+        var dn = String(u.displayName || '').split(' \u2014 ');
+        c.name = u.name || dn[0] || c.name; c.institution = u.institution || dn[1] || c.institution;
+        c.createdAt = u.createdAt || c.createdAt; c.lastSignInAt = u.lastSignInAt || c.lastSignInAt;
+      });
+      res[1].forEach(function (d) {
+        var o = Object.assign({ id: d.id }, d.data()); var c = get(o.userEmail);
+        if (!c) return;
+        c.orders.push(o);
+        if (!c.uid) c.uid = o.userId || '';
+        if (!c.createdAt || (o.createdAt && o.createdAt < c.createdAt)) c.createdAt = c.createdAt || o.createdAt;
+      });
+      res[2].forEach(function (d) {
+        var c = get(d.id); if (c) c.credit = d.data();
+      });
+      customers = Object.keys(byEmail).map(function (k) {
+        var c = byEmail[k];
+        c.orders.sort(function (a, b) { return (b.createdAt || '') < (a.createdAt || '') ? -1 : 1; });
+        c.spent = c.orders.filter(function (o) { return o.status !== 'cancelled'; })
+          .reduce(function (n, o) { return n + Number(o.total || 0); }, 0);
+        c.balanceCents = c.credit ? (c.credit.balanceCents || 0) : 0;
+        return c;
+      }).filter(function (c) { return c.email !== ADMIN_EMAIL; });
+      customers.sort(function (a, b) { return (b.createdAt || '') < (a.createdAt || '') ? -1 : 1; });
+      loading.style.display = 'none';
+      renderList();
+      if (current) openCustomer(current.email, true);
+    }).catch(function (err) {
+      loading.textContent = 'Could not load customers: ' + err.message + ' (publish the latest Firestore rules if this says permissions).';
+    });
+  }
+
+  function renderList() {
+    var q = document.getElementById('customer-search').value.trim().toLowerCase();
+    var list = customers.filter(function (c) {
+      return !q || [c.name, c.institution, c.email].join(' ').toLowerCase().indexOf(q) !== -1;
+    });
+    document.getElementById('customers-empty').style.display = customers.length ? 'none' : 'block';
+    document.getElementById('customers-wrap').style.display = customers.length ? 'block' : 'none';
+    document.getElementById('customer-rows').innerHTML = list.map(function (c) {
+      return '<tr class="customer-row" data-email="' + esc(c.email) + '" tabindex="0" style="cursor:pointer;">' +
+        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
+        '<td>' + esc(c.email) + '</td>' +
+        '<td>' + fmtDate(c.createdAt) + '</td>' +
+        '<td>' + c.orders.length + '</td>' +
+        '<td>' + money(c.spent) + '</td>' +
+        '<td>' + Credits.formatCents(c.balanceCents) + '</td></tr>';
+    }).join('') || '<tr><td colspan="6" style="color:var(--text-light);">No customers match &ldquo;' + esc(q) + '&rdquo;.</td></tr>';
+    document.querySelectorAll('.customer-row').forEach(function (tr) {
+      var open = function () { openCustomer(tr.getAttribute('data-email')); };
+      tr.addEventListener('click', open);
+      tr.addEventListener('keydown', function (e) { if (e.key === 'Enter') open(); });
+    });
+  }
+
+  document.getElementById('customer-search').addEventListener('input', renderList);
+
+  var CREDIT_LABELS = {
+    earned: 'Earned from a referral',
+    reversed: 'Referral reversed (order cancelled)',
+    spent: 'Used at checkout',
+    refunded: 'Returned (order cancelled)'
+  };
+
+  function openCustomer(email, keepStatus) {
+    var c = customers.find(function (x) { return x.email === email; });
+    if (!c) return;
+    current = c;
+    document.querySelector('#admin-content > section').style.display = 'none';
+    document.getElementById('customer-detail').style.display = '';
+    document.getElementById('cd-name').textContent = c.name || c.email;
+    document.getElementById('cd-sub').textContent = [c.institution, c.email].filter(Boolean).join(' \u00b7 ');
+    document.getElementById('cd-balance').textContent = Credits.formatCents(c.balanceCents);
+    var p = c.profile || {};
+    var addr = [p.addressLine1, p.addressLine2, [p.city, p.state].filter(Boolean).join(', ') + ' ' + (p.zip || '')]
+      .map(function (s) { return (s || '').trim(); }).filter(Boolean).join(', ');
+    var facts = [
+      ['Joined', fmtDate(c.createdAt) || 'Unknown'],
+      ['Last sign-in', fmtDate(c.lastSignInAt) || 'Not recorded yet'],
+      ['Shipping address', addr || 'None saved'],
+      ['Orders', c.orders.length + ' (' + money(c.spent) + ' not counting cancelled)'],
+      ['Credit earned / spent', c.credit ? Credits.formatCents(c.credit.earnedCents || 0) + ' / ' + Credits.formatCents(c.credit.spentCents || 0) : 'None']
+    ];
+    document.getElementById('cd-facts').innerHTML = facts.map(function (f) { return '<tr><td>' + f[0] + '</td><td>' + esc(f[1]) + '</td></tr>'; }).join('');
+
+    document.getElementById('cd-orders').innerHTML = c.orders.length
+      ? '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Items</th><th>Total</th></tr></thead><tbody>' +
+        c.orders.map(function (o) {
+          var items = (o.items || []).map(function (i) { return esc(i.name) + ' x' + i.qty; }).join(', ');
+          return '<tr><td>#' + esc(o.orderNumber || o.id) + '</td><td>' + fmtDate(o.createdAt) + '</td><td>' + esc(o.status || 'pending') + '</td><td>' + items + '</td><td>' + money(o.total) + '</td></tr>';
+        }).join('') + '</tbody></table></div>'
+      : '<p style="color:var(--text-light);">No orders yet.</p>';
+
+    var creditEl = document.getElementById('cd-credit');
+    creditEl.innerHTML = '<p style="color:var(--text-light);">Loading&hellip;</p>';
+    Credits.getEntries(c.email, 100).then(function (entries) {
+      if (!entries.length) { creditEl.innerHTML = '<p style="color:var(--text-light);">No store credit activity.</p>'; return; }
+      creditEl.innerHTML = '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Date</th><th>Activity</th><th>Order</th><th>Amount</th></tr></thead><tbody>' +
+        entries.map(function (en) {
+          var label = en.type === 'adjusted'
+            ? (en.amountCents >= 0 ? 'Added by TXBioResearch' : 'Removed by TXBioResearch') + (en.note ? ': ' + esc(en.note) : '')
+            : (CREDIT_LABELS[en.type] || esc(en.type)) + (en.code ? ' (code ' + esc(en.code) + ')' : '');
+          return '<tr><td>' + fmtDate(en.createdAt) + '</td><td>' + label + '</td><td>' + (en.orderNumber ? '#' + esc(en.orderNumber) : '') + '</td><td>' +
+            (en.amountCents < 0 ? '-' : '+') + Credits.formatCents(Math.abs(en.amountCents)) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }).catch(function (err) { creditEl.innerHTML = '<p style="color:var(--danger);">Could not load credit history: ' + esc(err.message) + '</p>'; });
+
+    if (!keepStatus) {
+      document.getElementById('credit-status').textContent = '';
+      window.scrollTo({ top: 0 });
+    }
+  }
+
+  document.getElementById('customer-back').addEventListener('click', function (e) {
+    e.preventDefault();
+    current = null;
+    document.getElementById('customer-detail').style.display = 'none';
+    document.querySelector('#admin-content > section').style.display = '';
+  });
+
+  document.getElementById('credit-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!current) return;
+    var status = document.getElementById('credit-status');
+    var btn = document.getElementById('credit-submit');
+    var cents = Math.round(parseFloat(document.getElementById('credit-amount').value) * 100);
+    var removing = document.getElementById('credit-direction').value === 'remove';
+    var note = document.getElementById('credit-note').value.trim();
+    if (!(cents > 0)) { status.style.color = 'var(--danger)'; status.textContent = 'Enter an amount greater than $0.'; return; }
+    if (removing && cents > current.balanceCents) {
+      status.style.color = 'var(--danger)';
+      status.textContent = 'That\u2019s more than their ' + Credits.formatCents(current.balanceCents) + ' balance. Enter ' + Credits.formatCents(current.balanceCents) + ' or less.';
+      return;
+    }
+    var delta = removing ? -cents : cents;
+    btn.disabled = true;
+    Credits.adminAdjust(current.email, delta, { type: 'adjusted', orderId: '', orderNumber: '', code: '', note: note }).then(function (account) {
+      btn.disabled = false;
+      document.getElementById('credit-amount').value = '';
+      document.getElementById('credit-note').value = '';
+      status.style.color = 'var(--text-light)';
+      status.textContent = (removing ? 'Removed ' : 'Added ') + Credits.formatCents(cents) + '. New balance ' + Credits.formatCents(account.balanceCents) + '.';
+      loadCustomers();
+    }).catch(function (err) {
+      btn.disabled = false;
+      status.style.color = 'var(--danger)';
+      status.textContent = 'Could not update store credit: ' + err.message;
+    });
+  });
+</script>
+</body>
+</html>

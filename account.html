@@ -43,6 +43,7 @@
         <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
         <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
         <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li class="nav-admin"><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
         <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My account</a></li>
         <li><a href="login.html" id="nav-account-link">Researcher login</a></li>
       </ul>
@@ -375,7 +376,9 @@
           var rows = entries.map(function (en) {
             var date = en.createdAt ? new Date(en.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
             var amt = (en.amountCents < 0 ? '-' : '+') + Credits.formatCents(Math.abs(en.amountCents));
-            var activity = LABELS[en.type] || en.type;
+            var activity = en.type === 'adjusted'
+              ? (en.amountCents >= 0 ? 'Added by TXBioResearch' : 'Removed by TXBioResearch') + (en.note ? ': ' + esc(en.note) : '')
+              : (LABELS[en.type] || en.type);
             if (en.type === 'earned' && en.code) activity += ' (code ' + esc(en.code) + ')';
             return '<tr><td data-label="Date">' + date + '</td><td data-label="Activity">' + activity + '</td><td data-label="Order">' + (en.orderNumber ? '#' + esc(en.orderNumber) : '') + '</td><td data-label="Amount">' + amt + '</td></tr>';
           });

@@ -43,6 +43,7 @@
         <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
         <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
         <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li class="nav-admin"><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
         <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My account</a></li>
         <li><a href="login.html" id="nav-account-link">Researcher login</a></li>
       </ul>
@@ -197,21 +198,36 @@
       return;
     }
 
+    signingUp = true;
     firebase.auth().createUserWithEmailAndPassword(email, password)
       .then(function (cred) {
-        return cred.user.updateProfile({ displayName: name + ' — ' + org });
+        // Save a customer record so the account shows on the admin Customers page.
+        var now = new Date().toISOString();
+        return Promise.all([
+          cred.user.updateProfile({ displayName: name + ' — ' + org }),
+          firebase.firestore().collection('users').doc(cred.user.uid).set({
+            name: name,
+            institution: org,
+            email: (cred.user.email || email).toLowerCase(),
+            createdAt: now,
+            lastSignInAt: now
+          }, { merge: true }).catch(function (err) { console.error('Could not save customer record:', err); })
+        ]);
       })
       .then(function () {
         window.location.href = getRedirectTarget();
       })
       .catch(function (err) {
+        signingUp = false;
         showError(err.message);
       });
   });
 
-  // If already signed in, skip straight through
+  // If already signed in, skip straight through (but not mid sign-up, which
+  // redirects itself once the customer record is saved).
+  var signingUp = false;
   firebase.auth().onAuthStateChanged(function (user) {
-    if (user) {
+    if (user && !signingUp) {
       window.location.href = getRedirectTarget();
     }
   });
