@@ -861,3 +861,22 @@ nav a { white-space: nowrap; }
 .research-sources { font-size: 0.88rem; }
 .research-sources a { color: var(--muted); }
 .research-note { color: var(--muted); font-style: italic; }
+
+/* Catalog search */
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.catalog-search { position: relative; margin-bottom: 18px; }
+.catalog-search svg { position: absolute; left: 14px; top: 14px; color: var(--muted); pointer-events: none; }
+.catalog-search input[type="search"] { width: 100%; margin: 0; padding: 12px 14px 12px 42px; font-size: 1rem; background: var(--raised); border: 1px solid var(--line); border-radius: 999px; color: var(--frost); }
+.catalog-search input[type="search"]:focus { outline: none; border-color: var(--mint); box-shadow: 0 0 0 3px var(--mint-wash); }
+.catalog-search-status { margin: 8px 0 0 16px; font-size: 0.85rem; color: var(--muted); min-height: 1em; }
+.catalog-search-status:empty { display: none; }
+.catalog-search-empty { margin: 32px 0; padding: 24px; text-align: center; color: var(--muted); border: 1px dashed var(--line); border-radius: var(--radius-sm); }
+.product-card.search-hide, section.search-hide { display: none !important; }
+
+/* Reorder on past orders (account.html) */
+.order-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
+.order-actions .btn-outline { padding: 9px 18px; font-size: 0.9rem; }
+.reorder-hint { font-size: 0.85rem; color: var(--muted); }
+.reorder-msg { margin-top: 12px; padding: 14px 16px; background: var(--raised); border-radius: var(--radius-sm); font-size: 0.92rem; }
+.reorder-msg ul { margin: 0 0 12px; padding-left: 20px; color: var(--muted); }
+.reorder-msg p { margin-bottom: 8px; }

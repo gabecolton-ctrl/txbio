@@ -178,6 +178,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
+<script src="js/products.js"></script>
+<script src="js/case-pricing.js"></script>
+<script src="js/reorder.js"></script>
 <script src="js/account.js"></script>
 <script src="js/credits.js"></script>
 <script src="js/nav-auth.js"></script>
@@ -335,6 +338,41 @@
     return html + '</div>';
   }
 
+  function wireReorder(box, order) {
+    var btn = box.querySelector('.reorder-btn');
+    var msg = box.querySelector('.reorder-msg');
+    btn.addEventListener('click', function () {
+      btn.disabled = true;
+      btn.textContent = 'Adding to cart…';
+      msg.style.display = 'none';
+      Reorder.run(order).then(function (result) {
+        if (result.added.length && !result.skipped.length) {
+          window.location.href = 'cart.html';
+          return;
+        }
+        btn.disabled = false;
+        btn.textContent = 'Reorder';
+        var html = '';
+        if (result.added.length) {
+          html += '<p>Added ' + result.added.length + ' of ' + (result.added.length + result.skipped.length) + ' items to your cart.</p>';
+        }
+        html += '<p>' + (result.added.length ? 'Not added:' : 'None of these items can be reordered:') + '</p><ul>' +
+          result.skipped.map(function (s) {
+            return '<li>' + escHtml(s.name) + (s.packSize ? ' (' + escHtml(s.packSize) + ')' : '') + ': ' + escHtml(s.reason) + '</li>';
+          }).join('') + '</ul>';
+        if (result.added.length) html += '<a href="cart.html" class="btn">View cart</a>';
+        else html += '<a href="services.html" class="btn-outline">Browse the catalog</a>';
+        msg.innerHTML = html;
+        msg.style.display = 'block';
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Reorder';
+        msg.innerHTML = '<p>Could not add these items to your cart: ' + escHtml(err.message) + '</p>';
+        msg.style.display = 'block';
+      });
+    });
+  }
+
   function renderOrders() {
     var loading = document.getElementById('orders-loading');
     var empty = document.getElementById('orders-empty');
@@ -398,7 +436,11 @@
           orderStatusHtml(order) +
           addressHtml +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
-          breakdownHtml;
+          breakdownHtml +
+          '<div class="order-actions"><button type="button" class="btn-outline reorder-btn">Reorder</button>' +
+          '<span class="reorder-hint">Adds these items to your cart at today’s prices.</span></div>' +
+          '<div class="reorder-msg" role="status" style="display:none;"></div>';
+        wireReorder(box, order);
         list.appendChild(box);
       });
     }).catch(function (err) {
