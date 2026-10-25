@@ -1,4 +1,4 @@
-// product-page.js — wires the Add to Cart button on individual product pages.
+// product-page.js — wires the Add to cart button on individual product pages.
 // Expects window.THIS_PRODUCT.slug to be set, and PRODUCTS array from products.js loaded.
 //
 // The click listener is attached as soon as the DOM is ready, independent of
@@ -21,7 +21,7 @@ document.addEventListener('DOMContentLoaded', function () {
     btn.textContent = 'Adding...';
     Cart.addItem(product, qty).then(function () {
       btn.disabled = false;
-      btn.textContent = 'Add to Cart';
+      btn.textContent = 'Add to cart';
       msg.style.display = 'block';
       setTimeout(function () { msg.style.display = 'none'; }, 2500);
       return Cart.getItemCount();
@@ -33,7 +33,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     }).catch(function (err) {
       btn.disabled = false;
-      btn.textContent = 'Add to Cart';
+      btn.textContent = 'Add to cart';
       alert('Could not add to cart: ' + (err.message || err));
     });
   });

@@ -78,17 +78,6 @@ var PRODUCTS = [
     form: "Sterile liquid"
   },
   {
-    slug: "botulinum-toxin",
-    name: "Botulinum toxin",
-    packSize: "1 vial x 100iu",
-    price: 159,
-    category: "Research Compound",
-    description: "Botulinum toxin is a research compound intended for laboratory research applications.",
-    storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C.",
-    purity: "99% Pure",
-    form: "Lyophilized powder"
-  },
-  {
     slug: "bpc-10mg-tb10mg",
     name: "BPC 10mg+TB10mg",
     packSize: "1 vial x 20mg",

@@ -22,34 +22,35 @@
   }
 </script>
 
-<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
 
 <header>
   <div class="header-inner">
-    <a href="../index.html" class="logo-link">
-      <img src="../images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
-      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    <a href="../index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="../images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
     </a>
-    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
     <nav>
-      <ul>
-        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
-        <li class="nav-myaccount"><a href="../account.html" id="nav-myaccount-link">My Account</a></li>
-        <li class="nav-admin"><a href="../admin-inventory.html" id="nav-admin-link">Inventory</a></li>
-        <li class="nav-admin"><a href="../admin-promos.html" id="nav-admin-promos-link">Promo Codes</a></li>
-        <li class="nav-admin"><a href="../admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
-        <li><a href="../index.html">Home</a></li>
+      <ul class="nav-primary">
+        <li><a href="../services.html" class="active">Catalog</a></li>
         <li><a href="../about.html">About</a></li>
-        <li><a href="../services.html" class="active">Products</a></li>
         <li><a href="../contact.html">Contact</a></li>
-            </ul>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin"><a href="../admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="../admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+        <li class="nav-admin"><a href="../admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li class="nav-myaccount"><a href="../account.html" id="nav-myaccount-link">My account</a></li>
+        <li><a href="../login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
     </nav>
   </div>
 </header>
 <a href="../cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
-  &#128722;
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
   <span id="floating-cart-badge" class="floating-cart-badge">0</span>
 </a>
 
@@ -58,7 +59,7 @@
 
 <main id="gated-content" style="display:none;">
 
-  <p style="margin-bottom:20px;"><a href="../services.html">&larr; Back to Catalog</a></p>
+  <a href="../services.html" class="back-link">&larr; Back to catalog</a>
 
   <div class="product-hero">
     <div class="product-media">
@@ -70,35 +71,35 @@
       <p class="product-price">$90</p>
 
       <table class="spec-table">
-        <tr><td>Pack Size</td><td>1 vial</td></tr>
+        <tr><td>Pack size</td><td>1 vial</td></tr>
         <tr><td>Form</td><td>Liquid solution</td></tr>
         <tr><td>Purity</td><td>99% Pure</td></tr>
         <tr><td>Storage</td><td>Refrigerate at 2-8&deg;C, protect from light.</td></tr>
-        <tr><td>Intended Use</td><td style="color:var(--danger);">Laboratory Research Only</td></tr>
+        <tr><td>Intended use</td><td style="color:var(--danger);">Laboratory research only</td></tr>
       </table>
 
       <div class="qty-row">
-        <label for="qty-input" style="margin-bottom:0;">Qty:</label>
+        <label for="qty-input" style="margin-bottom:0;">Quantity</label>
         <input type="number" id="qty-input" min="1" value="1">
       </div>
-      <button id="add-to-cart-btn" class="btn" style="width:100%; margin-bottom:10px;">Add to Cart</button>
-      <p id="add-to-cart-msg" style="display:none; color:var(--mint-dark); font-weight:600; font-size:0.9rem;">Added to cart.</p>
-      <a href="../contact.html" class="btn-outline-light" style="display:block; text-align:center;">Contact Us About This Product</a>
+      <button id="add-to-cart-btn" class="btn" style="width:100%; margin-bottom:10px;">Add to cart</button>
+      <p id="add-to-cart-msg" style="display:none; color:var(--mint-dark); font-weight:600; font-size:0.9rem;">Added to your cart.</p>
+      <a href="../contact.html" class="btn-outline-light" style="display:block; text-align:center;">Ask about this product</a>
     </div>
   </div>
 
   <section class="notice">
-    <strong>Not for Human or Animal Consumption:</strong>
+    <strong>Not for human or animal consumption</strong>
     <p>This product is sold exclusively for laboratory research use by qualified professionals and institutions. It is not a drug, food, cosmetic, or dietary supplement, and is not approved for use in humans or animals. Handling must be performed only by trained personnel in a controlled research setting.</p>
   </section>
 
   <section>
-    <h2>Research Overview</h2>
+    <h2>Research overview</h2>
     <p>Lipo-C is a lipotropic compound blend used in research settings studying lipid metabolism pathways.</p>
   </section>
 
   <section>
-    <h2>Handling &amp; Storage</h2>
+    <h2>Handling and storage</h2>
     <p>Refrigerate at 2-8&deg;C, protect from light.</p>
   </section>
 
@@ -106,14 +107,27 @@
 
 <footer>
   <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="../images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
+      </div>
+      <div class="footer-links">
+        <a href="../services.html">Catalog</a>
+        <a href="../about.html">About</a>
+        <a href="../contact.html">Contact</a>
+        <a href="../login.html">Researcher login</a>
+        <a href="../terms.html">Terms &amp; conditions</a>
+      </div>
+    </div>
     <div class="footer-disclaimer">
-      <strong>Research Use Only:</strong>
-      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
     </div>
-    <p style="text-align:center; margin-bottom:16px;"><a href="../terms.html">Terms &amp; Conditions</a></p>
-    <div class="footer-bottom">
-      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
-    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
   </div>
 </footer>
 

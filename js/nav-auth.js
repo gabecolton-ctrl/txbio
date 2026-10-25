@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
   firebase.auth().onAuthStateChanged(function (user) {
     if (user) {
       if (acctLink) {
-        acctLink.textContent = 'Sign Out';
+        acctLink.textContent = 'Sign out';
         acctLink.href = '#';
         acctLink.onclick = function (e) {
           e.preventDefault();
@@ -58,7 +58,7 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     } else {
       if (acctLink) {
-        acctLink.textContent = 'Researcher Login';
+        acctLink.textContent = 'Researcher login';
         acctLink.href = loginPath;
         acctLink.onclick = null;
       }

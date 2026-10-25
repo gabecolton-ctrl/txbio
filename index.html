@@ -22,109 +22,122 @@
   }
 </script>
 
-<div class="roa-banner">For Laboratory Research Use Only &mdash; Not Intended for Human or Animal Consumption</div>
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
 
 <header>
   <div class="header-inner">
-    <a href="index.html" class="logo-link">
-      <img src="images/logo-icon.png" alt="TXBioResearch logo" class="logo-icon">
-      <div class="logo-text">Texas Advanced<br>BioResearch<span>Research &middot; Development &middot; Texas</span></div>
+    <a href="index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
     </a>
-    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Toggle menu">
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
       <span></span><span></span><span></span>
     </button>
     <nav>
-      <ul>
-        <li><a href="#" id="nav-account-link">Researcher Login</a></li>
-        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My Account</a></li>
-        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
-        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo Codes</a></li>
-        <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
-        <li><a href="index.html" class="active">Home</a></li>
+      <ul class="nav-primary">
+        <li><a href="services.html">Catalog</a></li>
         <li><a href="about.html">About</a></li>
-        <li><a href="services.html">Products</a></li>
         <li><a href="contact.html">Contact</a></li>
-            </ul>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin"><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+        <li class="nav-admin"><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+        <li class="nav-admin"><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My account</a></li>
+        <li><a href="login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
     </nav>
   </div>
 </header>
 <a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
-  &#128722;
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
   <span id="floating-cart-badge" class="floating-cart-badge">0</span>
 </a>
 
 
 <div class="hero">
-  <h1>Research Peptides for Laboratory Use</h1>
-  <p>Texas Advanced BioResearch supplies research chemicals and peptides to qualified laboratories, institutions, and researchers across the country. All products are sold strictly for laboratory research. Not for human or animal use.</p>
-  <a href="services.html" class="btn">View Product Catalog</a>
-  <a href="about.html" class="btn-outline">Learn More</a>
+  <div class="hero-inner">
+    <div>
+      <h1>Research peptides, documented and shipped from Dallas.</h1>
+      <p>Texas Advanced BioResearch supplies research peptides and laboratory reagents to qualified labs, institutions, and researchers across the country. Every product is sold strictly for laboratory research.</p>
+      <div class="hero-actions">
+        <a href="services.html" class="btn">Browse the catalog</a>
+        <a href="login.html#register" class="btn-outline">Create a researcher account</a>
+      </div>
+    </div>
+    <div class="hero-mark">
+      <svg viewBox="0 0 400 370" role="img" aria-label="TXBioResearch star molecule mark">
+        <path class="bond" pathLength="100" d="M200 55 L233 155 L335 155 L253 215 L284 315 L200 255 L116 315 L145 215 L63 155 L166 155 L200 55"/>
+        <circle class="halo" cx="200" cy="55" r="46"/>
+        <circle class="halo" cx="63" cy="155" r="46"/>
+        <circle class="halo" cx="284" cy="315" r="46"/>
+        <circle class="node" cx="200" cy="55" r="28" style="animation-delay:0.90s"/>
+        <circle class="node" cx="63" cy="155" r="28" style="animation-delay:1.02s"/>
+        <circle class="node" cx="284" cy="315" r="28" style="animation-delay:1.14s"/>
+        <circle class="node" cx="200" cy="255" r="20" style="animation-delay:1.26s"/>
+        <circle class="ring" cx="335" cy="155" r="27" style="animation-delay:1.38s"/>
+        <circle class="ring" cx="116" cy="315" r="27" style="animation-delay:1.50s"/>
+        <circle class="ring" cx="166" cy="155" r="17" style="animation-delay:1.62s"/>
+        <circle class="ring" cx="233" cy="155" r="17" style="animation-delay:1.74s"/>
+        <circle class="ring" cx="145" cy="215" r="17" style="animation-delay:1.86s"/>
+        <circle class="ring" cx="253" cy="215" r="17" style="animation-delay:1.98s"/>
+      </svg>
+    </div>
+  </div>
+  <div class="hero-facts">
+    <div><strong>63 catalog items</strong><span>Peptides, research blends, and reconstitution supplies</span></div>
+    <div><strong>Specs on every product</strong><span>Form, purity, and storage listed before you order</span></div>
+    <div><strong>Verified accounts</strong><span>Pricing and ordering open to registered researchers</span></div>
+  </div>
 </div>
 
 <main>
 
   <section class="notice">
-    <strong>Important Notice:</strong>
-    <p>All products sold by TXBioResearch are intended <strong>solely for laboratory research purposes</strong> by qualified professionals. These products are <strong>not drugs, foods, cosmetics, or dietary supplements</strong> and are <strong>not intended for human or animal consumption, diagnostic, or therapeutic use</strong> of any kind. Full catalog access requires a verified researcher account. By purchasing from this site, the buyer certifies they are acquiring these materials for legitimate research use and agrees to our full <a href="services.html#terms">Terms of Sale</a>.</p>
+    <strong>Important notice</strong>
+    <p>All products sold by TXBioResearch are intended <strong>solely for laboratory research purposes</strong> by qualified professionals. These products are <strong>not drugs, foods, cosmetics, or dietary supplements</strong> and are <strong>not intended for human or animal consumption, diagnostic, or therapeutic use</strong> of any kind. Full catalog access requires a verified researcher account. By purchasing from this site, the buyer certifies they are acquiring these materials for legitimate research use and agrees to our full <a href="terms.html">Terms &amp; Conditions</a>.</p>
   </section>
 
-  <section>
-    <h2>Who We Serve</h2>
-    <div class="section-divider"></div>
-    <p class="lead">We work with research laboratories, universities, biotech companies, and independent researchers who require high-purity peptides for legitimate scientific study.</p>
-    <div class="card-grid">
-      <div class="card">
-        <h3>Academic &amp; University Labs</h3>
-        <p>Supporting peer-reviewed research programs with reliable sourcing and documentation.</p>
-      </div>
-      <div class="card">
-        <h3>Biotech &amp; Pharma R&amp;D</h3>
-        <p>Research-grade compounds for early-stage discovery, assay development, and preclinical study.</p>
-      </div>
-      <div class="card">
-        <h3>Independent Research Facilities</h3>
-        <p>Peptides supplied to qualified researchers for in-vitro study only, with account verification at signup.</p>
-      </div>
+  <section class="split">
+    <div>
+      <h2>Who we supply</h2>
+      <p class="lead">Research labs, universities, biotech companies, and independent researchers who need high-purity peptides for legitimate scientific study.</p>
+    </div>
+    <div class="rows">
+      <div class="row"><h3>Academic and university labs</h3><p>Reliable sourcing and documentation for peer-reviewed research programs.</p></div>
+      <div class="row"><h3>Biotech and pharma R&amp;D</h3><p>Research-grade compounds for early-stage discovery, assay development, and preclinical study.</p></div>
+      <div class="row"><h3>Independent research facilities</h3><p>Peptides supplied to qualified researchers for in-vitro study, with account verification at signup.</p></div>
+    </div>
+  </section>
+
+  <section class="split">
+    <div>
+      <h2>How we work</h2>
+      <p class="lead">A focused catalog, clear documentation, and a compliance-first ordering process.</p>
+    </div>
+    <div class="rows">
+      <div class="row"><h3>Documented purity</h3><p>Manufactured to research-grade purity standards, with specs listed on every product page.</p></div>
+      <div class="row"><h3>Consistent sourcing</h3><p>An established supply chain that keeps research programs on schedule.</p></div>
+      <div class="row"><h3>Compliance first</h3><p>Clear labeling, research-use agreements, and account verification on every order.</p></div>
     </div>
   </section>
 
   <section>
-    <h2>Why TXBioResearch</h2>
-    <div class="section-divider"></div>
-    <div class="card-grid">
-      <div class="card">
-        <h3>Documented Purity</h3>
-        <p>Products are manufactured to high research-grade purity standards, with specs listed on every product page.</p>
-      </div>
-      <div class="card">
-        <h3>Consistent Sourcing</h3>
-        <p>Established supply chain to keep research programs on schedule, with a broad catalog spanning common research categories.</p>
-      </div>
-      <div class="card">
-        <h3>Compliance-First</h3>
-        <p>Clear labeling, research-use agreements, and account verification on every order.</p>
-      </div>
-    </div>
+    <h2>How access works</h2>
+    <p class="lead" style="margin-bottom:32px;">Full pricing and product specifications are open to registered researchers.</p>
+    <ol class="steps">
+      <li><h3>Register</h3><p>Create an account with your name and your institution or lab.</p></li>
+      <li><h3>Certify research use</h3><p>Confirm you&rsquo;re buying solely for laboratory research.</p></li>
+      <li><h3>Browse and order</h3><p>See full pricing and specs, add items to your cart, and submit your order.</p></li>
+    </ol>
   </section>
 
-  <section>
-    <h2>How Access Works</h2>
-    <div class="section-divider"></div>
-    <p class="lead">To keep our catalog restricted to legitimate research buyers, full pricing and product specifications require a free researcher account.</p>
-    <div class="card-grid">
-      <div class="card">
-        <h3>1. Register</h3>
-        <p>Create an account with your name and institution or lab affiliation.</p>
-      </div>
-      <div class="card">
-        <h3>2. Certify Research Use</h3>
-        <p>Confirm you're acquiring products solely for laboratory research purposes.</p>
-      </div>
-      <div class="card">
-        <h3>3. Browse &amp; Order</h3>
-        <p>Access full pricing, specs, and place inquiries through our contact form.</p>
-      </div>
+  <section class="cta-band">
+    <div>
+      <h2>Ready to order?</h2>
+      <p>Create a free researcher account to see pricing and place orders.</p>
     </div>
+    <a href="login.html#register" class="btn">Create a researcher account</a>
   </section>
 
 </main>
@@ -132,26 +145,26 @@
 <footer>
   <div class="footer-inner">
     <div class="footer-top">
-      <div class="footer-brand">
-        <img src="images/logo-icon.png" alt="TXBioResearch">
-        <span>Texas Advanced BioResearch</span>
+      <div>
+        <div class="footer-brand">
+          <img src="images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
       </div>
       <div class="footer-links">
-        <a href="index.html">Home</a>
+        <a href="services.html">Catalog</a>
         <a href="about.html">About</a>
-        <a href="services.html">Products</a>
         <a href="contact.html">Contact</a>
-        <a href="login.html">Researcher Login</a>
-        <a href="terms.html">Terms &amp; Conditions</a>
+        <a href="login.html">Researcher login</a>
+        <a href="terms.html">Terms &amp; conditions</a>
       </div>
     </div>
     <div class="footer-disclaimer">
-      <strong>Research Use Only:</strong>
-      <p>The products offered on this website are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind. These products are not approved by the FDA for use as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims regarding the safety or efficacy of these compounds for any use outside of laboratory research. It is the sole responsibility of the purchaser to determine the legality of purchasing and using these products in their jurisdiction and to ensure proper handling, storage, and disposal in accordance with all applicable laws and regulations.</p>
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
     </div>
-    <div class="footer-bottom">
-      &copy; 2026 TXBioResearch. All rights reserved. | Dallas, TX
-    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
   </div>
 </footer>
 
