@@ -237,8 +237,39 @@
     });
   }
 
+  // Buyers can cancel their own pending orders (My orders). The admin
+  // finishes the job here: stock goes back and any store credit they used
+  // is returned. Runs once per order, when this page loads.
+  function finishCustomerCancellations() {
+    var todo = allOrders.filter(function (o) { return o.status === 'cancelled' && o.cancelledBy === 'customer' && !o.cancelFollowUpAt; });
+    return todo.reduce(function (chain, order) {
+      return chain.then(function () {
+        var update = { cancelFollowUpAt: new Date().toISOString() };
+        var errors = [];
+        var restock = order.restockedAt ? Promise.resolve() : Promise.all(stockReturnPlan(order).map(function (line) {
+          return Inventory.restockStock(line.slug, line.units);
+        })).then(function () { order.restockedAt = update.restockedAt = new Date().toISOString(); })
+          .catch(function (err) { errors.push('Stock was not returned (' + err.message + ').'); });
+        return restock.then(function () {
+          if (!window.Credits) return;
+          return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order)])
+            .catch(function (err) { errors.push('Store credit was not returned (' + err.message + ').'); });
+        }).then(function () {
+          if (errors.length) { setCancelStatus(order.id, errors.join(' ') + ' Reload the page to try again.', true); return; }
+          order.cancelFollowUpAt = update.cancelFollowUpAt;
+          return firebase.firestore().collection('orders').doc(order.id).update(update).then(function () {
+            setCancelStatus(order.id, cancelStatusText(order));
+          });
+        });
+      });
+    }, Promise.resolve());
+  }
+
   function cancelStatusText(order) {
     var parts = [];
+    if (order.cancelledBy === 'customer' && order.cancelledAt) {
+      parts.push('Cancelled by the customer ' + new Date(order.cancelledAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + (order.cancelReason ? ' (' + order.cancelReason.replace(/^Customer: /, '') + ')' : '') + '.');
+    }
     if (order.restockedAt) parts.push('Stock returned.');
     if (order.cancellationEmailSentAt) {
       parts.push('Cancellation email sent ' + new Date(order.cancellationEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.');
@@ -410,6 +441,7 @@
       allOrders = orders;
       loading.style.display = 'none';
       renderOrders(allOrders);
+      finishCustomerCancellations();
     }).catch(function (err) {
       loading.textContent = 'Could not load orders: ' + err.message;
     });

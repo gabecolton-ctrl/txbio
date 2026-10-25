@@ -28,12 +28,22 @@ service cloud.firestore {
     }
 
     // Orders — a user can create an order for themselves and read only their
-    // own orders. Orders are immutable for buyers; only the admin can update
-    // them (status, tracking, cancellations, affiliate credit bookkeeping).
+    // own orders. Buyers can only cancel a pending order; everything else
+    // (status, tracking, cancellations, affiliate credit bookkeeping) is admin-only.
     match /orders/{orderId} {
       allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
       allow read: if signedIn() && (request.auth.uid == resource.data.userId || isAdmin());
-      allow update: if isAdmin();
+      allow update: if isAdmin() || (
+        // A buyer may cancel their own order while it's still pending
+        // (not yet confirmed or paid). The admin page then returns stock
+        // and any store credit (admin-orders.html).
+        signedIn()
+        && request.auth.uid == resource.data.userId
+        && resource.data.get('status', 'pending') == 'pending'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason', 'cancelledBy', 'cancelledAt'])
+        && request.resource.data.cancelledBy == 'customer'
+      );
       allow delete: if false;
     }
 

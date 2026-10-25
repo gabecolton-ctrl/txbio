@@ -36,9 +36,83 @@
       html += '<span class="order-status-detail">Shipped ' + new Date(order.shippedEmailSentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
     }
     if (status === 'cancelled' && order.cancelReason) {
-      html += '<span class="order-status-detail">Reason: ' + escHtml(order.cancelReason) + '</span>';
+      html += '<span class="order-status-detail">' + (order.cancelledBy === 'customer' ? 'You cancelled this order' + (order.cancelReason && order.cancelReason.indexOf('Customer: ') === 0 ? ': ' + escHtml(order.cancelReason.slice(10)) : '') : 'Reason: ' + escHtml(order.cancelReason)) + '</span>';
     }
     return html + '</div>';
+  }
+
+  // Cancelling: buyers can cancel a pending order themselves (firestore.rules
+  // allows only that change). Once it's confirmed or further along, money may
+  // need refunding, so they ask by email instead.
+  var CANCEL_REASONS = ['Ordered by mistake', 'Need to change items or quantities', 'Wrong shipping address', 'Found a different option', 'Other'];
+  var REQUEST_STATUSES = ['confirmed', 'processing', 'label-created'];
+  function cancelHtml(order) {
+    var status = order.status || 'pending';
+    if (status === 'pending') return '<button type="button" class="btn-outline-light cancel-btn">Cancel order</button>';
+    if (REQUEST_STATUSES.indexOf(status) !== -1) {
+      var subject = encodeURIComponent('Cancel order #' + (order.orderNumber || order.id));
+      var body = encodeURIComponent('Please cancel order #' + (order.orderNumber || order.id) + '.\n\nReason: ');
+      return '<a class="cancel-request-link" href="mailto:orders@txbioresearch.com?subject=' + subject + '&body=' + body + '">Need to cancel? Email us</a>';
+    }
+    return '';
+  }
+
+  function wireCancel(box, order) {
+    var btn = box.querySelector('.cancel-btn');
+    if (!btn) return;
+    var panel = box.querySelector('.cancel-panel');
+    btn.addEventListener('click', function () {
+      panel.innerHTML =
+        '<p><strong>Cancel order #' + escHtml(order.orderNumber || order.id) + '?</strong> Any store credit you used is returned. If you already sent a payment, email <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> and we’ll refund it.</p>' +
+        '<label for="cancel-reason-' + order.id + '">Reason (optional)</label>' +
+        '<select id="cancel-reason-' + order.id + '"><option value="">Choose a reason</option>' +
+        CANCEL_REASONS.map(function (r) { return '<option>' + escHtml(r) + '</option>'; }).join('') + '</select>' +
+        '<div class="cancel-panel-actions"><button type="button" class="btn cancel-confirm">Yes, cancel order</button>' +
+        '<button type="button" class="btn-outline-light cancel-keep">Keep order</button></div>' +
+        '<p class="cancel-error" style="display:none;"></p>';
+      panel.style.display = 'block';
+      btn.style.display = 'none';
+      panel.querySelector('.cancel-keep').addEventListener('click', function () {
+        panel.style.display = 'none';
+        btn.style.display = '';
+      });
+      panel.querySelector('.cancel-confirm').addEventListener('click', function () {
+        var confirmBtn = this;
+        var reason = panel.querySelector('select').value;
+        confirmBtn.disabled = true;
+        confirmBtn.textContent = 'Cancelling…';
+        var fields = { status: 'cancelled', cancelledBy: 'customer', cancelledAt: new Date().toISOString(), cancelReason: reason ? 'Customer: ' + reason : 'Cancelled by customer' };
+        firebase.firestore().collection('orders').doc(order.id).update(fields).then(function () {
+          Object.assign(order, fields);
+          notifyStore(order, reason);
+          renderOrders();
+        }).catch(function (err) {
+          confirmBtn.disabled = false;
+          confirmBtn.textContent = 'Yes, cancel order';
+          var e = panel.querySelector('.cancel-error');
+          e.textContent = /permission/i.test(err.message)
+            ? 'This order can no longer be cancelled online, because it may already be confirmed. Please email orders@txbioresearch.com.'
+            : 'Could not cancel: ' + err.message;
+          e.style.display = 'block';
+        });
+      });
+    });
+  }
+
+  // Lets the store know (same channel as new-order notifications).
+  function notifyStore(order, reason) {
+    try {
+      var fd = new FormData();
+      fd.append('_subject', 'Order #' + (order.orderNumber || order.id) + ' cancelled by customer');
+      fd.append('_captcha', 'false');
+      fd.append('_template', 'box');
+      fd.append('Order', '#' + (order.orderNumber || order.id));
+      fd.append('Customer', order.userEmail || '');
+      fd.append('Total', '$' + Number(order.total || 0).toFixed(2));
+      fd.append('Reason', reason || '(none given)');
+      fd.append('Next step', 'Open Admin → Orders. Stock and any store credit used are returned automatically when the page loads.');
+      fetch('https://formsubmit.co/orders@txbioresearch.com', { method: 'POST', body: fd }).catch(function () {});
+    } catch (e) {}
   }
 
   function wireReorder(box, order) {
@@ -149,9 +223,11 @@
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
           breakdownHtml +
           '<div class="order-actions"><button type="button" class="btn reorder-btn">Reorder</button>' +
-          '<span class="reorder-hint">Adds these items to your cart at today’s prices.</span></div>' +
+          '<span class="reorder-hint">Adds these items to your cart at today’s prices.</span>' + cancelHtml(order) + '</div>' +
+          '<div class="cancel-panel" style="display:none;"></div>' +
           '<div class="reorder-msg" role="status" style="display:none;"></div>';
         wireReorder(box, order);
+        wireCancel(box, order);
         list.appendChild(box);
       });
       // Links from order emails point at orders.html#order-<number>.

@@ -922,3 +922,12 @@ html.signed-in .nav-myaccount { display: list-item; }
 .order-pay-box .btn-outline { padding: 8px 16px; font-size: 0.88rem; }
 
 .fee-table input { width: 90px; margin: 0; padding: 7px 10px; display: inline-block; }
+
+/* Customer cancel on My orders */
+.order-actions .cancel-btn { margin-left: auto; padding: 9px 18px; font-size: 0.9rem; }
+.cancel-request-link { margin-left: auto; font-size: 0.88rem; color: var(--muted); }
+.cancel-panel { margin-top: 12px; padding: 14px 16px; border: 1px solid rgba(242, 134, 122, 0.35); background: var(--alert-wash); border-radius: var(--radius-sm); }
+.cancel-panel select { max-width: 340px; }
+.cancel-panel-actions { display: flex; flex-wrap: wrap; gap: 10px; }
+.cancel-panel .cancel-confirm { background: var(--alert); border-color: var(--alert); color: var(--ink); }
+.cancel-error { color: var(--alert); font-size: 0.9rem; margin: 10px 0 0; }
