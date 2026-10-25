@@ -79,6 +79,9 @@ var OrderEmails = (function () {
     if (order.bogoDiscount > 0) {
       lines.push('BOGO: -' + money(order.bogoDiscount));
     }
+    if (order.creditUsed > 0) {
+      lines.push('Store credit: -' + money(order.creditUsed));
+    }
     return lines.join('\n') || 'None';
   }
 

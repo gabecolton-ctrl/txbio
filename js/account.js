@@ -55,13 +55,26 @@ var Account = (function () {
     return 'TXB-' + random;
   }
 
-  function createOrder(order) {
+  // options.creditSpendCents / options.creditAccount: when the buyer applies
+  // store credit, the order and the credit deduction are written together in
+  // one batch so neither can happen without the other (see credits.js).
+  function createOrder(order, options) {
     var user = getCurrentUser();
     if (!user) return Promise.reject(new Error('Not signed in yet — please wait a moment and try again.'));
     order.userId = user.uid;
     order.userEmail = user.email || '';
     order.createdAt = new Date().toISOString();
     order.orderNumber = generateOrderNumber();
+    var spend = options && options.creditSpendCents > 0 ? options.creditSpendCents : 0;
+    if (spend && window.Credits) {
+      var ref = ensureDb().collection('orders').doc();
+      var batch = ensureDb().batch();
+      batch.set(ref, order);
+      Credits.addSpendToBatch(batch, user.email, options.creditAccount, spend, ref, order.orderNumber);
+      return batch.commit().then(function () {
+        return { docRef: ref, orderNumber: order.orderNumber };
+      });
+    }
     return ensureDb().collection('orders').add(order).then(function (docRef) {
       return { docRef: docRef, orderNumber: order.orderNumber };
     });
@@ -124,7 +137,7 @@ var Account = (function () {
     setUser: setUser,
     getProfile: getProfile,
     saveProfile: function (profile) { return withTimeout(saveProfile(profile), 10000, 'Saving your info is taking too long. Please check your connection and try again.'); },
-    createOrder: function (order) { return withTimeout(createOrder(order), 10000, 'Submitting your order is taking too long. Please check your connection and try again.'); },
+    createOrder: function (order, options) { return withTimeout(createOrder(order, options), 10000, 'Submitting your order is taking too long. Please check your connection and try again.'); },
     isFirstOrder: function () { return withTimeout(isFirstOrder(), 10000, 'Checking order history is taking too long. Please try again.'); },
     getOrderHistory: getOrderHistory,
     getAllOrders: function () { return withTimeout(getAllOrders(), 10000, 'Loading orders is taking too long. Please try again.'); },

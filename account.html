@@ -110,6 +110,21 @@
     </form>
   </section>
 
+  <section id="credit-section" style="display:none;">
+    <h2>Store credit</h2>
+    <div class="card" style="max-width:400px; margin-bottom:18px;">
+      <p style="margin-bottom:4px; color:var(--text-light);">Available balance</p>
+      <p id="credit-balance" style="font-family:var(--serif); font-size:2rem; margin:0; color:var(--text);">$0.00</p>
+      <p style="margin:8px 0 0; font-size:0.88rem; color:var(--text-light);">Applied at checkout when you choose &ldquo;Use my store credit.&rdquo;</p>
+    </div>
+    <div id="credit-history-wrap" style="overflow-x:auto; display:none;">
+      <table class="cart-table">
+        <thead><tr><th>Date</th><th>Activity</th><th>Order</th><th>Amount</th></tr></thead>
+        <tbody id="credit-history"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section>
     <h2>Order History</h2>
     <div id="orders-loading" class="cart-empty">Loading your orders&hellip;</div>
@@ -153,6 +168,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/account.js"></script>
+<script src="js/credits.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
@@ -336,6 +352,39 @@
       loading.textContent = 'Could not load order history: ' + err.message;
     });
   }
+</script>
+<script>
+  // Store credit: shown only to accounts that have a credit record.
+  (function () {
+    var LABELS = {
+      earned: 'Earned from a referral',
+      reversed: 'Referral reversed (order cancelled)',
+      spent: 'Used at checkout',
+      refunded: 'Returned (order cancelled)'
+    };
+    function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    document.addEventListener('userReady', function (e) {
+      var user = e.detail.user;
+      if (!window.Credits || !user.email) return;
+      Credits.getAccount(user.email).then(function (account) {
+        if (!account.exists) return;
+        document.getElementById('credit-section').style.display = '';
+        document.getElementById('credit-balance').textContent = Credits.formatCents(account.balanceCents);
+        return Credits.getEntries(user.email, 50).then(function (entries) {
+          if (!entries.length) return;
+          var rows = entries.map(function (en) {
+            var date = en.createdAt ? new Date(en.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+            var amt = (en.amountCents < 0 ? '-' : '+') + Credits.formatCents(Math.abs(en.amountCents));
+            var activity = LABELS[en.type] || en.type;
+            if (en.type === 'earned' && en.code) activity += ' (code ' + esc(en.code) + ')';
+            return '<tr><td data-label="Date">' + date + '</td><td data-label="Activity">' + activity + '</td><td data-label="Order">' + (en.orderNumber ? '#' + esc(en.orderNumber) : '') + '</td><td data-label="Amount">' + amt + '</td></tr>';
+          });
+          document.getElementById('credit-history').innerHTML = rows.join('');
+          document.getElementById('credit-history-wrap').style.display = '';
+        });
+      }).catch(function (err) { console.error('Could not load store credit:', err); });
+    });
+  })();
 </script>
 </body>
 </html>

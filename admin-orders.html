@@ -112,6 +112,8 @@
 <script src="js/cart.js"></script>
 <script src="js/account.js"></script>
 <script src="js/inventory.js"></script>
+<script src="js/promos.js"></script>
+<script src="js/credits.js"></script>
 <script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
@@ -217,6 +219,7 @@
     var reason = cancelReasonValue(order.id);
     var update = { cancelReason: reason };
     var notes = [];
+    var errors = [];
 
     var restock = Promise.resolve();
     if (!order.restockedAt) {
@@ -226,30 +229,121 @@
       })).then(function () {
         order.restockedAt = update.restockedAt = new Date().toISOString();
       }).catch(function (err) {
-        notes.push('Stock was not returned (' + err.message + '); adjust it on the Inventory page.');
+        errors.push('Stock was not returned (' + err.message + '); adjust it on the Inventory page.');
       });
     }
 
     return restock.then(function () {
+      if (!window.Credits) return;
+      return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order)]).then(function (msgs) {
+        msgs.filter(Boolean).forEach(function (m) { notes.push(m); });
+      }).catch(function (err) {
+        errors.push('Store credit was not adjusted (' + err.message + '); fix it before re-crediting.');
+      });
+    }).then(function () {
       if (!window.OrderEmails || !OrderEmails.canSendCancelled()) {
-        notes.push('No cancellation email was sent because the cancellation template isn’t set up yet.');
+        errors.push('No cancellation email was sent because the cancellation template isn’t set up yet.');
         return;
       }
       if (!order.userEmail) {
-        notes.push('This order has no buyer email, so no email was sent.');
+        errors.push('This order has no buyer email, so no email was sent.');
         return;
       }
       return OrderEmails.sendCancelled(order, reason).then(function () {
         order.cancellationEmailSentAt = update.cancellationEmailSentAt = new Date().toISOString();
       }).catch(function (err) {
-        notes.push('The cancellation email didn’t send: ' + (err && (err.text || err.message) || err) + '.');
+        errors.push('The cancellation email didn’t send: ' + (err && (err.text || err.message) || err) + '.');
       });
     }).then(function () {
       order.cancelReason = reason;
       return firebase.firestore().collection('orders').doc(order.id).update(update);
     }).then(function () {
-      var text = [cancelStatusText(order)].concat(notes).filter(Boolean).join(' ');
-      setCancelStatus(order.id, text, notes.length > 0);
+      var text = [cancelStatusText(order)].concat(notes, errors).filter(Boolean).join(' ');
+      setCancelStatus(order.id, text, errors.length > 0);
+    });
+  }
+
+  // Affiliate store credit: when an order that used an affiliate's promo code
+  // is marked shipped, the code's affiliate earns 10% of the order subtotal
+  // after discounts (credits.js). Cancelling a credited order takes it back.
+  function affiliateCodeOf(order) {
+    return order.affiliateCode || order.promoCode || '';
+  }
+
+  function affiliateText(order) {
+    var code = affiliateCodeOf(order);
+    if (order.affiliateCreditedAt && order.affiliateReversedAt) {
+      return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + ', then reversed.';
+    }
+    if (order.affiliateCreditedAt) {
+      return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + '.';
+    }
+    if (order.affiliateSkipped) return 'Referral ' + code + ': ' + order.affiliateSkipped;
+    return '';
+  }
+
+  function setAffiliateText(order, extra, isError) {
+    var el = document.querySelector('[data-affiliate-for="' + order.id + '"]');
+    if (!el) return;
+    el.textContent = [affiliateText(order), extra].filter(Boolean).join(' ');
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+
+  function updateOrder(order, fields) {
+    Object.assign(order, fields);
+    return firebase.firestore().collection('orders').doc(order.id).update(fields);
+  }
+
+  function creditAffiliate(order) {
+    if (order.affiliateCreditedAt && !order.affiliateReversedAt) return Promise.resolve();
+    var code = affiliateCodeOf(order);
+    if (!code || !window.Credits || !window.Promos) return Promise.resolve();
+    return Promos.getCode(code).then(function (promo) {
+      var email = promo && promo.affiliateEmail ? promo.affiliateEmail.toLowerCase() : '';
+      if (!email) return;
+      if (email === String(order.userEmail || '').toLowerCase()) {
+        return updateOrder(order, { affiliateSkipped: 'no credit, the affiliate placed this order themselves.' })
+          .then(function () { setAffiliateText(order); });
+      }
+      var cents = Credits.commissionCents(order);
+      if (cents <= 0) return;
+      return Credits.adminAdjust(email, cents, {
+        type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: ''
+      }).then(function () {
+        return updateOrder(order, {
+          affiliateEmail: email,
+          affiliateCreditCents: cents,
+          affiliateCreditedAt: new Date().toISOString(),
+          affiliateReversedAt: null
+        });
+      }).then(function () {
+        setAffiliateText(order);
+      });
+    }).catch(function (err) {
+      setAffiliateText(order, 'Referral credit failed: ' + err.message, true);
+    });
+  }
+
+  function reverseAffiliateCredit(order) {
+    if (!order.affiliateCreditedAt || order.affiliateReversedAt || !order.affiliateEmail) return Promise.resolve('');
+    return Credits.adminAdjust(order.affiliateEmail, -order.affiliateCreditCents, {
+      type: 'reversed', orderId: order.id, orderNumber: order.orderNumber || '', code: affiliateCodeOf(order), note: ''
+    }).then(function () {
+      return updateOrder(order, { affiliateReversedAt: new Date().toISOString() });
+    }).then(function () {
+      setAffiliateText(order);
+      return 'Referral credit reversed.';
+    });
+  }
+
+  function refundBuyerCredit(order) {
+    if (!(order.creditUsedCents > 0) || order.creditRefundedAt || !order.userEmail) return Promise.resolve('');
+    return Credits.adminAdjust(order.userEmail, order.creditUsedCents, {
+      type: 'refunded', orderId: order.id, orderNumber: order.orderNumber || '', code: '', note: ''
+    }).then(function () {
+      return updateOrder(order, { creditRefundedAt: new Date().toISOString() });
+    }).then(function () {
+      return Credits.formatCents(order.creditUsedCents) + ' store credit returned to the buyer.';
     });
   }
 
@@ -326,7 +420,8 @@
             '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
           '</div>' +
         '</div>' +
-        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + '</p>' +
+        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
+        '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
         '<div class="tracking-row">' +
           '<label for="tracking-' + order.id + '">Tracking number</label>' +
@@ -353,6 +448,7 @@
           '<tr><td>Shipping</td><td>$' + (order.shipping || 0).toFixed(2) + '</td></tr>' +
           (order.discount > 0 ? '<tr><td>Discount</td><td>-$' + order.discount.toFixed(2) + '</td></tr>' : '') +
           '<tr><td>Tax</td><td>$' + (order.tax || 0).toFixed(2) + '</td></tr>' +
+          (order.creditUsed > 0 ? '<tr><td>Store credit</td><td>-$' + Number(order.creditUsed).toFixed(2) + '</td></tr>' : '') +
           '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + (order.total || 0).toFixed(2) + '</td></tr>' +
         '</table>';
 
@@ -420,7 +516,7 @@
         Account.updateOrderStatus(orderId, newStatus).then(function () {
           select.disabled = false;
           if (order) order.status = newStatus;
-          if (order && newStatus === 'shipped') sendShippedEmail(order);
+          if (order && newStatus === 'shipped') { sendShippedEmail(order); creditAffiliate(order); }
           if (order && newStatus === 'cancelled') {
             setCancelStatus(orderId, 'Cancelling\u2026');
             cancelOrder(order).catch(function (err) {
