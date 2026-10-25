@@ -43,7 +43,8 @@ var CasePricing = (function () {
   }
 
   function money(n) {
-    return '$' + (Math.round(n * 100) % 100 === 0 ? n.toFixed(0) : n.toFixed(2));
+    var cents = Math.round(n * 100) % 100 !== 0;
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: 2 });
   }
 
   function currentUnitPrice() {
@@ -75,6 +76,15 @@ var CasePricing = (function () {
       : '';
     ui.note.style.display = mode === 'case' ? '' : 'none';
     if (ui.qtyLabel) ui.qtyLabel.textContent = mode === 'case' ? 'Cases' : 'Quantity';
+    // Dosage dropdown: show each dose's case price while "Case of 10" is picked.
+    if (ui.doseOptions) {
+      ui.doseOptions.forEach(function (o) {
+        var unitForDose = window.DOSE_PRICES ? DOSE_PRICES[o.el.value] : null;
+        o.el.textContent = (mode === 'case' && unitForDose != null)
+          ? o.original.replace(/\$[\d,.]+/, money(casePrice(unitForDose)) + ' per case')
+          : o.original;
+      });
+    }
     if (ui.packCell) ui.packCell.textContent = mode === 'case'
       ? ui.packOriginal.replace(/^1 vial/i, 'Case of ' + CASE_SIZE + ' vials')
       : ui.packOriginal;
@@ -111,6 +121,12 @@ var CasePricing = (function () {
       note: wrap.querySelector('[data-role="note"]'),
       qtyLabel: document.querySelector('label[for="qty-input"]')
     };
+    var doseSel = document.getElementById('dose-select');
+    if (doseSel) {
+      ui.doseOptions = Array.prototype.map.call(doseSel.options, function (el) {
+        return { el: el, original: el.textContent };
+      });
+    }
     // The spec table's "Pack size" row follows the selection too.
     Array.prototype.forEach.call(anchor.querySelectorAll('tr'), function (tr) {
       if (tr.cells.length === 2 && /pack size/i.test(tr.cells[0].textContent)) {
