@@ -314,18 +314,20 @@
 
   function computeAndDisplayTotals() {
     var shipping = parseFloat(document.getElementById('shipping-select').value) || 0;
-    // Promo codes discount everything except BOGO products, which already get
-    // buy-one-get-one. The code still goes on the order, so affiliates are credited.
+    // Promo codes don't stack with buy-one-get-one: vials that form BOGO pairs
+    // aren't discounted, but a leftover single vial (e.g. buying just one) is.
+    // The code always goes on the order, so affiliates are credited.
     var promoBase = currentCartItems.reduce(function (n, item) {
-      return isBogoLine(item) ? n : n + item.price * item.qty;
+      var units = isBogoLine(item) ? item.qty % 2 : item.qty;
+      return n + item.price * units;
     }, 0);
     var discountAmount = Math.round(promoBase * (appliedDiscountPercent / 100) * 100) / 100;
     var promoNote = document.getElementById('promo-bogo-note');
     if (promoNote) {
       var skipped = appliedPromoCode && promoBase < currentSubtotal;
       promoNote.textContent = skipped
-        ? (promoBase > 0 ? 'Promo codes don\u2019t discount BOGO items, so ' + appliedPromoCode + ' applies to the rest of your order.'
-                         : 'Promo codes don\u2019t discount BOGO items, so ' + appliedPromoCode + ' gives no extra discount on this order. It\u2019s still applied to your order.')
+        ? (promoBase > 0 ? 'Promo codes don\u2019t stack with buy-one-get-one, so ' + appliedPromoCode + ' applies to the rest of your order.'
+                         : 'Promo codes don\u2019t stack with buy-one-get-one, so ' + appliedPromoCode + ' gives no extra discount on this order. It\u2019s still applied to your order.')
         : '';
       promoNote.style.display = skipped ? 'block' : 'none';
     }
