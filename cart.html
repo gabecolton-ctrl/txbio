@@ -60,10 +60,10 @@
 <main id="gated-content" style="display:none;">
   <div id="bac-water-modal" style="display:none; position:fixed; inset:0; z-index:500; background:rgba(7,12,10,0.7); align-items:center; justify-content:center; padding:20px;">
     <div style="background:#fff; border-radius:8px; max-width:420px; width:100%; padding:28px; text-align:center;">
-      <h3 style="margin-bottom:12px;">Need Bacteriostatic Water?</h3>
-      <p style="color:var(--text-light); font-size:0.92rem; margin-bottom:20px;">Your cart includes lyophilized powder products, which require bacteriostatic water for reconstitution. Would you like to add some to your order?</p>
-      <button type="button" id="bac-water-add-btn" class="btn" style="width:100%; margin-bottom:10px;">Add Bacteriostatic Water</button>
-      <button type="button" id="bac-water-dismiss-btn" class="btn-outline-light" style="width:100%; text-align:center;">No Thanks</button>
+      <h3 id="bac-water-title" style="margin-bottom:12px;">Need bacteriostatic water?</h3>
+      <p id="bac-water-text" style="color:var(--text-light); font-size:0.92rem; margin-bottom:20px;">Your cart includes lyophilized powder products, which require bacteriostatic water for reconstitution. Would you like to add some to your order?</p>
+      <button type="button" id="bac-water-add-btn" class="btn" style="width:100%; margin-bottom:10px;">Add bacteriostatic water</button>
+      <button type="button" id="bac-water-dismiss-btn" class="btn-outline-light" style="width:100%; text-align:center;">No thanks</button>
     </div>
   </div>
 
@@ -142,6 +142,26 @@
 <script src="js/nav-toggle.js"></script>
 <script>
   var bacWaterPromptShown = false;
+  // When the cart holds a case of a powder product, the prompt offers a case
+  // of 10ml bac water (10 vials, full price) instead of a single vial.
+  var BAC_WATER_VIAL = { slug: 'bac-water-10ml', name: 'Bacteriostatic Water', packSize: '1 vial x 10ml', price: 20 };
+  var BAC_WATER_CASE = { slug: 'bac-water-10ml-case', name: 'Bacteriostatic Water', packSize: 'Case of 10 vials x 10ml', price: 200, caseOf: 10, unitSlug: 'bac-water-10ml' };
+  var bacWaterOffer = BAC_WATER_VIAL;
+
+  function cartHasPowderCase(items) {
+    return items.some(function (item) { return item.caseOf && cartHasPowderProduct([item]); });
+  }
+
+  function setBacWaterOffer(items) {
+    var asCase = cartHasPowderCase(items);
+    bacWaterOffer = asCase ? BAC_WATER_CASE : BAC_WATER_VIAL;
+    document.getElementById('bac-water-text').textContent = asCase
+      ? 'Your cart includes a case of lyophilized powder, which needs bacteriostatic water for reconstitution. Add a case of 10 bacteriostatic water vials (10ml each) for $200?'
+      : 'Your cart includes lyophilized powder products, which require bacteriostatic water for reconstitution. Would you like to add a 10ml vial for $20?';
+    document.getElementById('bac-water-add-btn').textContent = asCase
+      ? 'Add a case of bacteriostatic water'
+      : 'Add bacteriostatic water';
+  }
 
   function renderCart() {
     var loading = document.getElementById('cart-loading');
@@ -193,6 +213,7 @@
       // powder products and doesn't already include bac water.
       if (!bacWaterPromptShown && cartHasPowderProduct(items) && !cartHasBacWater(items)) {
         bacWaterPromptShown = true;
+        setBacWaterOffer(items);
         document.getElementById('bac-water-modal').style.display = 'flex';
       }
     });
@@ -206,18 +227,12 @@
     var btn = document.getElementById('bac-water-add-btn');
     btn.disabled = true;
     btn.textContent = 'Adding...';
-    var bacWaterProduct = {
-      slug: 'bac-water-10ml',
-      name: 'Bacteriostatic Water',
-      packSize: '1 vial x 10ml',
-      price: 20
-    };
-    Cart.addItem(bacWaterProduct, 1).then(function () {
+    Cart.addItem(bacWaterOffer, 1).then(function () {
       document.getElementById('bac-water-modal').style.display = 'none';
       renderCart();
     }).catch(function (err) {
       btn.disabled = false;
-      btn.textContent = 'Add Bacteriostatic Water';
+      btn.textContent = bacWaterOffer.caseOf ? 'Add a case of bacteriostatic water' : 'Add bacteriostatic water';
       alert('Could not add: ' + (err.message || err));
     });
   });
