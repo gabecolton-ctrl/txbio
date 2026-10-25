@@ -85,9 +85,7 @@ function bogoDiscount(lines, eligibleSlugs) {
   const breakdown = [];
   let total = 0;
   for (const line of lines) {
-    if (line.caseOf) continue;
-    const ok = eligibleSlugs.some((base) => line.slug === base || line.slug.indexOf(base + '-') === 0);
-    if (!ok) continue;
+    if (!isBogoLine(line, eligibleSlugs)) continue;
     const freeUnits = Math.floor(line.qty / 2);
     if (freeUnits <= 0) continue;
     const amount = freeUnits * line.price;
@@ -108,10 +106,19 @@ function checkPromo(promo, code, isFirstOrder) {
   return { valid: true, code, discountPercent: pct, affiliateEmail: promo.affiliateEmail || '' };
 }
 
+// A single-vial line of a product with BOGO on (cases never get BOGO).
+function isBogoLine(line, eligibleSlugs) {
+  if (line.caseOf) return false;
+  return (eligibleSlugs || []).some((base) => line.slug === base || line.slug.indexOf(base + '-') === 0);
+}
+
 // Totals, rounded exactly like checkout.html's computeAndDisplayTotals().
-function computeTotals({ lines, discountPercent, bogo, shippingPrice, taxRate, creditBalanceCents, useCredit }) {
+// Promo codes discount everything except BOGO lines; the code is still
+// recorded on the order so affiliates are credited.
+function computeTotals({ lines, discountPercent, bogo, bogoSlugs, shippingPrice, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
-  const discount = round2(subtotal * ((discountPercent || 0) / 100));
+  const promoBase = lines.reduce((n, l) => (isBogoLine(l, bogoSlugs) ? n : n + l.price * l.qty), 0);
+  const discount = round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   const tax = round2(discountedSubtotal * taxRate);
   const totalBeforeCredit = discountedSubtotal + shippingPrice + tax;
@@ -147,5 +154,5 @@ function cleanAddress(a) {
 }
 
 module.exports = {
-  PricingError, round2, resolveLine, priceCart, bogoDiscount, checkPromo, computeTotals, stockNeeds, cleanText, cleanAddress, MAX_QTY_PER_LINE
+  PricingError, round2, isBogoLine, resolveLine, priceCart, bogoDiscount, checkPromo, computeTotals, stockNeeds, cleanText, cleanAddress, MAX_QTY_PER_LINE
 };

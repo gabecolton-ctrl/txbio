@@ -148,6 +148,21 @@ test('BOGO: pairs of eligible vials; never on cases', async () => {
   assert.strictEqual(order.bogoBreakdown.length, 1);
 });
 
+test('promo codes skip BOGO items but stay on the order for affiliates', async () => {
+  const promo = { 'promoCodes/BOOP12': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'aff@example.com', timesUsed: 0, totalDiscounted: 0 }, 'bogoProducts/semaglutide': { active: true } };
+  // Only BOGO items: no promo discount, code still recorded.
+  let r = await run(Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }]), promo), { promoCode: 'BOOP12' });
+  assert.deepStrictEqual([r.order.bogoDiscount, r.order.discount, r.order.promoCode, r.order.affiliateCode], [109, 0, 'BOOP12', 'BOOP12']);
+  assert.strictEqual(r.db.store.get('promoCodes/BOOP12').timesUsed, 1);
+  // Single BOGO vial (no free unit yet) also isn't discounted.
+  r = await run(Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), promo), { promoCode: 'BOOP12' });
+  assert.strictEqual(r.order.discount, 0);
+  // Mixed: promo applies to the non-BOGO item and to a case of the BOGO product.
+  r = await run(Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }, { slug: 'cagrilintide', qty: 1 }, { slug: 'semaglutide-5mg-case', qty: 1 }]), promo), { promoCode: 'BOOP12' });
+  assert.strictEqual(r.order.discount, P.round2((121 + 69 * 7) * 0.10));
+  assert.strictEqual(r.order.bogoDiscount, 109);
+});
+
 test('promo rules: unknown, inactive, first-order only', async () => {
   const base = cart([{ slug: 'cagrilintide', qty: 1 }]);
   await rejects(run(base, { promoCode: 'NOPE' }), 'failed-precondition', 'does not exist');

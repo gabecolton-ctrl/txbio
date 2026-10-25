@@ -72,6 +72,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       lines,
       discountPercent: promo ? promo.discountPercent : 0,
       bogo: bogo.discountAmount,
+      bogoSlugs,
       shippingPrice: shippingOpt.price,
       taxRate: catalog.taxRate,
       creditBalanceCents: credit ? (credit.balanceCents || 0) : 0,
