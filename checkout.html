@@ -237,6 +237,7 @@
 <script src="js/inventory.js"></script>
 <script src="js/promos.js"></script>
 <script src="js/bogo.js"></script>
+<script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
@@ -499,6 +500,15 @@
 
   function sendCustomerConfirmationEmail(order) {
     if (!currentUserEmail) return Promise.resolve();
+
+    // Send from orders@txbioresearch.com through EmailJS once it's set up
+    // (js/order-emails.js). The FormSubmit fallback below only reaches buyers
+    // who have activated FormSubmit, so most never see it.
+    if (window.OrderEmails && OrderEmails.isConfigured()) {
+      return OrderEmails.sendConfirmation(order, currentUserEmail).catch(function (err) {
+        console.error('Order confirmation email failed to send:', err);
+      });
+    }
 
     var addr = order.shippingAddress || {};
     var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
