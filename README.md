@@ -3,7 +3,8 @@
 Static site for txbioresearch.com, served by GitHub Pages from the `main`
 branch (root folder). Sign-in, carts, orders, stock, promo codes and BOGO run
 on Firebase (Auth + Firestore). Order and contact emails go through
-FormSubmit to txbioresearch@gmail.com.
+FormSubmit: new-order notifications to orders@txbioresearch.com,
+contact form messages to info@txbioresearch.com.
 
 Merging to `main` publishes the site; changes appear within a few minutes.
 
