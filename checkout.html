@@ -121,6 +121,7 @@
           <button type="button" id="promo-apply-btn" class="btn-outline-light" style="white-space:nowrap; padding:10px 16px;">Apply</button>
         </div>
         <p id="promo-message" style="font-size:0.85rem; margin-top:6px; margin-bottom:14px; display:none;"></p>
+        <p id="promo-bogo-note" style="font-size:0.85rem; color:var(--text-light); margin:-8px 0 14px; display:none;"></p>
 
         <div id="credit-box" class="checkbox-row" style="display:none; margin-top:4px;">
           <input type="checkbox" id="use-credit">
@@ -301,10 +302,33 @@
   var appliedDiscountAmount = 0;
   var appliedBogoDiscount = 0;
   var bogoBreakdown = [];
+  var bogoEligibleSlugs = []; // products with BOGO on; promo codes don't discount them
+
+  // A single-vial line of a BOGO product (same match as js/bogo.js; cases never get BOGO).
+  function isBogoLine(item) {
+    if (item.caseOf || /-case$/.test(item.slug || '')) return false;
+    return bogoEligibleSlugs.some(function (base) {
+      return item.slug === base || item.slug.indexOf(base + '-') === 0;
+    });
+  }
 
   function computeAndDisplayTotals() {
     var shipping = parseFloat(document.getElementById('shipping-select').value) || 0;
-    var discountAmount = Math.round(currentSubtotal * (appliedDiscountPercent / 100) * 100) / 100;
+    // Promo codes discount everything except BOGO products, which already get
+    // buy-one-get-one. The code still goes on the order, so affiliates are credited.
+    var promoBase = currentCartItems.reduce(function (n, item) {
+      return isBogoLine(item) ? n : n + item.price * item.qty;
+    }, 0);
+    var discountAmount = Math.round(promoBase * (appliedDiscountPercent / 100) * 100) / 100;
+    var promoNote = document.getElementById('promo-bogo-note');
+    if (promoNote) {
+      var skipped = appliedPromoCode && promoBase < currentSubtotal;
+      promoNote.textContent = skipped
+        ? (promoBase > 0 ? 'Promo codes don\u2019t discount BOGO items, so ' + appliedPromoCode + ' applies to the rest of your order.'
+                         : 'Promo codes don\u2019t discount BOGO items, so ' + appliedPromoCode + ' gives no extra discount on this order. It\u2019s still applied to your order.')
+        : '';
+      promoNote.style.display = skipped ? 'block' : 'none';
+    }
     appliedDiscountAmount = discountAmount;
     var discountedSubtotal = currentSubtotal - discountAmount - appliedBogoDiscount;
     var tax = Math.round(discountedSubtotal * TAX_RATE * 100) / 100;
@@ -371,6 +395,7 @@
 
   function applyBogoDiscount(items) {
     return Bogo.getEligibleSlugs().then(function (eligibleSlugs) {
+      bogoEligibleSlugs = eligibleSlugs;
       var result = Bogo.calculateDiscount(items, eligibleSlugs);
       appliedBogoDiscount = result.discountAmount;
       bogoBreakdown = result.breakdown;
@@ -381,6 +406,7 @@
       console.error('Could not load BOGO eligibility:', err);
       appliedBogoDiscount = 0;
       bogoBreakdown = [];
+      bogoEligibleSlugs = [];
     });
   }
 
