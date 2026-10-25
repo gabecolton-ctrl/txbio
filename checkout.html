@@ -336,7 +336,9 @@
   }
 
   function computeAndDisplayTotals() {
-    var shipping = parseFloat(document.getElementById('shipping-select').value) || 0;
+    var shipSel = document.getElementById('shipping-select');
+    var shipOpt = shipSel.options[shipSel.selectedIndex];
+    var shipping = parseFloat(shipOpt && shipOpt.getAttribute('data-price') || shipSel.value) || 0;
     // Promo codes don't stack with buy-one-get-one: vials that form BOGO pairs
     // aren't discounted, but a leftover single vial (e.g. buying just one) is.
     // The code always goes on the order, so affiliates are credited.
@@ -469,13 +471,7 @@
       btn.textContent = 'Apply';
       msg.style.display = 'block';
       if (result.atCost) {
-        atCost = result.atCost;
-        appliedPromoCode = atCost.code;
-        appliedDiscountPercent = 0;
-        msg.style.color = 'var(--mint-dark)';
-        msg.textContent = atCost.code + ' applied: at-cost pricing.';
-        input.disabled = true;
-        btn.style.display = 'none';
+        applyAtCost(result.atCost, false);
       } else if (result.valid) {
         appliedPromoCode = result.code;
         appliedDiscountPercent = result.discountPercent;
@@ -499,6 +495,44 @@
     });
   });
 
+  // Turns on at-cost pricing and the family's single shipping option.
+  function applyAtCost(ac, automatic) {
+    atCost = ac;
+    appliedPromoCode = ac.code;
+    appliedDiscountPercent = 0;
+    var input = document.getElementById('promo-code-input');
+    var btn = document.getElementById('promo-apply-btn');
+    var msg = document.getElementById('promo-message');
+    input.value = ac.code;
+    input.disabled = true;
+    btn.style.display = 'none';
+    msg.style.display = 'block';
+    msg.style.color = 'var(--mint-dark)';
+    msg.textContent = automatic ? 'Family pricing applied (' + ac.code + ').' : ac.code + ' applied: at-cost pricing.';
+    var sel = document.getElementById('shipping-select');
+    sel.innerHTML = '';
+    var opt = document.createElement('option');
+    opt.value = ac.shipping.value;
+    opt.setAttribute('data-price', ac.shipping.price);
+    opt.textContent = ac.shipping.label;
+    sel.appendChild(opt);
+    sel.value = ac.shipping.value;
+    computeAndDisplayTotals();
+  }
+
+  // Family accounts (listed on an at-cost code) get it automatically.
+  function loadFamilyPricing() {
+    if (!currentUserEmail || !window.AtCost) return;
+    firebase.firestore().collection('atCostMembers').doc(currentUserEmail.toLowerCase()).get().then(function (doc) {
+      var codes = doc.exists ? (doc.data().codes || []) : [];
+      return codes.reduce(function (p, code) {
+        return p.then(function (found) { return found || tryAtCostCode(code); });
+      }, Promise.resolve(null));
+    }).then(function (found) {
+      if (found && !atCost) applyAtCost(found.atCost, true);
+    }).catch(function () { /* not family, or rules not published yet */ });
+  }
+
   // An at-cost code only reads for the emails it lists (firestore.rules), so
   // for anyone else this quietly falls through to regular promo codes.
   function tryAtCostCode(rawCode) {
@@ -511,7 +545,7 @@
       return db.collection('costs').get().then(function (snap) {
         var costs = {};
         snap.forEach(function (d) { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
-        return { atCost: { code: code, markupPerVial: check.markupPerVial, costs: costs } };
+        return { atCost: { code: code, markupPerVial: check.markupPerVial, shipping: check.shipping, costs: costs } };
       });
     }).catch(function () { return null; });
   }
@@ -570,6 +604,7 @@
     currentUserEmail = e.detail.user.email || '';
   });
   document.addEventListener('userReady', renderSummary);
+  document.addEventListener('userReady', function () { setTimeout(loadFamilyPricing, 0); });
   document.addEventListener('userReady', loadShippingAddress);
   document.getElementById('shipping-select').addEventListener('change', computeAndDisplayTotals);
 

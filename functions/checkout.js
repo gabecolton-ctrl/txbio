@@ -20,8 +20,9 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   const userEmail = String(email || '').toLowerCase();
   const nowIso = (now || new Date()).toISOString();
 
-  const shippingOpt = catalog.shipping[String(data.shippingValue)];
-  if (!shippingOpt) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
+  const familyShipping = String(data.shippingValue) === AtCost.FAMILY_SHIPPING_VALUE;
+  let shippingOpt = familyShipping ? null : catalog.shipping[String(data.shippingValue)];
+  if (!shippingOpt && !familyShipping) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
   const paymentMethod = PAYMENT_METHODS.indexOf(data.paymentMethod) !== -1 ? data.paymentMethod : null;
   if (!paymentMethod) throw new HttpsError('invalid-argument', 'Please choose a payment method.');
   const address = P.cleanAddress(data.shippingAddress);
@@ -58,8 +59,11 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       const costs = {};
       costSnap.docs.forEach((d) => { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
       atCost = { code: promoCode, markupPerVial: check.markupPerVial, result: AtCost.priceLines(lines, costs, check.markupPerVial) };
+      shippingOpt = { price: check.shipping.price, label: check.shipping.label };
     }
   }
+  // The family shipping option exists only with a valid family code.
+  if (!shippingOpt) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
 
   let promo = null;
   if (promoCode && !atCost) {
