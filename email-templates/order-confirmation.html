@@ -1,0 +1,42 @@
+<!--
+  EmailJS template: "Order confirmation"
+  Subject:     Order #{{order_number}} received, TXBioResearch
+  To Email:    {{to_email}}
+  From Name:   TXBioResearch
+  Reply To:    orders@txbioresearch.com
+  Paste everything below this comment into the template's HTML editor.
+-->
+<div style="font-family:Arial,Helvetica,sans-serif;background:#f3f6f5;padding:24px 12px;color:#14201e;">
+  <div style="max-width:560px;margin:0 auto;background:#ffffff;border:1px solid #dfe7e5;border-radius:10px;overflow:hidden;">
+    <div style="background:#0f1b1d;padding:20px 28px;">
+      <div style="font-family:Georgia,serif;font-size:20px;color:#e6efed;">Texas Advanced BioResearch</div>
+    </div>
+    <div style="padding:28px;">
+      <h1 style="font-family:Georgia,serif;font-weight:normal;font-size:24px;margin:0 0 8px;">We received your order</h1>
+      <p style="margin:0 0 20px;color:#4b5d5a;">Order #{{order_number}}</p>
+
+      <p style="margin:0 0 6px;font-weight:bold;">Items</p>
+      <p style="margin:0 0 20px;white-space:pre-line;line-height:1.6;">{{items}}</p>
+
+      <table style="width:100%;border-collapse:collapse;font-size:14px;margin-bottom:20px;">
+        <tr><td style="padding:6px 0;color:#4b5d5a;">Subtotal</td><td style="padding:6px 0;text-align:right;">{{subtotal}}</td></tr>
+        <tr><td style="padding:6px 0;color:#4b5d5a;">Shipping ({{shipping_option}})</td><td style="padding:6px 0;text-align:right;">{{shipping}}</td></tr>
+        <tr><td style="padding:6px 0;color:#4b5d5a;vertical-align:top;">Discounts</td><td style="padding:6px 0;text-align:right;white-space:pre-line;">{{discounts}}</td></tr>
+        <tr><td style="padding:6px 0;color:#4b5d5a;">Tax</td><td style="padding:6px 0;text-align:right;">{{tax}}</td></tr>
+        <tr><td style="padding:10px 0 0;border-top:1px solid #dfe7e5;font-weight:bold;">Total</td><td style="padding:10px 0 0;border-top:1px solid #dfe7e5;text-align:right;font-weight:bold;">{{total}}</td></tr>
+      </table>
+
+      <p style="margin:0 0 6px;font-weight:bold;">Ships to</p>
+      <p style="margin:0 0 20px;">{{shipping_address}}</p>
+
+      <p style="margin:0 0 6px;font-weight:bold;">Next steps</p>
+      <p style="margin:0 0 20px;">{{next_steps}}</p>
+
+      <p style="margin:0;color:#4b5d5a;font-size:14px;">Questions? Reply to this email.</p>
+    </div>
+    <div style="padding:16px 28px;background:#f3f6f5;font-size:12px;color:#6c817e;line-height:1.5;">
+      All products are sold for laboratory research use only and are not for human or animal consumption.<br>
+      TXBioResearch &middot; Dallas, TX
+    </div>
+  </div>
+</div>
