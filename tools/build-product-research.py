@@ -51,12 +51,18 @@ def areas_html(areas):
     return '<h3>Research areas</h3><ul class="research-areas">' + ''.join(f'<li>{e(a)}</li>' for a in areas) + '</ul>'
 
 
+def names(comps):
+    n = [c['name'] for c in comps]
+    return n[0] if len(n) == 1 else ', '.join(n[:-1]) + (',' if len(n) > 2 else '') + ' and ' + n[-1]
+
+
 def build(slug, name):
     p = D.P[slug]
     spec_rows, body, src, short = [], [], [], ''
     note = p.get('note', '')
 
     if p.get('blend_unknown'):
+        spec_rows += rows({'aka': p.get('aka')})
         short = f'{name} is a multi-compound research blend.'
         body.append(f'<p>{e(name)} is a multi-compound blend supplied for laboratory research. '
                     'The compounds it contains and the amount of each are listed on the vial label.</p>')
@@ -79,8 +85,8 @@ def build(slug, name):
         else:
             if p.get('blend'):
                 spec_rows.append(f'<tr{GEN_ROW}><td>Contents</td><td>{e(p["blend"])}</td></tr>')
-                short = f'{name} is a research blend of ' + ' and '.join(c['name'] for c in comps) + '.'
-                body.append(f'<p>This vial combines {" and ".join(e(c["name"]) for c in comps)} ({e(p["blend"])}).</p>')
+                short = f'{name} is a research blend of ' + names(comps) + '.'
+                body.append(f'<p>This vial combines {e(names(comps))} ({e(p["blend"])}).</p>')
             else:
                 short = comps[0]['overview'].split('. ')[0] + '.'
             for c in comps:

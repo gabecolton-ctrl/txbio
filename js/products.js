@@ -259,7 +259,7 @@ var PRODUCTS = [
     packSize: "1 vial x 70mg",
     price: 95,
     category: "Research Compound",
-    description: "GLOW blend is a multi-compound research blend.",
+    description: "GLOW blend is a research blend of GHK-Cu, BPC-157, and TB-500.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -336,7 +336,7 @@ var PRODUCTS = [
     packSize: "1 vial x 80mg",
     price: 139,
     category: "Research Compound",
-    description: "KLOW blend is a multi-compound research blend.",
+    description: "KLOW blend is a research blend of GHK-Cu, BPC-157, TB-500, and KPV.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
