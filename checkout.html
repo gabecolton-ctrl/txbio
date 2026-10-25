@@ -244,7 +244,9 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
 <script src="js/firebase-config.js"></script>
+<script src="js/site-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/account.js"></script>
 <script src="js/inventory.js"></script>
@@ -638,6 +640,54 @@
     });
   }
 
+  // Confirmation screen after an order is placed (either checkout path).
+  function showOrderPlaced(orderData, paymentMethod) {
+    document.getElementById('summary-content').style.display = 'none';
+    var badge = document.getElementById('floating-cart-badge');
+    if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
+
+    var backorderedItems = orderData.items.filter(function (i) { return i.backordered > 0; });
+    var backorderText = '';
+    if (backorderedItems.length > 0) {
+      var lines = backorderedItems.map(function (i) {
+        var unitWord = i.caseOf ? ' vials' : '';
+        return i.name + ' (' + i.packSize + '): ' + i.fulfilled + unitWord + ' available now, ' + i.backordered + unitWord + ' on backorder';
+      });
+      backorderText = '<strong>Partial Backorder Notice:</strong><p>' + lines.join('</p><p>') + '</p><p>We will ship available items first and follow up on backordered quantities separately.</p>';
+    }
+
+    document.getElementById('btc-order-number').textContent = 'Order #' + orderData.orderNumber;
+    document.getElementById('bank-order-number').textContent = 'Order #' + orderData.orderNumber;
+    document.getElementById('inquiry-order-number').textContent = 'Order #' + orderData.orderNumber;
+
+    if (paymentMethod === 'bitcoin') {
+      var btcAddress = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
+      document.getElementById('btc-amount-display').textContent = 'Order Total: $' + Number(orderData.total).toFixed(2) + ' USD (send equivalent in BTC)';
+      document.getElementById('btc-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:' + btcAddress;
+      if (backorderText) {
+        var btcNotice = document.getElementById('btc-backorder-notice');
+        btcNotice.innerHTML = backorderText;
+        btcNotice.style.display = 'block';
+      }
+      document.getElementById('btc-instructions').style.display = 'block';
+    } else if (paymentMethod === 'bank') {
+      if (backorderText) {
+        var bankNotice = document.getElementById('bank-backorder-notice');
+        bankNotice.innerHTML = backorderText;
+        bankNotice.style.display = 'block';
+      }
+      document.getElementById('bank-instructions').style.display = 'block';
+      loadBankDetails();
+    } else {
+      if (backorderText) {
+        var inquiryNotice = document.getElementById('inquiry-backorder-notice');
+        inquiryNotice.innerHTML = backorderText;
+        inquiryNotice.style.display = 'block';
+      }
+      document.getElementById('order-success').style.display = 'block';
+    }
+  }
+
   document.getElementById('order-form').addEventListener('submit', function (e) {
     e.preventDefault();
     var submitBtn = e.target.querySelector('button[type="submit"]');
@@ -654,6 +704,30 @@
 
     submitBtn.disabled = true;
     submitBtn.textContent = 'Submitting...';
+
+    // Server checkout (functions/index.js placeOrder): the server works out
+    // prices, discounts, stock, and credit itself. Turned on in js/site-config.js.
+    if (window.USE_SERVER_CHECKOUT) {
+      var useCreditBox = document.getElementById('use-credit');
+      firebase.functions().httpsCallable('placeOrder')({
+        shippingValue: shippingOption.value,
+        paymentMethod: paymentMethod,
+        promoCode: appliedPromoCode || '',
+        useCredit: !!(creditAccount && useCreditBox && useCreditBox.checked),
+        shippingAddress: checkoutAddress,
+        notes: notes
+      }).then(function (result) {
+        var orderData = result.data;
+        sendOrderNotificationEmail(orderData);
+        sendCustomerConfirmationEmail(orderData);
+        showOrderPlaced(orderData, paymentMethod);
+      }).catch(function (err) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Submit Order Inquiry';
+        alert('Could not submit order: ' + (err && err.message ? err.message : err));
+      });
+      return;
+    }
 
     var totals = computeAndDisplayTotals();
 
@@ -717,50 +791,7 @@
       }
       return Cart.clearCart().then(function () { return orderData; });
     }).then(function (orderData) {
-      document.getElementById('summary-content').style.display = 'none';
-      var badge = document.getElementById('floating-cart-badge');
-      if (badge) { badge.textContent = '0'; badge.style.display = 'none'; }
-
-      var backorderedItems = orderData.items.filter(function (i) { return i.backordered > 0; });
-      var backorderText = '';
-      if (backorderedItems.length > 0) {
-        var lines = backorderedItems.map(function (i) {
-          var unitWord = i.caseOf ? ' vials' : '';
-          return i.name + ' (' + i.packSize + '): ' + i.fulfilled + unitWord + ' available now, ' + i.backordered + unitWord + ' on backorder';
-        });
-        backorderText = '<strong>Partial Backorder Notice:</strong><p>' + lines.join('</p><p>') + '</p><p>We will ship available items first and follow up on backordered quantities separately.</p>';
-      }
-
-      document.getElementById('btc-order-number').textContent = 'Order #' + orderData.orderNumber;
-      document.getElementById('bank-order-number').textContent = 'Order #' + orderData.orderNumber;
-      document.getElementById('inquiry-order-number').textContent = 'Order #' + orderData.orderNumber;
-
-      if (paymentMethod === 'bitcoin') {
-        var btcAddress = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
-        document.getElementById('btc-amount-display').textContent = 'Order Total: $' + totals.total.toFixed(2) + ' USD (send equivalent in BTC)';
-        document.getElementById('btc-qr').src = 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=bitcoin:' + btcAddress;
-        if (backorderText) {
-          var btcNotice = document.getElementById('btc-backorder-notice');
-          btcNotice.innerHTML = backorderText;
-          btcNotice.style.display = 'block';
-        }
-        document.getElementById('btc-instructions').style.display = 'block';
-      } else if (paymentMethod === 'bank') {
-        if (backorderText) {
-          var bankNotice = document.getElementById('bank-backorder-notice');
-          bankNotice.innerHTML = backorderText;
-          bankNotice.style.display = 'block';
-        }
-        document.getElementById('bank-instructions').style.display = 'block';
-        loadBankDetails();
-      } else {
-        if (backorderText) {
-          var inquiryNotice = document.getElementById('inquiry-backorder-notice');
-          inquiryNotice.innerHTML = backorderText;
-          inquiryNotice.style.display = 'block';
-        }
-        document.getElementById('order-success').style.display = 'block';
-      }
+      showOrderPlaced(orderData, paymentMethod);
     }).catch(function (err) {
       submitBtn.disabled = false;
       submitBtn.textContent = 'Submit Order Inquiry';

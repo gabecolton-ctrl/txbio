@@ -1,0 +1,13 @@
+{
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": ["node_modules", "test", ".git", "*.log"],
+      "predeploy": ["node tools/build-catalog.js"]
+    }
+  ],
+  "firestore": {
+    "rules": "firestore.rules"
+  }
+}

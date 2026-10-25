@@ -1,0 +1,89 @@
+#!/usr/bin/env node
+// build-catalog.js — builds functions/catalog.json, the price list the server
+// checkout trusts, from the same files the website shows prices from:
+//   js/products.js           name, pack size, single-vial price
+//   products/<slug>.html     DOSE_PRICES for products with a dosage dropdown
+//   js/case-pricing.js       case size, free vials, single-vial-only products
+//
+// Run it after changing any price, then redeploy the function:
+//   node tools/build-catalog.js
+// The deploy steps in functions/README.md run it for you.
+
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+
+const root = path.resolve(__dirname, '..');
+const read = (p) => fs.readFileSync(path.join(root, p), 'utf8');
+
+// js/products.js defines `var PRODUCTS = [...]`.
+const sandbox = {};
+vm.runInNewContext(read('js/products.js') + '\nthis.PRODUCTS = PRODUCTS;', sandbox);
+const PRODUCTS = sandbox.PRODUCTS;
+
+// Case settings from js/case-pricing.js.
+const caseJs = read('js/case-pricing.js');
+const num = (re, label) => {
+  const m = caseJs.match(re);
+  if (!m) throw new Error('Could not find ' + label + ' in js/case-pricing.js');
+  return Number(m[1]);
+};
+const CASE_SIZE = num(/var CASE_SIZE = (\d+);/, 'CASE_SIZE');
+const FREE_VIALS = num(/var FREE_VIALS = (\d+);/, 'FREE_VIALS');
+const excludedBlock = caseJs.match(/var NOT_CASE_ELIGIBLE = \[([\s\S]*?)\];/);
+if (!excludedBlock) throw new Error('Could not find NOT_CASE_ELIGIBLE in js/case-pricing.js');
+const NOT_CASE_ELIGIBLE = [...excludedBlock[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
+
+const products = {};
+for (const p of PRODUCTS) {
+  const entry = {
+    name: p.name,
+    packSize: p.packSize,
+    price: p.price,
+    caseEligible: NOT_CASE_ELIGIBLE.indexOf(p.slug) === -1,
+    doses: null
+  };
+  const pagePath = path.join('products', p.slug + '.html');
+  if (fs.existsSync(path.join(root, pagePath))) {
+    const page = read(pagePath);
+    const dp = page.match(/var DOSE_PRICES = (\{[^}]*\});/);
+    if (dp) {
+      const unit = page.match(/slug: '([^']+)-' \+ dose \+ '(\w+)'/);
+      if (!unit || unit[1] !== p.slug) throw new Error('Unexpected dose slug pattern on ' + pagePath);
+      const prices = JSON.parse(dp[1]);
+      entry.doses = {};
+      for (const [dose, price] of Object.entries(prices)) {
+        const label = dose + unit[2];
+        entry.doses[p.slug + '-' + label] = { label, price, packSize: '1 vial x ' + label };
+      }
+    }
+  }
+  products[p.slug] = entry;
+}
+
+// Shipping options and tax rate from checkout.html.
+const checkout = read('checkout.html');
+const shipSelect = checkout.match(/<select id="shipping-select">([\s\S]*?)<\/select>/);
+if (!shipSelect) throw new Error('Could not find the shipping options in checkout.html');
+const shipping = {};
+for (const m of shipSelect[1].matchAll(/<option value="([\d.]+)">([^<]+)<\/option>/g)) {
+  shipping[m[1]] = { price: Number(m[1]), label: m[2].trim() };
+}
+if (!Object.keys(shipping).length) throw new Error('No shipping options found in checkout.html');
+const taxMatch = checkout.match(/var TAX_RATE = ([\d.]+);/);
+if (!taxMatch) throw new Error('Could not find TAX_RATE in checkout.html');
+
+const catalog = {
+  generatedAt: new Date().toISOString(),
+  taxRate: Number(taxMatch[1]),
+  shipping,
+  caseSize: CASE_SIZE,
+  freeVials: FREE_VIALS,
+  products
+};
+
+const out = path.join(root, 'functions', 'catalog.json');
+fs.mkdirSync(path.dirname(out), { recursive: true });
+fs.writeFileSync(out, JSON.stringify(catalog, null, 2) + '\n');
+const doseCount = Object.values(products).reduce((n, p) => n + (p.doses ? Object.keys(p.doses).length : 0), 0);
+console.log('Wrote functions/catalog.json: ' + Object.keys(products).length + ' products, ' + doseCount + ' dose options.');

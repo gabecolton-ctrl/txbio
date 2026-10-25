@@ -1,0 +1,82 @@
+rules_version = '2';
+// Rules for AFTER the server checkout is on (js/site-config.js
+// USE_SERVER_CHECKOUT = true). Publish these in Firebase only then.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isAdmin() {
+      return signedIn() && request.auth.token.email == 'gabecolton@gmail.com';
+    }
+
+    // Lowercased login email of the signed-in user (store credit is keyed by it).
+    function myEmail() {
+      return signedIn() && request.auth.token.email != null ? request.auth.token.email.lower() : '';
+    }
+
+    // Each user's cart — only they can read/write it.
+    match /carts/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Each user's profile info (name, org, address) — only they can write it;
+    // they and the admin (Customers page) can read it.
+    match /users/{userId} {
+      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow write: if signedIn() && request.auth.uid == userId;
+    }
+
+    // Orders — placed only by the server checkout (functions/), which is not
+    // subject to these rules. Buyers read their own; only the admin updates
+    // them (status, tracking, cancellations, affiliate credit bookkeeping).
+    match /orders/{orderId} {
+      allow create: if false;
+      allow read: if signedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      allow update: if isAdmin();
+      allow delete: if false;
+    }
+
+    // Stock counts — anyone signed in can read them; only the admin (and the
+    // server checkout) can change them.
+    match /inventory/{productSlug} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Promo codes — anyone signed in can read (to preview a code at
+    // checkout); only the admin (and the server checkout) can change them.
+    match /promoCodes/{code} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // BOGO eligibility per product — read by checkout, edited by the admin.
+    match /bogoProducts/{productSlug} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Site settings (e.g. settings/bankTransfer with payment details).
+    // Signed-in buyers can read them at checkout; only the admin can edit.
+    match /settings/{docId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+
+    // Store credit, keyed by lowercased login email. The owner can read it;
+    // only the admin (and the server checkout, when credit is spent) can
+    // change it.
+    match /credits/{email} {
+      allow read: if isAdmin() || myEmail() == email;
+      allow write: if isAdmin();
+
+      match /entries/{entryId} {
+        allow read: if isAdmin() || myEmail() == email;
+        allow write: if isAdmin();
+      }
+    }
+  }
+}

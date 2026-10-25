@@ -1,0 +1,16 @@
+{
+  "name": "txbio-functions",
+  "private": true,
+  "description": "Server-side checkout for txbioresearch.com",
+  "main": "index.js",
+  "engines": {
+    "node": "20"
+  },
+  "scripts": {
+    "test": "node test/run-tests.js"
+  },
+  "dependencies": {
+    "firebase-admin": "^12.7.0",
+    "firebase-functions": "^6.1.0"
+  }
+}
