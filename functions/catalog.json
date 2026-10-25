@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T05:10:53.516Z",
+  "generatedAt": "2026-10-25T17:23:57.463Z",
   "taxRate": 0.0825,
   "shipping": {
     "20": {
@@ -265,12 +265,12 @@
       "doses": {
         "glutathione-600mg": {
           "label": "600mg",
-          "price": 95,
+          "price": 37,
           "packSize": "1 vial x 600mg"
         },
         "glutathione-1200mg": {
           "label": "1200mg",
-          "price": 37,
+          "price": 95,
           "packSize": "1 vial x 1200mg"
         },
         "glutathione-1500mg": {
