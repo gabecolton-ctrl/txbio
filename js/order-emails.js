@@ -12,8 +12,8 @@
 
 var OrderEmails = (function () {
   var CONFIG = {
-    publicKey: '',              // Account → General → Public Key
-    serviceId: '',              // Email Services → your Private Email service → Service ID
+    publicKey: 'mCHNzwcAKKJCasPJ9',              // Account → General → Public Key
+    serviceId: 'service_l76oqmw',              // Email Services → your Private Email service → Service ID
     confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
     shippedTemplateId: 'template_r6zmcve'     // Email Templates → "Order shipped" → Template ID
   };
