@@ -111,6 +111,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/account.js"></script>
+<script src="js/inventory.js"></script>
 <script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
@@ -176,6 +177,79 @@
       setShipStatus(order.id, 'The shipped email didn’t send: ' + (err && (err.text || err.message) || err) + '. Use Resend shipped email to try again.', true);
       var resend = document.querySelector('button[data-resend-for="' + order.id + '"]');
       if (resend) resend.style.display = '';
+    });
+  }
+
+  // Cancellation: setting an order to "cancelled" returns its stock (once per
+  // order) and emails the buyer, with the optional reason from the card.
+  function stockReturnPlan(order) {
+    // Only units checkout actually took from stock (item.fulfilled) go back.
+    return (order.items || []).filter(function (item) {
+      return typeof item.fulfilled === 'number' && item.fulfilled > 0;
+    }).map(function (item) {
+      var slug = item.caseOf ? (item.unitSlug || item.slug.replace(/-case$/, '')) : item.slug;
+      return { slug: slug, units: item.fulfilled, label: item.name + ' (' + item.packSize + ')' };
+    });
+  }
+
+  function cancelStatusText(order) {
+    var parts = [];
+    if (order.restockedAt) parts.push('Stock returned.');
+    if (order.cancellationEmailSentAt) {
+      parts.push('Cancellation email sent ' + new Date(order.cancellationEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.');
+    }
+    return parts.join(' ');
+  }
+
+  function setCancelStatus(orderId, text, isError) {
+    var el = document.querySelector('[data-cancel-status-for="' + orderId + '"]');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+
+  function cancelReasonValue(orderId) {
+    var input = document.querySelector('input[data-cancel-reason-for="' + orderId + '"]');
+    return input ? input.value.trim() : '';
+  }
+
+  function cancelOrder(order) {
+    var reason = cancelReasonValue(order.id);
+    var update = { cancelReason: reason };
+    var notes = [];
+
+    var restock = Promise.resolve();
+    if (!order.restockedAt) {
+      var plan = stockReturnPlan(order);
+      restock = Promise.all(plan.map(function (line) {
+        return Inventory.restockStock(line.slug, line.units);
+      })).then(function () {
+        order.restockedAt = update.restockedAt = new Date().toISOString();
+      }).catch(function (err) {
+        notes.push('Stock was not returned (' + err.message + '); adjust it on the Inventory page.');
+      });
+    }
+
+    return restock.then(function () {
+      if (!window.OrderEmails || !OrderEmails.canSendCancelled()) {
+        notes.push('No cancellation email was sent because the cancellation template isn’t set up yet.');
+        return;
+      }
+      if (!order.userEmail) {
+        notes.push('This order has no buyer email, so no email was sent.');
+        return;
+      }
+      return OrderEmails.sendCancelled(order, reason).then(function () {
+        order.cancellationEmailSentAt = update.cancellationEmailSentAt = new Date().toISOString();
+      }).catch(function (err) {
+        notes.push('The cancellation email didn’t send: ' + (err && (err.text || err.message) || err) + '.');
+      });
+    }).then(function () {
+      order.cancelReason = reason;
+      return firebase.firestore().collection('orders').doc(order.id).update(update);
+    }).then(function () {
+      var text = [cancelStatusText(order)].concat(notes).filter(Boolean).join(' ');
+      setCancelStatus(order.id, text, notes.length > 0);
     });
   }
 
@@ -263,6 +337,11 @@
           '</div>' +
           '<p class="tracking-status" data-ship-status-for="' + order.id + '">' + shipStatusText(order) + '</p>' +
         '</div>' +
+        '<div class="tracking-row">' +
+          '<label for="cancel-reason-' + order.id + '">Cancellation reason (optional)</label>' +
+          '<input type="text" id="cancel-reason-' + order.id + '" data-cancel-reason-for="' + order.id + '" value="' + escapeAttr(order.cancelReason) + '" placeholder="Included in the email if you cancel this order" autocomplete="off">' +
+          '<p class="tracking-status" data-cancel-status-for="' + order.id + '">' + cancelStatusText(order) + '</p>' +
+        '</div>' +
         '<div style="overflow-x:auto;">' +
           '<table class="cart-table" style="margin-bottom:10px;">' +
             '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
@@ -326,10 +405,28 @@
             return;
           }
         }
+        if (order && newStatus === 'cancelled') {
+          var plan = order.restockedAt ? [] : stockReturnPlan(order);
+          var units = plan.reduce(function (n, l) { return n + l.units; }, 0);
+          var msg = 'Cancel order #' + (order.orderNumber || order.id) + '?' +
+            (order.cancellationEmailSentAt ? ' The buyer was already sent a cancellation email and will get another.' : ' The buyer will be emailed.') +
+            (units ? ' ' + units + ' unit' + (units === 1 ? '' : 's') + ' will go back into stock.' : '');
+          if (!window.confirm(msg)) {
+            select.value = previousStatus;
+            select.disabled = false;
+            return;
+          }
+        }
         Account.updateOrderStatus(orderId, newStatus).then(function () {
           select.disabled = false;
           if (order) order.status = newStatus;
           if (order && newStatus === 'shipped') sendShippedEmail(order);
+          if (order && newStatus === 'cancelled') {
+            setCancelStatus(orderId, 'Cancelling\u2026');
+            cancelOrder(order).catch(function (err) {
+              setCancelStatus(orderId, 'Status saved as cancelled, but follow-up failed: ' + err.message, true);
+            });
+          }
         }).catch(function (err) {
           select.disabled = false;
           alert('Could not update status: ' + err.message);
