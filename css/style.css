@@ -717,7 +717,7 @@ main.legal { max-width: 820px; }
 main.legal section { margin-bottom: 40px; }
 main.legal section:not(.page-head):not(.notice) h2 { font-size: 1.45rem; margin-bottom: 12px; }
 main.legal section:not(.page-head) p { color: var(--muted); }
-.split .btn-outline { margin-top: 8px; }
+.split .btn, .split .btn-outline { margin-top: 8px; }
 
 /* ---------- Case pricing (js/case-pricing.js) ---------- */
 .buy-mode { margin-bottom: 28px; }
