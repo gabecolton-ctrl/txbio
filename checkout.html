@@ -6,7 +6,7 @@
 <title>Order Summary | TXBioResearch</title>
 <meta name="description" content="Review and submit your research order inquiry to TXBioResearch.">
 <link rel="icon" type="image/png" href="images/logo-icon.png">
-<link rel="stylesheet" href="css/style.css?v=20261025b">
+<link rel="stylesheet" href="css/style.css?v=20261025c">
 </head>
 <body>
 <div id="splash-screen">
@@ -49,6 +49,8 @@
               <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
               <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
               <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+              <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
+              <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
             </ul>
           </details>
         </li>
@@ -148,7 +150,7 @@
         <table class="spec-table" style="margin-bottom:0;">
           <tr><td>Subtotal</td><td id="summary-subtotal">$0</td></tr>
           <tr><td>Shipping</td><td id="summary-shipping">$20</td></tr>
-          <tr id="summary-discount-row" style="display:none;"><td>Discount</td><td id="summary-discount">-$0</td></tr>
+          <tr id="summary-discount-row" style="display:none;"><td id="summary-discount-label">Discount</td><td id="summary-discount">-$0</td></tr>
           <tr id="summary-bogo-row" style="display:none;"><td>BOGO Discount</td><td id="summary-bogo">-$0</td></tr>
           <tr><td>Tax (8.25%)</td><td id="summary-tax">$0</td></tr>
           <tr id="summary-credit-row" style="display:none;"><td>Store credit</td><td id="summary-credit">-$0</td></tr>
@@ -273,6 +275,7 @@
 <script src="js/inventory.js"></script>
 <script src="js/promos.js"></script>
 <script src="js/bogo.js"></script>
+<script src="js/at-cost.js"></script>
 <script src="js/credits.js"></script>
 <script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
@@ -320,6 +323,9 @@
   var appliedBogoDiscount = 0;
   var bogoBreakdown = [];
   var bogoEligibleSlugs = []; // products with BOGO on; promo codes don't discount them
+  // Family "at cost" code (js/at-cost.js): every vial at cost + markup. Replaces
+  // the promo discount and BOGO; no affiliate credit.
+  var atCost = null; // { code, markupPerVial, costs, result }
 
   // A single-vial line of a BOGO product (same match as js/bogo.js; cases never get BOGO).
   function isBogoLine(item) {
@@ -339,8 +345,20 @@
       return n + item.price * units;
     }, 0);
     var discountAmount = Math.round(promoBase * (appliedDiscountPercent / 100) * 100) / 100;
+    var bogoForTotals = appliedBogoDiscount;
+    if (atCost) {
+      atCost.result = AtCost.priceLines(currentCartItems, atCost.costs, atCost.markupPerVial);
+      discountAmount = atCost.result.discount;
+      bogoForTotals = 0;
+    }
+    document.getElementById('summary-discount-label').textContent = atCost ? 'At cost (' + atCost.code + ')' : 'Discount';
     var promoNote = document.getElementById('promo-bogo-note');
-    if (promoNote) {
+    if (promoNote && atCost) {
+      promoNote.textContent = atCost.result.missing.length
+        ? 'No cost on file yet for ' + atCost.result.missing.join(', ') + ', so ' + (atCost.result.missing.length === 1 ? 'it’s' : 'they’re') + ' at the regular price.'
+        : '';
+      promoNote.style.display = atCost.result.missing.length ? 'block' : 'none';
+    } else if (promoNote) {
       var skipped = appliedPromoCode && promoBase < currentSubtotal;
       promoNote.textContent = skipped
         ? (promoBase > 0 ? 'Promo codes don\u2019t stack with buy-one-get-one, so ' + appliedPromoCode + ' applies to the rest of your order.'
@@ -349,7 +367,7 @@
       promoNote.style.display = skipped ? 'block' : 'none';
     }
     appliedDiscountAmount = discountAmount;
-    var discountedSubtotal = currentSubtotal - discountAmount - appliedBogoDiscount;
+    var discountedSubtotal = currentSubtotal - discountAmount - bogoForTotals;
     var tax = Math.round(discountedSubtotal * TAX_RATE * 100) / 100;
     var total = discountedSubtotal + shipping + tax;
 
@@ -384,7 +402,7 @@
 
     var bogoRow = document.getElementById('summary-bogo-row');
     var bogoDetailText = document.getElementById('bogo-detail-text');
-    if (appliedBogoDiscount > 0) {
+    if (bogoForTotals > 0) {
       document.getElementById('summary-bogo').textContent = '-$' + appliedBogoDiscount.toFixed(2);
       bogoRow.style.display = 'table-row';
       var lines = bogoBreakdown.map(function (b) {
@@ -402,8 +420,9 @@
       shipping: shipping,
       discount: discountAmount,
       promoCode: appliedPromoCode,
-      bogoDiscount: appliedBogoDiscount,
-      bogoBreakdown: bogoBreakdown,
+      bogoDiscount: bogoForTotals,
+      bogoBreakdown: atCost ? [] : bogoBreakdown,
+      atCost: atCost ? { code: atCost.code, markupPerVial: atCost.markupPerVial, result: atCost.result } : null,
       tax: tax,
       totalBeforeCredit: totalBeforeCredit,
       creditUsed: creditUsedCents / 100,
@@ -440,13 +459,24 @@
     btn.disabled = true;
     btn.textContent = 'Checking...';
 
-    Account.isFirstOrder().then(function (isFirst) {
-      return Promos.validateCode(code, isFirst);
+    tryAtCostCode(code).then(function (family) {
+      if (family) return family;
+      return Account.isFirstOrder().then(function (isFirst) {
+        return Promos.validateCode(code, isFirst);
+      });
     }).then(function (result) {
       btn.disabled = false;
       btn.textContent = 'Apply';
       msg.style.display = 'block';
-      if (result.valid) {
+      if (result.atCost) {
+        atCost = result.atCost;
+        appliedPromoCode = atCost.code;
+        appliedDiscountPercent = 0;
+        msg.style.color = 'var(--mint-dark)';
+        msg.textContent = atCost.code + ' applied: at-cost pricing.';
+        input.disabled = true;
+        btn.style.display = 'none';
+      } else if (result.valid) {
         appliedPromoCode = result.code;
         appliedDiscountPercent = result.discountPercent;
         msg.style.color = 'var(--mint-dark)';
@@ -468,6 +498,23 @@
       msg.textContent = 'Could not check promo code: ' + (err.message || err);
     });
   });
+
+  // An at-cost code only reads for the emails it lists (firestore.rules), so
+  // for anyone else this quietly falls through to regular promo codes.
+  function tryAtCostCode(rawCode) {
+    var code = String(rawCode || '').trim().toUpperCase();
+    var db = firebase.firestore();
+    return db.collection('atCostCodes').doc(code).get().then(function (doc) {
+      if (!doc.exists) return null;
+      var check = AtCost.checkCode(doc.data(), code, currentUserEmail);
+      if (!check.valid) return null;
+      return db.collection('costs').get().then(function (snap) {
+        var costs = {};
+        snap.forEach(function (d) { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
+        return { atCost: { code: code, markupPerVial: check.markupPerVial, costs: costs } };
+      });
+    }).catch(function () { return null; });
+  }
 
   function loadStoreCredit(user) {
     if (!window.Credits || !user || !user.email) return;
@@ -799,10 +846,17 @@
       return Promise.all(stockPromises).then(function (stockResults) {
         var hasBackorder = stockResults.some(function (r) { return r.backordered > 0; });
         var itemsWithStock = items.map(function (item, i) {
-          return Object.assign({}, item, {
+          var line = Object.assign({}, item, {
             fulfilled: stockResults[i].fulfilled,
             backordered: stockResults[i].backordered
           });
+          // At-cost orders record each line's cost and what was charged (P&L).
+          var ac = totals.atCost && totals.atCost.result.lines[i];
+          if (ac) {
+            if (typeof ac.unitCost === 'number') line.unitCost = ac.unitCost;
+            line.atCostPrice = ac.atCostPrice;
+          }
+          return line;
         });
 
         var orderData = {
@@ -818,7 +872,7 @@
           totalBeforeCredit: totals.totalBeforeCredit,
           creditUsed: totals.creditUsed,
           creditUsedCents: totals.creditUsedCents,
-          affiliateCode: totals.promoCode || '',
+          affiliateCode: totals.atCost ? '' : (totals.promoCode || ''),
           total: totals.total,
           shippingAddress: checkoutAddress,
           notes: notes,
@@ -826,6 +880,10 @@
           hasBackorder: hasBackorder,
           status: 'pending'
         };
+        if (totals.atCost) {
+          orderData.atCostCode = totals.atCost.code;
+          orderData.atCostMarkupPerVial = totals.atCost.markupPerVial;
+        }
         return Account.createOrder(orderData, { creditSpendCents: totals.creditUsedCents, creditAccount: creditAccount }).then(function (result) {
           orderData.orderNumber = result.orderNumber;
           sendOrderNotificationEmail(orderData);
@@ -834,7 +892,7 @@
         });
       });
     }).then(function (orderData) {
-      if (appliedPromoCode) {
+      if (appliedPromoCode && !atCost) {
         Promos.recordUsage(appliedPromoCode, appliedDiscountAmount);
       }
       return Cart.clearCart().then(function () { return orderData; });

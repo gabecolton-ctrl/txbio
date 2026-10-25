@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Profit &amp; loss | TXBioResearch</title>
+<meta name="description" content="Admin profit and loss report for TXBioResearch online sales.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css?v=20261025c">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul class="nav-primary">
+        <li><a href="services.html">Catalog</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin nav-admin-menu">
+          <details>
+            <summary>Admin</summary>
+            <ul>
+              <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+              <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
+              <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+              <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+              <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+              <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
+              <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-myaccount nav-admin-menu nav-account-menu">
+          <details>
+            <summary>My account</summary>
+            <ul>
+              <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
+              <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-login"><a href="login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section class="page-head">
+    <h1>Profit &amp; loss</h1>
+    <p class="lead">Sales minus product cost, from your online orders. Costs come from the <a href="admin-at-cost.html">At cost</a> page, using the cost in effect when each order was placed.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <div class="pnl-controls">
+        <label for="pnl-period">Period</label>
+        <select id="pnl-period"></select>
+        <label class="checkbox-row"><input type="checkbox" id="pnl-pending"> <span>Include orders still pending (not yet confirmed or paid)</span></label>
+        <button type="button" id="pnl-csv" class="btn-outline-light">Download CSV</button>
+      </div>
+      <div id="pnl-missing" class="notice" style="display:none;"></div>
+      <div id="pnl-loading" class="cart-empty">Loading orders…</div>
+      <div id="pnl-body" style="display:none;">
+        <div class="pnl-summary" id="pnl-summary"></div>
+
+        <h2>By month</h2>
+        <div class="catalog-wrap"><table class="catalog-table pnl-table" id="pnl-months"></table></div>
+
+        <h2>By product</h2>
+        <div class="catalog-wrap"><table class="catalog-table pnl-table" id="pnl-products"></table></div>
+
+        <p class="section-note" style="margin-top:18px;">How it’s counted: <strong>Net sales</strong> are product sales after promo, BOGO and at-cost discounts. They don’t include shipping or sales tax, which are shown separately. <strong>Cost</strong> is vials × cost per vial. <strong>Affiliate credit</strong> is store credit earned by affiliates (reversals excluded). Cancelled orders aren’t counted. Postage you pay isn’t tracked here.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
+      </div>
+      <div class="footer-links">
+        <a href="services.html">Catalog</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="login.html" class="signed-out-only">Researcher login</a>
+        <a href="terms.html">Terms &amp; conditions</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="shipping.html">Shipping &amp; returns</a>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
+    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/at-cost.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var COUNTED = ['confirmed', 'processing', 'label-created', 'shipped', 'delivered'];
+  var orders = [], costDocs = {}, unitLabels = {}, lines = [];
+
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function money(n) { var neg = n < 0; return (neg ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function pct(a, b) { return b ? Math.round(a / b * 1000) / 10 + '%' : '—'; }
+  function r2(n) { return Math.round(n * 100) / 100; }
+  function monthOf(iso) { return String(iso || '').slice(0, 7); }
+  function monthName(m) { var d = new Date(m + '-15T12:00:00'); return isNaN(d) ? m : d.toLocaleDateString(undefined, { month: 'long', year: 'numeric' }); }
+
+  document.addEventListener('userReady', function (e) {
+    if (e.detail.user.email !== ADMIN_EMAIL) { document.getElementById('admin-denied').style.display = 'block'; return; }
+    document.getElementById('admin-content').style.display = 'block';
+    var db = firebase.firestore();
+    Promise.all([
+      db.collection('orders').get(),
+      db.collection('costs').get(),
+      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).catch(function () { return null; })
+    ]).then(function (res) {
+      res[0].forEach(function (d) { orders.push(Object.assign({ id: d.id }, d.data())); });
+      res[1].forEach(function (d) { costDocs[d.id] = d.data(); });
+      var cat = res[2];
+      if (cat) Object.keys(cat.products).forEach(function (slug) {
+        var p = cat.products[slug];
+        if (p.doses) Object.keys(p.doses).forEach(function (ds) { unitLabels[ds] = p.name + ' ' + p.doses[ds].label; });
+        else unitLabels[slug] = p.name;
+      });
+      buildLines();
+      fillPeriods();
+      document.getElementById('pnl-loading').style.display = 'none';
+      document.getElementById('pnl-body').style.display = '';
+      render();
+    }).catch(function (err) {
+      document.getElementById('pnl-loading').textContent = 'Could not load: ' + err.message + (/permission/i.test(err.message) ? '. Publish the updated Firestore rules (firestore.rules) first.' : '');
+    });
+  });
+
+  // One row per order line, with net sales and cost worked out.
+  function buildLines() {
+    lines = [];
+    orders.forEach(function (o) {
+      if ((o.status || 'pending') === 'cancelled') return;
+      var items = o.items || [];
+      var subtotal = Number(o.subtotal) || items.reduce(function (n, i) { return n + i.price * i.qty; }, 0);
+      var off = (Number(o.discount) || 0) + (Number(o.bogoDiscount) || 0);
+      var factor = subtotal > 0 ? Math.max(0, (subtotal - off) / subtotal) : 1;
+      items.forEach(function (it) {
+        var unitSlug = AtCost.unitSlugOf(it);
+        var vials = AtCost.vialsOf(it);
+        var gross = r2(it.price * it.qty);
+        var net = typeof it.atCostPrice === 'number' ? it.atCostPrice : r2(gross * factor);
+        var unitCost = typeof it.unitCost === 'number' ? it.unitCost : AtCost.costAt(costDocs[unitSlug], o.createdAt);
+        lines.push({
+          order: o, month: monthOf(o.createdAt), status: o.status || 'pending',
+          unitSlug: unitSlug, label: unitLabels[unitSlug] || it.name, vials: vials,
+          gross: gross, net: net, unitCost: unitCost,
+          cost: typeof unitCost === 'number' ? r2(unitCost * vials) : null,
+          atCost: !!o.atCostCode
+        });
+      });
+    });
+  }
+
+  function fillPeriods() {
+    var months = {}, years = {};
+    orders.forEach(function (o) { var m = monthOf(o.createdAt); if (m) { months[m] = 1; years[m.slice(0, 4)] = 1; } });
+    var now = new Date();
+    var thisMonth = now.getFullYear() + '-' + String(now.getMonth() + 1).padStart(2, '0');
+    var opts = ['<option value="all">All time</option>'];
+    Object.keys(years).sort().reverse().forEach(function (y) { opts.push('<option value="' + y + '">' + y + '</option>'); });
+    Object.keys(months).sort().reverse().forEach(function (m) { opts.push('<option value="' + m + '">' + monthName(m) + (m === thisMonth ? ' (this month)' : '') + '</option>'); });
+    var sel = document.getElementById('pnl-period');
+    sel.innerHTML = opts.join('');
+    sel.value = Object.keys(years).indexOf(String(now.getFullYear())) !== -1 ? String(now.getFullYear()) : 'all';
+  }
+
+  function inScope() {
+    var period = document.getElementById('pnl-period').value;
+    var pending = document.getElementById('pnl-pending').checked;
+    return function (status, month) {
+      if (!(COUNTED.indexOf(status) !== -1 || (pending && status === 'pending'))) return false;
+      return period === 'all' || month.indexOf(period) === 0;
+    };
+  }
+
+  function scopedOrders() {
+    var ok = inScope();
+    return orders.filter(function (o) { return (o.status || 'pending') !== 'cancelled' && ok(o.status || 'pending', monthOf(o.createdAt)); });
+  }
+
+  function totalsFor(ordersSet, linesSet) {
+    var t = { orders: ordersSet.length, gross: 0, discounts: 0, net: 0, cost: 0, missingNet: 0, affiliate: 0, shipping: 0, tax: 0, atCostOrders: 0 };
+    ordersSet.forEach(function (o) {
+      t.discounts += (Number(o.discount) || 0) + (Number(o.bogoDiscount) || 0);
+      t.shipping += Number(o.shipping) || 0;
+      t.tax += Number(o.tax) || 0;
+      if (o.affiliateCreditedAt && !o.affiliateReversedAt) t.affiliate += (o.affiliateCreditCents || 0) / 100;
+      if (o.atCostCode) t.atCostOrders++;
+    });
+    linesSet.forEach(function (l) {
+      t.gross += l.gross; t.net += l.net;
+      if (l.cost == null) t.missingNet += l.net; else t.cost += l.cost;
+    });
+    t.profit = t.net - t.cost - t.missingNet; // lines with no cost count as no profit until a cost is entered
+    t.netProfit = t.profit - t.affiliate;
+    return t;
+  }
+
+  function render() {
+    var ok = inScope();
+    var os = scopedOrders();
+    var ls = lines.filter(function (l) { return ok(l.status, l.month); });
+    var t = totalsFor(os, ls);
+
+    document.getElementById('pnl-summary').innerHTML = [
+      ['Orders', t.orders + (t.atCostOrders ? ' <span class="pnl-sub">' + t.atCostOrders + ' at cost</span>' : '')],
+      ['Net sales', money(t.net)],
+      ['Cost of product', money(t.cost)],
+      ['Gross profit', money(t.profit) + ' <span class="pnl-sub">' + pct(t.profit, t.net - t.missingNet) + ' margin</span>'],
+      ['Affiliate credit', money(t.affiliate)],
+      ['Net profit', '<strong>' + money(t.netProfit) + '</strong>'],
+      ['Shipping collected', money(t.shipping)],
+      ['Sales tax collected', money(t.tax)]
+    ].map(function (r) { return '<div class="pnl-tile"><span class="pnl-label">' + r[0] + '</span><span class="pnl-value">' + r[1] + '</span></div>'; }).join('');
+
+    // Missing costs warning.
+    var missing = {};
+    ls.forEach(function (l) { if (l.cost == null) missing[l.label] = (missing[l.label] || 0) + l.net; });
+    var mk = Object.keys(missing);
+    var warn = document.getElementById('pnl-missing');
+    if (mk.length) {
+      warn.style.display = '';
+      warn.innerHTML = '<strong>No cost entered for ' + mk.length + ' product' + (mk.length === 1 ? '' : 's') + '</strong><p>' + money(t.missingNet) +
+        ' of sales is left out of profit until you add costs on the <a href="admin-at-cost.html">At cost</a> page: ' + mk.slice(0, 12).map(esc).join(', ') + (mk.length > 12 ? ', …' : '') + '.</p>';
+    } else warn.style.display = 'none';
+
+    // By month.
+    var months = {};
+    os.forEach(function (o) { var m = monthOf(o.createdAt); (months[m] = months[m] || { o: [], l: [] }).o.push(o); });
+    ls.forEach(function (l) { (months[l.month] = months[l.month] || { o: [], l: [] }).l.push(l); });
+    var mrows = Object.keys(months).sort().reverse().map(function (m) {
+      var x = totalsFor(months[m].o, months[m].l);
+      return '<tr><td>' + esc(monthName(m)) + '</td><td>' + x.orders + '</td><td>' + money(x.gross) + '</td><td>' + money(-x.discounts) + '</td><td>' + money(x.net) +
+        '</td><td>' + money(x.cost) + '</td><td>' + money(x.profit) + '</td><td>' + pct(x.profit, x.net - x.missingNet) + '</td><td>' + money(x.affiliate) +
+        '</td><td><strong>' + money(x.netProfit) + '</strong></td><td>' + money(x.shipping) + '</td></tr>';
+    });
+    document.getElementById('pnl-months').innerHTML = '<thead><tr><th>Month</th><th>Orders</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Cost</th><th>Gross profit</th><th>Margin</th><th>Affiliate</th><th>Net profit</th><th>Shipping</th></tr></thead><tbody>' +
+      (mrows.join('') || '<tr><td colspan="11">No orders in this period.</td></tr>') + '</tbody>';
+
+    // By product.
+    var prods = {};
+    ls.forEach(function (l) {
+      var p = prods[l.unitSlug] = prods[l.unitSlug] || { label: l.label, vials: 0, net: 0, cost: 0, missing: false };
+      p.vials += l.vials; p.net += l.net;
+      if (l.cost == null) p.missing = true; else p.cost += l.cost;
+    });
+    var prows = Object.keys(prods).map(function (k) { return prods[k]; })
+      .sort(function (a, b) { return (b.net - b.cost) - (a.net - a.cost); })
+      .map(function (p) {
+        return '<tr><td>' + esc(p.label) + '</td><td>' + p.vials + '</td><td>' + money(p.net) + '</td><td>' + (p.missing ? '<span class="cost-warn">no cost</span>' : money(p.cost)) +
+          '</td><td>' + (p.missing ? '—' : money(p.net - p.cost)) + '</td><td>' + (p.missing ? '—' : pct(p.net - p.cost, p.net)) + '</td></tr>';
+      });
+    document.getElementById('pnl-products').innerHTML = '<thead><tr><th>Product</th><th>Vials</th><th>Net sales</th><th>Cost</th><th>Profit</th><th>Margin</th></tr></thead><tbody>' +
+      (prows.join('') || '<tr><td colspan="6">No sales in this period.</td></tr>') + '</tbody>';
+  }
+
+  document.getElementById('pnl-period').addEventListener('change', render);
+  document.getElementById('pnl-pending').addEventListener('change', render);
+
+  document.getElementById('pnl-csv').addEventListener('click', function () {
+    var ok = inScope();
+    var rows = [['Date', 'Order', 'Status', 'Customer', 'Product', 'Item', 'Vials', 'Gross sales', 'Net sales', 'Cost per vial', 'Cost', 'Profit', 'At-cost code']];
+    lines.filter(function (l) { return ok(l.status, l.month); }).forEach(function (l) {
+      rows.push([String(l.order.createdAt || '').slice(0, 10), l.order.orderNumber || l.order.id, l.status, l.order.userEmail || '', l.label, l.unitSlug, l.vials,
+        l.gross.toFixed(2), l.net.toFixed(2), l.unitCost == null ? '' : l.unitCost.toFixed(2), l.cost == null ? '' : l.cost.toFixed(2),
+        l.cost == null ? '' : (l.net - l.cost).toFixed(2), l.order.atCostCode || '']);
+    });
+    var csv = rows.map(function (r) { return r.map(function (v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\n');
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
+    a.download = 'txbio-pnl-' + document.getElementById('pnl-period').value + '.csv';
+    document.body.appendChild(a); a.click(); a.remove();
+  });
+</script>
+</body>
+</html>

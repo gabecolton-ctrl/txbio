@@ -2,6 +2,7 @@
 // passed in, so tests can run it against an in-memory stand-in.
 const { HttpsError } = require('firebase-functions/v2/https');
 const P = require('./pricing');
+const AtCost = require('./at-cost');
 
 const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank'];
 
@@ -46,8 +47,22 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   const bogoSlugs = bogoSnap.docs.map((d) => d.id);
   const bogo = P.bogoDiscount(lines, bogoSlugs);
 
-  let promo = null;
+  // Family "at cost" code: only valid for the emails it lists; for anyone else
+  // it's treated as an unknown code (same as the browser).
+  let atCost = null;
   if (promoCode) {
+    const acSnap = await db.collection('atCostCodes').doc(promoCode).get();
+    const check = acSnap.exists ? AtCost.checkCode(acSnap.data(), promoCode, userEmail) : { valid: false };
+    if (check.valid) {
+      const costSnap = await db.collection('costs').get();
+      const costs = {};
+      costSnap.docs.forEach((d) => { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
+      atCost = { code: promoCode, markupPerVial: check.markupPerVial, result: AtCost.priceLines(lines, costs, check.markupPerVial) };
+    }
+  }
+
+  let promo = null;
+  if (promoCode && !atCost) {
     const [promoSnap, priorOrders] = await Promise.all([
       db.collection('promoCodes').doc(promoCode).get(),
       db.collection('orders').where('userId', '==', uid).limit(1).get()
@@ -71,7 +86,8 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     const totals = P.computeTotals({
       lines,
       discountPercent: promo ? promo.discountPercent : 0,
-      bogo: bogo.discountAmount,
+      fixedDiscount: atCost ? atCost.result.discount : null,
+      bogo: atCost ? 0 : bogo.discountAmount,
       bogoSlugs,
       shippingPrice: shippingOpt.price,
       taxRate: catalog.taxRate,
@@ -87,7 +103,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       available.set(slug, qty);
     });
     const remaining = new Map(available);
-    const items = lines.map((l) => {
+    const items = lines.map((l, i) => {
       const slug = l.caseOf ? l.unitSlug : l.slug;
       const units = l.caseOf ? l.qty * l.caseOf : l.qty;
       const left = remaining.get(slug);
@@ -98,6 +114,11 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       }
       const item = { slug: l.slug, name: l.name, packSize: l.packSize, price: l.price, qty: l.qty, fulfilled, backordered: units - fulfilled };
       if (l.caseOf) { item.caseOf = l.caseOf; item.unitSlug = l.unitSlug; }
+      if (atCost) {
+        const ac = atCost.result.lines[i];
+        if (typeof ac.unitCost === 'number') item.unitCost = ac.unitCost;
+        item.atCostPrice = ac.atCostPrice;
+      }
       return item;
     });
 
@@ -108,9 +129,9 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       shipping: totals.shipping,
       shippingOption: shippingOpt.label,
       discount: totals.discount,
-      promoCode: promo ? promo.code : null,
+      promoCode: promo ? promo.code : (atCost ? atCost.code : null),
       bogoDiscount: totals.bogoDiscount,
-      bogoBreakdown: bogo.breakdown,
+      bogoBreakdown: atCost ? [] : bogo.breakdown,
       tax: totals.tax,
       totalBeforeCredit: totals.totalBeforeCredit,
       creditUsed: totals.creditUsed,
@@ -128,6 +149,10 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       orderNumber,
       placedBy: 'server'
     };
+    if (atCost) {
+      orderDoc.atCostCode = atCost.code;
+      orderDoc.atCostMarkupPerVial = atCost.markupPerVial;
+    }
 
     // Writes.
     stockSlugs.forEach((slug) => {

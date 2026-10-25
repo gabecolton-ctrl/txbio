@@ -78,5 +78,26 @@ service cloud.firestore {
         allow write: if isAdmin();
       }
     }
+
+    // "At cost" family pricing (js/at-cost.js, admin-at-cost.html).
+    // Costs are private: the admin, and the emails listed on an at-cost code
+    // (mirrored into atCostMembers/{email}) so their checkout can price at cost.
+    function isAtCostMember() {
+      return signedIn() && exists(/databases/$(database)/documents/atCostMembers/$(myEmail()));
+    }
+    match /costs/{unitSlug} {
+      allow read: if isAdmin() || isAtCostMember();
+      allow write: if isAdmin();
+    }
+    // A code is readable only by the emails it lists; for anyone else it
+    // looks like it doesn't exist.
+    match /atCostCodes/{code} {
+      allow read: if isAdmin() || (signedIn() && resource != null && myEmail() in resource.data.emails);
+      allow write: if isAdmin();
+    }
+    match /atCostMembers/{email} {
+      allow read: if isAdmin() || myEmail() == email;
+      allow write: if isAdmin();
+    }
   }
 }

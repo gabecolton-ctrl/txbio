@@ -116,10 +116,11 @@ function isBogoLine(line, eligibleSlugs) {
 // Promo codes don't stack with BOGO: vials in BOGO pairs aren't discounted,
 // but a leftover single vial is. The code is always recorded on the order so
 // affiliates are credited.
-function computeTotals({ lines, discountPercent, bogo, bogoSlugs, shippingPrice, taxRate, creditBalanceCents, useCredit }) {
+// fixedDiscount (dollars) replaces the percentage promo, e.g. at-cost pricing.
+function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
   const promoBase = lines.reduce((n, l) => n + l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty), 0);
-  const discount = round2(promoBase * ((discountPercent || 0) / 100));
+  const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   const tax = round2(discountedSubtotal * taxRate);
   const totalBeforeCredit = discountedSubtotal + shippingPrice + tax;
