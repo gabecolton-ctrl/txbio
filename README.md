@@ -8,6 +8,12 @@ contact form messages to info@txbioresearch.com.
 
 Merging to `main` publishes the site; changes appear within a few minutes.
 
+**Server checkout:** `functions/` holds the `placeOrder` Cloud Function, which
+prices and places orders on the server. It's switched on in `js/site-config.js`
+once deployed; see `functions/README.md` for deploying and for redeploying
+after price changes. `firestore.rules.server-checkout` is the rules file to
+publish once it's on.
+
 ## Pages
 
 | Page | What it is |

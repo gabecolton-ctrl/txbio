@@ -1,0 +1,8 @@
+// site-config.js — site-wide switches.
+
+// Server checkout: when true, checkout sends orders to the placeOrder Cloud
+// Function (functions/), which prices them on the server. Turn on only after
+// the function is deployed (see functions/README.md), then publish
+// firestore.rules.server-checkout so browsers can no longer write orders,
+// stock, promo usage, or credit directly.
+var USE_SERVER_CHECKOUT = false;
