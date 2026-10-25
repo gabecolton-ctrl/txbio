@@ -5,7 +5,8 @@
 //   active: boolean,
 //   timesUsed: number,
 //   totalDiscounted: number,   // cumulative $ discounted across all uses
-//   createdAt: string
+//   createdAt: string,
+//   affiliateEmail: string     // optional; earns store credit on orders using the code
 // }
 
 var Promos = (function () {
@@ -41,7 +42,7 @@ var Promos = (function () {
     });
   }
 
-  function createOrUpdateCode(code, discountPercent, type, active) {
+  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail) {
     var normalized = normalizeCode(code);
     var ref = ensureDb().collection('promoCodes').doc(normalized);
     return ref.get().then(function (doc) {
@@ -50,6 +51,7 @@ var Promos = (function () {
         discountPercent: discountPercent,
         type: type,
         active: active,
+        affiliateEmail: (affiliateEmail || '').trim().toLowerCase(),
         timesUsed: existing.timesUsed || 0,
         totalDiscounted: existing.totalDiscounted || 0,
         createdAt: existing.createdAt || new Date().toISOString()
@@ -134,7 +136,7 @@ var Promos = (function () {
   return {
     getCode: function (code) { return withRetry(getCode, [code], 10000, 15000, 'Checking promo code is taking too long. Please try again.'); },
     getAllCodes: function () { return withRetry(getAllCodes, [], 10000, 15000, 'Loading promo codes is taking too long. Please try again.'); },
-    createOrUpdateCode: function (code, pct, type, active) { return withRetry(createOrUpdateCode, [code, pct, type, active], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
+    createOrUpdateCode: function (code, pct, type, active, affiliateEmail) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
     deleteCode: function (code) { return withRetry(deleteCode, [code], 10000, 15000, 'Deleting promo code is taking too long. Please try again.'); },
     validateCode: function (code, isFirstOrder) { return withDoubleRetry(validateCode, [code, isFirstOrder], 8000, 8000, 12000, 'Validating promo code is taking too long. Please check your connection and try again.'); },
     recordUsage: recordUsage

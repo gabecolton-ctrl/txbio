@@ -15,7 +15,8 @@ var OrderEmails = (function () {
     publicKey: 'mCHNzwcAKKJCasPJ9',              // Account → General → Public Key
     serviceId: 'service_l76oqmw',              // Email Services → your Private Email service → Service ID
     confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
-    shippedTemplateId: 'template_r6zmcve'     // Email Templates → "Order shipped" → Template ID
+    shippedTemplateId: 'template_r6zmcve',    // Email Templates → "Order shipped" → Template ID
+    cancelledTemplateId: ''                   // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
   };
 
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
@@ -78,6 +79,9 @@ var OrderEmails = (function () {
     if (order.bogoDiscount > 0) {
       lines.push('BOGO: -' + money(order.bogoDiscount));
     }
+    if (order.creditUsed > 0) {
+      lines.push('Store credit: -' + money(order.creditUsed));
+    }
     return lines.join('\n') || 'None';
   }
 
@@ -117,8 +121,30 @@ var OrderEmails = (function () {
     }).then(function () { return true; });
   }
 
+  // Cancellation notice, sent when the admin cancels an order.
+  function canSendCancelled() {
+    return isConfigured() && !!CONFIG.cancelledTemplateId;
+  }
+
+  function sendCancelled(order, reason) {
+    if (!canSendCancelled() || !order.userEmail) return Promise.resolve(false);
+    return loadSdk().then(function (emailjs) {
+      return emailjs.send(CONFIG.serviceId, CONFIG.cancelledTemplateId, {
+        to_email: order.userEmail,
+        order_number: order.orderNumber || '',
+        items: itemsText(order.items),
+        total: money(order.total),
+        payment_method: order.paymentMethod || '',
+        reason_line: reason ? 'Reason: ' + reason : 'If you have questions about this cancellation, reply to this email.',
+        refund_line: 'If you already sent payment for this order, reply to this email and we\u2019ll arrange your refund.'
+      });
+    }).then(function () { return true; });
+  }
+
   return {
     isConfigured: isConfigured,
+    canSendCancelled: canSendCancelled,
+    sendCancelled: sendCancelled,
     sendConfirmation: sendConfirmation,
     sendShipped: sendShipped
   };

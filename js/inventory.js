@@ -59,6 +59,22 @@ var Inventory = (function () {
     });
   }
 
+  // Puts units back (e.g. when an order is cancelled). Untracked products
+  // (no inventory record) are left alone, matching decrementStock.
+  function restockStock(slug, amount) {
+    var ref = ensureDb().collection('inventory').doc(slug);
+    return ensureDb().runTransaction(function (transaction) {
+      return transaction.get(ref).then(function (doc) {
+        if (!doc.exists || typeof doc.data().qty !== 'number' || !(amount > 0)) {
+          return { restocked: 0, remaining: doc.exists ? doc.data().qty : null };
+        }
+        var newQty = doc.data().qty + amount;
+        transaction.update(ref, { qty: newQty, updatedAt: new Date().toISOString() });
+        return { restocked: amount, remaining: newQty };
+      });
+    });
+  }
+
   function withTimeout(promise, ms, message) {
     var timeout = new Promise(function (resolve, reject) {
       setTimeout(function () { reject(new Error(message || 'Request timed out. Please try again.')); }, ms);
@@ -70,6 +86,7 @@ var Inventory = (function () {
     getStock: getStock,
     getAllStock: getAllStock,
     setStock: function (slug, qty) { return withTimeout(setStock(slug, qty), 10000, 'Saving stock count is taking too long. Please try again.'); },
+    restockStock: function (slug, amount) { return withTimeout(restockStock(slug, amount), 10000, 'Returning stock is taking too long. Please try again.'); },
     decrementStock: function (slug, amount) { return withTimeout(decrementStock(slug, amount), 10000, 'Checking stock is taking too long. Please try again.'); }
   };
 })();
