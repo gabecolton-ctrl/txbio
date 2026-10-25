@@ -93,7 +93,6 @@
       <label for="dose-select" style="margin-bottom:6px;">Dosage</label>
       <select id="dose-select">
         <option value="10">10mg &mdash; $35</option>
-        <option value="30">30mg &mdash; $90</option>
       </select>
 
       <table class="spec-table">
@@ -188,7 +187,7 @@
 <script src="../js/main.js"></script>
 <script src="../js/nav-toggle.js"></script>
 <script>
-  var DOSE_PRICES = { "10": 35, "30": 90 };
+  var DOSE_PRICES = { "10": 35 };
   var doseSelect = document.getElementById('dose-select');
   var priceEl = document.getElementById('selected-price');
 

@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T20:12:38.072Z",
+  "generatedAt": "2026-10-25T20:28:52.538Z",
   "taxRate": 0.0825,
   "shipping": {
     "20": {
@@ -580,11 +580,6 @@
           "label": "20mg",
           "price": 121,
           "packSize": "1 vial x 20mg"
-        },
-        "semaglutide-30mg": {
-          "label": "30mg",
-          "price": 149,
-          "packSize": "1 vial x 30mg"
         }
       }
     },
@@ -605,11 +600,6 @@
           "label": "10mg",
           "price": 35,
           "packSize": "1 vial x 10mg"
-        },
-        "semax-30mg": {
-          "label": "30mg",
-          "price": 90,
-          "packSize": "1 vial x 30mg"
         }
       }
     },
