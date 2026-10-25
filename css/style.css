@@ -760,3 +760,15 @@ html.signed-in .signed-out-only { display: none !important; }
 main.legal ul { padding-left: 20px; margin: 0 0 18px; }
 main.legal li { color: var(--muted); margin-bottom: 8px; }
 main.legal li strong, main.legal section:not(.page-head) p strong { color: var(--frost); }
+
+/* ---------- Sign-in extras ---------- */
+.auth-aside { text-align: center; margin: 16px 0 0; font-size: 0.9rem; }
+.auth-help { color: var(--muted); font-size: 0.92rem; margin-bottom: 18px; }
+.auth-notice { display: none; background: var(--mint-wash); border: 1px solid rgba(94, 234, 212, 0.3); color: var(--frost); font-size: 0.9rem; padding: 10px 14px; border-radius: var(--radius-sm); margin-bottom: 18px; }
+.auth-notice.show { display: block; }
+
+/* ---------- Order status (My Account) ---------- */
+.order-status { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0 0 12px; font-size: 0.9rem; color: var(--muted); }
+.status-pill { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--line); color: var(--frost); background: var(--raised); }
+.status-pill.status-shipped, .status-pill.status-delivered { color: var(--ink); background: var(--mint); border-color: var(--mint); }
+.status-pill.status-cancelled { color: var(--alert); background: var(--alert-wash); border-color: rgba(242, 134, 122, 0.35); }

@@ -68,7 +68,17 @@
       <input type="email" id="signin-email" required autocomplete="email">
       <label for="signin-password">Password</label>
       <input type="password" id="signin-password" required autocomplete="current-password">
-      <button type="submit" class="btn" style="width:100%;">Sign In</button>
+      <button type="submit" class="btn" style="width:100%;">Sign in</button>
+      <p class="auth-aside"><a href="#" id="forgot-link">Forgot your password?</a></p>
+    </form>
+
+    <form id="reset-form" style="display:none;">
+      <p class="auth-help">Enter the email you registered with and we&rsquo;ll send you a link to set a new password.</p>
+      <label for="reset-email">Email</label>
+      <input type="email" id="reset-email" required autocomplete="email">
+      <div id="reset-notice" class="auth-notice" role="status"></div>
+      <button type="submit" class="btn" id="reset-submit" style="width:100%;">Send reset link</button>
+      <p class="auth-aside"><a href="#" id="reset-back">Back to sign in</a></p>
     </form>
 
     <form id="signup-form" style="display:none;">
@@ -106,6 +116,7 @@
         <a href="login.html" class="signed-out-only">Researcher login</a>
         <a href="terms.html">Terms &amp; conditions</a>
         <a href="privacy.html">Privacy policy</a>
+        <a href="shipping.html">Shipping &amp; returns</a>
       </div>
     </div>
     <div class="footer-disclaimer">
@@ -140,11 +151,64 @@
     errorBox.textContent = '';
   }
 
+  // Forgot password: Firebase emails a reset link. The confirmation reads the
+  // same whether or not an account exists, so the form can't be used to find
+  // out which emails are registered.
+  var formReset = document.getElementById('reset-form');
+  var resetNotice = document.getElementById('reset-notice');
+  function showReset(show) {
+    clearError();
+    resetNotice.classList.remove('show');
+    formReset.style.display = show ? '' : 'none';
+    formSignin.style.display = show ? 'none' : '';
+    if (show) {
+      document.getElementById('reset-email').value = document.getElementById('signin-email').value.trim();
+      document.getElementById('reset-email').focus();
+    }
+  }
+  document.getElementById('forgot-link').addEventListener('click', function (e) { e.preventDefault(); showReset(true); });
+  document.getElementById('reset-back').addEventListener('click', function (e) { e.preventDefault(); showReset(false); });
+  formReset.addEventListener('submit', function (e) {
+    e.preventDefault();
+    clearError();
+    var email = document.getElementById('reset-email').value.trim();
+    var btn = document.getElementById('reset-submit');
+    btn.disabled = true;
+    btn.textContent = 'Sending...';
+    var done = function () {
+      btn.disabled = false;
+      btn.textContent = 'Send reset link';
+      resetNotice.textContent = 'If an account exists for ' + email + ', a reset link is on its way. Check your inbox and spam folder; the link expires after a while.';
+      resetNotice.classList.add('show');
+    };
+    var fail = function (err) {
+      var code = err && err.code;
+      if (code === 'auth/user-not-found') return done(); // same message either way
+      btn.disabled = false;
+      btn.textContent = 'Send reset link';
+      if (code === 'auth/invalid-email') showError('That email address doesn\u2019t look right. Check it and try again.');
+      else if (code === 'auth/too-many-requests') showError('Too many attempts. Wait a few minutes and try again.');
+      else showError('We couldn\u2019t send the reset email. Try again, or email info@txbioresearch.com for help.');
+    };
+    // The reset email links back to this sign-in page. If Firebase hasn't
+    // approved this site's address for that link, send the email without it.
+    firebase.auth().sendPasswordResetEmail(email, { url: window.location.origin + '/login.html' })
+      .then(done)
+      .catch(function (err) {
+        var code = err && err.code;
+        if (code === 'auth/unauthorized-continue-uri' || code === 'auth/invalid-continue-uri' || code === 'auth/missing-continue-uri') {
+          return firebase.auth().sendPasswordResetEmail(email).then(done).catch(fail);
+        }
+        fail(err);
+      });
+  });
+
   tabSignin.addEventListener('click', function () {
     tabSignin.classList.add('active');
     tabSignup.classList.remove('active');
     formSignin.style.display = '';
     formSignup.style.display = 'none';
+    formReset.style.display = 'none';
     clearError();
   });
   tabSignup.addEventListener('click', function () {
@@ -152,6 +216,7 @@
     tabSignin.classList.remove('active');
     formSignup.style.display = '';
     formSignin.style.display = 'none';
+    formReset.style.display = 'none';
     clearError();
   });
 

@@ -154,6 +154,7 @@
         <a href="login.html" class="signed-out-only">Researcher login</a>
         <a href="terms.html">Terms &amp; conditions</a>
         <a href="privacy.html">Privacy policy</a>
+        <a href="shipping.html">Shipping &amp; returns</a>
       </div>
     </div>
     <div class="footer-disclaimer">
@@ -287,6 +288,45 @@
     });
   });
 
+  // Order status for buyers: a friendly label, tracking with a carrier link
+  // when the number's format identifies the carrier, ship date, and any
+  // cancellation reason.
+  var STATUS_LABELS = {
+    pending: 'Order received',
+    confirmed: 'Confirmed',
+    processing: 'Preparing to ship',
+    shipped: 'Shipped',
+    delivered: 'Delivered',
+    cancelled: 'Cancelled'
+  };
+  function escHtml(v) {
+    return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
+  }
+  function trackingLink(num) {
+    var n = String(num || '').replace(/\s+/g, '').toUpperCase();
+    if (/^1Z[0-9A-Z]{16}$/.test(n)) return { carrier: 'UPS', url: 'https://www.ups.com/track?tracknum=' + n };
+    if (/^9\d{19,21}$/.test(n) || /^[A-Z]{2}\d{9}US$/.test(n)) return { carrier: 'USPS', url: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + n };
+    if (/^(\d{12}|\d{15})$/.test(n)) return { carrier: 'FedEx', url: 'https://www.fedex.com/fedextrack/?trknbr=' + n };
+    return null;
+  }
+  function orderStatusHtml(order) {
+    var status = order.status || 'pending';
+    var html = '<div class="order-status"><span class="status-pill status-' + escHtml(status) + '">' + escHtml(STATUS_LABELS[status] || status) + '</span>';
+    if (order.trackingNumber && status !== 'cancelled') {
+      var link = trackingLink(order.trackingNumber);
+      html += '<span class="order-status-detail">Tracking: ' + (link
+        ? '<a href="' + link.url + '" target="_blank" rel="noopener">' + escHtml(order.trackingNumber) + '</a> (' + link.carrier + ')'
+        : escHtml(order.trackingNumber)) + '</span>';
+    }
+    if (order.shippedEmailSentAt && status !== 'cancelled') {
+      html += '<span class="order-status-detail">Shipped ' + new Date(order.shippedEmailSentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
+    }
+    if (status === 'cancelled' && order.cancelReason) {
+      html += '<span class="order-status-detail">Reason: ' + escHtml(order.cancelReason) + '</span>';
+    }
+    return html + '</div>';
+  }
+
   function renderOrders() {
     var loading = document.getElementById('orders-loading');
     var empty = document.getElementById('orders-empty');
@@ -325,7 +365,9 @@
             '<tr><td>Subtotal</td><td>$' + order.subtotal + '</td></tr>' +
             '<tr><td>Shipping' + (order.shippingOption ? ' (' + order.shippingOption + ')' : '') + '</td><td>$' + order.shipping + '</td></tr>' +
             discountRowHtml +
+            (order.bogoDiscount > 0 ? '<tr><td>BOGO discount</td><td>-$' + Number(order.bogoDiscount).toFixed(2) + '</td></tr>' : '') +
             '<tr><td>Tax</td><td>$' + order.tax + '</td></tr>' +
+            (order.creditUsed > 0 ? '<tr><td>Store credit</td><td>-$' + Number(order.creditUsed).toFixed(2) + '</td></tr>' : '') +
             '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + order.total + '</td></tr>' +
             '</table>';
         } else {
@@ -344,7 +386,8 @@
           }
         }
         box.innerHTML =
-          '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong> &middot; Status: ' + (order.status || 'pending') + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
+          '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
+          orderStatusHtml(order) +
           addressHtml +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
           breakdownHtml;
