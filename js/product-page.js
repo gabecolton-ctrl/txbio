@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     var qty = parseInt(qtyInput.value, 10) || 1;
     btn.disabled = true;
     btn.textContent = 'Adding...';
-    Cart.addItem(product, qty).then(function () {
+    Cart.addItem(window.CasePricing ? CasePricing.apply(product) : product, qty).then(function () {
       btn.disabled = false;
       btn.textContent = 'Add to cart';
       msg.style.display = 'block';

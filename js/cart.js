@@ -74,13 +74,20 @@ var Cart = (function () {
         if (existing) {
           existing.qty += qty;
         } else {
-          items.push({
+          var line = {
             slug: product.slug,
             name: product.name,
             packSize: product.packSize,
             price: product.price,
             qty: qty
-          });
+          };
+          // Case lines (see case-pricing.js) remember how many vials they hold
+          // and which single-vial slug to pull stock from at checkout.
+          if (product.caseOf) {
+            line.caseOf = product.caseOf;
+            line.unitSlug = product.unitSlug;
+          }
+          items.push(line);
         }
         transaction.set(ref, { items: items, updatedAt: new Date().toISOString() });
       });
