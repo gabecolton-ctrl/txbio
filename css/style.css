@@ -743,3 +743,12 @@ main.legal section:not(.page-head) p { color: var(--muted); }
 .buy-option-price { font-size: 0.92rem; color: var(--muted); font-variant-numeric: tabular-nums; }
 .buy-option-save { font-size: 0.82rem; font-weight: 600; color: var(--mint); }
 .buy-mode-note { margin: 10px 0 0; font-size: 0.88rem; color: var(--muted); }
+
+/* ---------- Orders page: tracking number ---------- */
+.tracking-row { margin: 4px 0 14px; padding: 14px 16px; background: var(--ink); border: 1px solid var(--line-soft); border-radius: var(--radius-sm); }
+.tracking-row label { margin-bottom: 6px; }
+.tracking-controls { display: flex; flex-wrap: wrap; gap: 8px; }
+.tracking-controls input { flex: 1 1 220px; margin: 0; }
+.tracking-controls button { padding: 10px 14px; font-size: 0.86rem; white-space: nowrap; }
+.tracking-status { margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
+.tracking-status:empty { display: none; }

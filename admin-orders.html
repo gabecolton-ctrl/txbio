@@ -119,34 +119,63 @@
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
-  // When an order is marked shipped, offer to email the buyer (with an
-  // optional tracking number). Uses js/order-emails.js; does nothing until
-  // EmailJS is set up there.
-  function offerShippedEmail(order) {
-    if (!window.OrderEmails || !OrderEmails.isConfigured()) return;
-    if (!order.userEmail) {
-      alert('This order has no buyer email, so no shipped email was sent.');
-      return;
+  // Shipping: each order has a tracking number field. Marking an order
+  // "shipped" saves that number and emails the buyer automatically
+  // (js/order-emails.js), with the tracking number in the email.
+  function escapeAttr(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function shipStatusText(order) {
+    if (!order.shippedEmailSentAt) return '';
+    var when = new Date(order.shippedEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    var sentTracking = order.emailedTrackingNumber !== undefined ? order.emailedTrackingNumber : order.trackingNumber;
+    return 'Shipped email sent ' + when + (sentTracking ? ' with tracking ' + sentTracking : ' without tracking') + '.';
+  }
+
+  function setShipStatus(orderId, text, isError) {
+    var el = document.querySelector('[data-ship-status-for="' + orderId + '"]');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+
+  function trackingInputValue(orderId) {
+    var input = document.querySelector('input[data-tracking-for="' + orderId + '"]');
+    return input ? input.value.trim() : '';
+  }
+
+  function saveTracking(order, tracking) {
+    order.trackingNumber = tracking;
+    return firebase.firestore().collection('orders').doc(order.id).update({ trackingNumber: tracking });
+  }
+
+  // Sends the shipped email with the tracking number currently in the field.
+  function sendShippedEmail(order) {
+    var tracking = trackingInputValue(order.id);
+    if (!window.OrderEmails || !OrderEmails.isConfigured()) {
+      setShipStatus(order.id, 'Buyer emails aren’t set up, so no email was sent.', true);
+      return Promise.resolve();
     }
-    var again = order.shippedEmailSentAt ? ' A shipped email was already sent on ' + new Date(order.shippedEmailSentAt).toLocaleDateString() + '.' : '';
-    var tracking = window.prompt(
-      'Email ' + order.userEmail + ' that order #' + order.orderNumber + ' has shipped?' + again +
-      '\n\nEnter a tracking number (optional), then press OK to send. Press Cancel to skip the email.',
-      order.trackingNumber || ''
-    );
-    if (tracking === null) return;
-    tracking = tracking.trim();
-    OrderEmails.sendShipped(order, tracking).then(function () {
+    if (!order.userEmail) {
+      setShipStatus(order.id, 'This order has no buyer email, so no email was sent.', true);
+      return Promise.resolve();
+    }
+    setShipStatus(order.id, 'Sending shipped email…');
+    return OrderEmails.sendShipped(order, tracking).then(function () {
       var sentAt = new Date().toISOString();
       order.shippedEmailSentAt = sentAt;
-      if (tracking) order.trackingNumber = tracking;
-      var update = { shippedEmailSentAt: sentAt };
-      if (tracking) update.trackingNumber = tracking;
-      return firebase.firestore().collection('orders').doc(order.id).update(update);
+      order.trackingNumber = tracking;
+      order.emailedTrackingNumber = tracking;
+      return firebase.firestore().collection('orders').doc(order.id).update({ trackingNumber: tracking, emailedTrackingNumber: tracking, shippedEmailSentAt: sentAt });
     }).then(function () {
-      alert('Shipped email sent to ' + order.userEmail + '.');
+      setShipStatus(order.id, shipStatusText(order));
+      var resend = document.querySelector('button[data-resend-for="' + order.id + '"]');
+      if (resend) resend.style.display = '';
     }).catch(function (err) {
-      alert('The shipped email did not send: ' + (err && (err.text || err.message) || err) + '\nThe order status was still saved.');
+      setShipStatus(order.id, 'The shipped email didn’t send: ' + (err && (err.text || err.message) || err) + '. Use Resend shipped email to try again.', true);
+      var resend = document.querySelector('button[data-resend-for="' + order.id + '"]');
+      if (resend) resend.style.display = '';
     });
   }
 
@@ -225,6 +254,15 @@
         '</div>' +
         '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
+        '<div class="tracking-row">' +
+          '<label for="tracking-' + order.id + '">Tracking number</label>' +
+          '<div class="tracking-controls">' +
+            '<input type="text" id="tracking-' + order.id + '" data-tracking-for="' + order.id + '" value="' + escapeAttr(order.trackingNumber) + '" placeholder="Enter before marking shipped" autocomplete="off">' +
+            '<button type="button" class="btn-outline-light" data-save-tracking-for="' + order.id + '">Save</button>' +
+            '<button type="button" class="btn-outline-light" data-resend-for="' + order.id + '"' + (order.status === 'shipped' || order.shippedEmailSentAt ? '' : ' style="display:none;"') + '>Resend shipped email</button>' +
+          '</div>' +
+          '<p class="tracking-status" data-ship-status-for="' + order.id + '">' + shipStatusText(order) + '</p>' +
+        '</div>' +
         '<div style="overflow-x:auto;">' +
           '<table class="cart-table" style="margin-bottom:10px;">' +
             '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
@@ -242,16 +280,56 @@
       listEl.appendChild(box);
     });
 
+    listEl.querySelectorAll('button[data-save-tracking-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var orderId = btn.getAttribute('data-save-tracking-for');
+        var order = allOrders.find(function (o) { return o.id === orderId; });
+        if (!order) return;
+        btn.disabled = true;
+        saveTracking(order, trackingInputValue(orderId)).then(function () {
+          btn.disabled = false;
+          setShipStatus(orderId, order.shippedEmailSentAt
+            ? 'Tracking number saved. The buyer was already emailed, so use Resend shipped email to send them this number.'
+            : 'Tracking number saved. It goes in the email when you mark this order shipped.');
+        }).catch(function (err) {
+          btn.disabled = false;
+          setShipStatus(orderId, 'Could not save tracking number: ' + err.message, true);
+        });
+      });
+    });
+
+    listEl.querySelectorAll('button[data-resend-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var orderId = btn.getAttribute('data-resend-for');
+        var order = allOrders.find(function (o) { return o.id === orderId; });
+        if (!order) return;
+        btn.disabled = true;
+        sendShippedEmail(order).then(function () { btn.disabled = false; });
+      });
+    });
+
     listEl.querySelectorAll('.order-status-select').forEach(function (select) {
       select.addEventListener('change', function () {
         var orderId = select.getAttribute('data-order-id');
         var newStatus = select.value;
         select.disabled = true;
+        var order = allOrders.find(function (o) { return o.id === orderId; });
+        var previousStatus = order ? (order.status || 'pending') : 'pending';
+        if (order && newStatus === 'shipped') {
+          var tracking = trackingInputValue(orderId);
+          var question = order.shippedEmailSentAt
+            ? 'A shipped email was already sent for this order. Mark it shipped and email the buyer again?'
+            : (tracking ? null : 'There\u2019s no tracking number for this order. Mark it shipped and email the buyer without one?');
+          if (question && !window.confirm(question)) {
+            select.value = previousStatus;
+            select.disabled = false;
+            return;
+          }
+        }
         Account.updateOrderStatus(orderId, newStatus).then(function () {
           select.disabled = false;
-          var order = allOrders.find(function (o) { return o.id === orderId; });
           if (order) order.status = newStatus;
-          if (order && newStatus === 'shipped') offerShippedEmail(order);
+          if (order && newStatus === 'shipped') sendShippedEmail(order);
         }).catch(function (err) {
           select.disabled = false;
           alert('Could not update status: ' + err.message);
