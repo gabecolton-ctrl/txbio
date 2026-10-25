@@ -14,8 +14,8 @@ var OrderEmails = (function () {
   var CONFIG = {
     publicKey: '',              // Account → General → Public Key
     serviceId: '',              // Email Services → your Private Email service → Service ID
-    confirmationTemplateId: '', // Email Templates → "Order confirmation" → Template ID
-    shippedTemplateId: ''       // Email Templates → "Order shipped" → Template ID
+    confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
+    shippedTemplateId: 'template_r6zmcve'     // Email Templates → "Order shipped" → Template ID
   };
 
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
