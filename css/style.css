@@ -874,8 +874,8 @@ nav a { white-space: nowrap; }
 .product-card.search-hide, section.search-hide { display: none !important; }
 
 /* Reorder on past orders (account.html) */
-.order-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 12px; margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line-soft); }
-.order-actions .btn-outline { padding: 9px 18px; font-size: 0.9rem; }
+.order-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px 20px; margin-top: 18px; padding-top: 18px; border-top: 1px solid var(--line-soft); }
+.order-actions .reorder-btn { padding: 10px 22px; font-size: 0.9rem; margin: 0; }
 .reorder-hint { font-size: 0.85rem; color: var(--muted); }
 .reorder-msg { margin-top: 12px; padding: 14px 16px; background: var(--raised); border-radius: var(--radius-sm); font-size: 0.92rem; }
 .reorder-msg ul { margin: 0 0 12px; padding-left: 20px; color: var(--muted); }
