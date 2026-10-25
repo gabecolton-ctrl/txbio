@@ -113,11 +113,12 @@ function isBogoLine(line, eligibleSlugs) {
 }
 
 // Totals, rounded exactly like checkout.html's computeAndDisplayTotals().
-// Promo codes discount everything except BOGO lines; the code is still
-// recorded on the order so affiliates are credited.
+// Promo codes don't stack with BOGO: vials in BOGO pairs aren't discounted,
+// but a leftover single vial is. The code is always recorded on the order so
+// affiliates are credited.
 function computeTotals({ lines, discountPercent, bogo, bogoSlugs, shippingPrice, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
-  const promoBase = lines.reduce((n, l) => (isBogoLine(l, bogoSlugs) ? n : n + l.price * l.qty), 0);
+  const promoBase = lines.reduce((n, l) => n + l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty), 0);
   const discount = round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   const tax = round2(discountedSubtotal * taxRate);
