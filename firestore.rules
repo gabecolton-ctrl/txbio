@@ -31,6 +31,20 @@ service cloud.firestore {
       allow write: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
     }
 
+    // BOGO eligibility per product — anyone signed in can read (checkout
+    // applies it), only the admin account can change it.
+    match /bogoProducts/{productSlug} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
+    }
+
+    // Site settings (e.g. settings/bankTransfer with payment details).
+    // Signed-in buyers can read them at checkout; only the admin can edit.
+    match /settings/{docId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.token.email == 'gabecolton@gmail.com';
+    }
+
     // Promo codes — anyone signed in can read (to validate a code at
     // checkout), but only the admin account can create/edit/delete codes
     // or update their usage stats.

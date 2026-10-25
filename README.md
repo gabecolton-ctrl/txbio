@@ -1,200 +1,50 @@
-# TXBioResearch Website
+# TXBioResearch website
 
-A 4-page static site: Home, About, Products (catalog), Contact.
+Static site for txbioresearch.com, served by GitHub Pages from the `main`
+branch (root folder). Sign-in, carts, orders, stock, promo codes and BOGO run
+on Firebase (Auth + Firestore). Order and contact emails go through
+FormSubmit to txbioresearch@gmail.com.
 
-## File structure
-```
-index.html
-about.html
-services.html
-contact.html
-css/style.css
-js/main.js
-```
+Merging to `main` publishes the site; changes appear within a few minutes.
 
-## Editing the catalog
-Open `services.html` and edit the `<table class="catalog-table">` rows.
-Each row is: Product name / Pack size / Price / Intended Use tag.
-Replace the `$0.00` placeholders with real prices.
+## Pages
 
-## Editing the contact form
-The form in `contact.html` currently has `action="#"` — it doesn't send anywhere yet.
-To make it functional, you have two easy no-backend options:
-1. **Formspree** (formspree.io) — sign up free, get a form endpoint, set
-   `action="https://formspree.io/f/yourFormId"` and `method="POST"`.
-2. **Netlify Forms** — only works if hosted on Netlify, not applicable here since you're using Namecheap.
+| Page | What it is |
+|---|---|
+| `index.html`, `about.html`, `contact.html`, `terms.html` | Public pages |
+| `login.html` | Sign in / register (`login.html#register` opens Register) |
+| `services.html` | Catalog (signed-in researchers only) |
+| `products/*.html` | One page per product |
+| `cart.html`, `checkout.html`, `account.html` | Buyer flow |
+| `admin-inventory.html`, `admin-orders.html`, `admin-promos.html`, `admin-bogo.html` | Admin only (gabecolton@gmail.com) |
 
-## Deploying via GitHub + Namecheap
+## Where things live
 
-### Step 1 — Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial site"
-git branch -M main
-git remote add origin https://github.com/YOUR_USERNAME/txbioresearch.git
-git push -u origin main
-```
+- **Design:** everything visual is in `css/style.css`. Colors are the variables at the top.
+- **Product data:** `js/products.js` (name, pack size, price, specs). Products
+  with a dosage dropdown keep their per-dose prices in `DOSE_PRICES` near the
+  bottom of their own page in `products/`.
+- **Catalog cards:** hand-written in `services.html`, grouped by category.
+- **Case pricing:** `js/case-pricing.js`. A case is 10 vials and the buyer pays
+  for 7. Case size, free vials, and which products are single-vial only are
+  set at the top of the file.
+- **Stock:** `admin-inventory.html`. Products with dosages are tracked per dose
+  (for example `semaglutide-10mg`). A case pulls 10 units from its dose's count.
+  Leaving a product untracked treats it as always in stock.
+- **Bank transfer details:** stored in Firestore, not in this repo (see below).
 
-### Step 2 — Enable GitHub Pages
-1. Go to your repo on GitHub → **Settings** → **Pages**.
-2. Under "Build and deployment", set Source to **Deploy from a branch**.
-3. Branch: `main`, folder: `/ (root)`. Save.
-4. GitHub will give you a URL like `https://YOUR_USERNAME.github.io/txbioresearch`.
+## Firestore setup
 
-### Step 3 — Add a custom domain (your Namecheap domain)
-1. Still in **Settings → Pages**, under "Custom domain", enter your domain
-   (e.g. `txbioresearch.com`) and save. This creates a `CNAME` file in your repo automatically.
-2. In **Namecheap → Domain List → Manage → Advanced DNS**, add these records:
+`firestore.rules` holds the security rules the site expects. After editing it,
+paste it into Firebase console → Firestore → Rules and publish.
 
-   For an apex domain (`txbioresearch.com`):
-   | Type  | Host | Value                  |
-   |-------|------|------------------------|
-   | A     | @    | 185.199.108.153        |
-   | A     | @    | 185.199.109.153        |
-   | A     | @    | 185.199.110.153        |
-   | A     | @    | 185.199.111.153        |
-   | CNAME | www  | YOUR_USERNAME.github.io |
+Bank transfer details shown after checkout come from the document
+`settings/bankTransfer` with these string fields:
 
-3. Wait for DNS to propagate (can take up to 24 hrs, often much faster).
-4. Back in GitHub Pages settings, check **Enforce HTTPS** once the certificate is issued.
+- `accountNumber`
+- `routingNumber`
+- `bankName` (optional)
+- `accountName` (optional)
 
-## Legal / compliance note
-This site is built around a "research use only" model — every page carries
-a disclaimer that products are not for human or animal consumption and are
-sold only to qualified researchers/institutions. Keep this framing consistent
-across any new pages or marketing copy you add, since removing it while still
-marketing to individual/personal buyers would undermine the legal basis for
-the research-use labeling.
-
-## Firebase Authentication Setup
-
-This site uses Firebase Authentication (Email/Password) to gate the Products
-catalog and all individual product pages behind a login.
-
-**Already configured:**
-- Firebase project: `txbio-7cba9`
-- Email/Password sign-in method enabled
-- Config wired into `js/firebase-config.js`
-
-**How the gate works:**
-- `login.html` — sign in or register (name + institution + email + password)
-- `js/auth-guard.js` — included on `services.html` and every page in `/products/`;
-  checks if a user is signed in, redirects to `login.html` if not
-- `js/nav-auth.js` — swaps the nav's "Researcher Login" link to "Sign Out" when
-  a user is logged in
-
-**To manage registered users:** Firebase Console → Authentication → Users tab.
-You can view, disable, or delete accounts there manually — there's no automated
-vetting of "is this really a researcher," so treat account approval as a manual
-trust step if you want tighter control (e.g. periodically review new signups).
-
-**Important:** anyone can currently self-register through login.html. If you
-want approval-gated signup instead of instant self-registration, that requires
-additional backend logic (e.g. a Cloud Function that holds new accounts in a
-"pending" state until you approve them). Ask if you want that built.
-
-## Editing product info
-
-All product content (name, price, specs, description) lives in two places
-that must be kept in sync:
-1. `js/products.js` — a data reference file (not currently rendered directly,
-   kept for future use if you want to auto-generate pages again)
-2. `products/*.html` — the actual live pages, one per product, generated from
-   this data. To change a price or description, edit the specific product's
-   HTML file directly under `products/`.
-
-## Adding a real product image
-
-Each product page currently shows the TXBioResearch icon as a placeholder in
-place of a product photo. To add a real image:
-1. Add your image file to `/images/` (e.g. `images/retatrutide.jpg`)
-2. In that product's HTML file under `/products/`, find the `<div class="product-media">`
-   block and change the `src="../images/logo-icon.png"` to your new filename.
-
-## Cart Feature (Firestore-backed)
-
-Added: a shopping cart tied to each user's account, stored in Firestore
-(Firebase's database) so it persists across devices and sessions.
-
-**Setup already done:**
-- Firestore database created (production mode)
-- Security rules published so each user can only read/write their own cart:
-  ```
-  match /carts/{userId} {
-    allow read, write: if request.auth != null && request.auth.uid == userId;
-  }
-  ```
-
-**New pages:**
-- `cart.html` — view cart contents, adjust quantities, remove items
-- `checkout.html` — order summary + "Submit Order Inquiry" (no live payment yet)
-
-**New files:**
-- `js/cart.js` — all cart logic (add/update/remove/clear), reads and writes
-  to Firestore at `/carts/{the signed-in user's uid}`
-- `js/product-page.js` — wires the "Add to Cart" button on each product page
-
-**Important — no payment processor connected yet:**
-Clicking "Submit Order Inquiry" on the checkout page currently just clears
-the cart and shows a confirmation message. It does **not**:
-- Charge any payment method
-- Automatically email you the order details
-
-Right now, if someone submits an order, you won't be notified anywhere.
-Before this goes live for real customers, you'll want one of:
-1. **Quick fix:** change the order form to also send an email (e.g. via
-   Formspree, same as the Contact page) so you actually receive orders.
-2. **Full fix:** once you pick a payment processor (Stripe, Square, etc.),
-   the checkout page needs to be rebuilt to redirect to their hosted
-   checkout flow, or use their JS SDK for a custom embedded form. Come back
-   for this once you know which processor you're using — the amount of
-   backend logic needed depends heavily on which one you pick.
-
-**To see submitted orders in the meantime:** none are stored anywhere right
-now (the cart is cleared on submit, not saved to an "orders" collection).
-If you want a record of inquiries even before payment is wired up, ask —
-that's a small addition (save to a `/orders` collection instead of just
-clearing the cart).
-
-## My Account Page & Order History (added)
-
-New page: `account.html` — lets a signed-in user manage their personal info,
-shipping address, and view their order history. Submitting an order on
-`checkout.html` now saves it to Firestore (previously it only cleared the cart).
-
-**IMPORTANT — Firestore rules must be updated in Firebase Console:**
-
-The rules you published earlier only covered `/carts/{userId}`. With the
-account and order features, you need to add rules for `/users/{userId}` and
-`/orders/{orderId}` too. Go to Firebase Console → Firestore Database → Rules,
-replace everything with:
-
-```
-rules_version = '2';
-service cloud.firestore {
-  match /databases/{database}/documents {
-    match /carts/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
-    }
-    match /orders/{orderId} {
-      allow create: if request.auth != null && request.auth.uid == request.resource.data.userId;
-      allow read: if request.auth != null && request.auth.uid == resource.data.userId;
-      allow update, delete: if false;
-    }
-  }
-}
-```
-
-Publish, and orders/account will work. Until you do this, submitting an
-order or saving account info will fail with a permission error.
-
-**Viewing all orders as the business owner:** right now, each customer can
-only see their own orders (correct for their privacy) — but there's no
-"admin view" for you to see all orders across all customers in one place.
-The only way to see everything currently is manually in Firebase Console →
-Firestore Database → Data → `orders` collection. If you want a proper admin
-dashboard on the site itself, that's a separate build — ask if you want it.
+If that document is missing, buyers who choose bank transfer are told the
+details will be emailed to them.

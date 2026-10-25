@@ -69,7 +69,8 @@
     </ul>
 
     <div class="contact-panel">
-      <form action="#" method="POST">
+      <form id="contact-form" novalidate>
+        <input type="text" name="_honey" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute; left:-9999px; width:1px; height:1px;">
         <label for="name">Name</label>
         <input type="text" id="name" name="name" required autocomplete="name">
 
@@ -87,8 +88,13 @@
           <label for="confirm">I confirm I am contacting TXBioResearch on behalf of a laboratory or research institution, for research use only, and not for personal, human, or animal consumption.</label>
         </div>
 
-        <button type="submit" class="btn">Send message</button>
+        <p id="contact-error" class="auth-error" role="alert"></p>
+        <button type="submit" class="btn" id="contact-submit">Send message</button>
       </form>
+      <div id="contact-sent" style="display:none;" role="status">
+        <h2 style="font-size:1.6rem;">Message sent</h2>
+        <p style="color:var(--muted);">Thanks for reaching out. We'll reply to the email address you gave us.</p>
+      </div>
     </div>
   </section>
 </main>
@@ -127,5 +133,51 @@
 <script src="js/nav-auth.js"></script>
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
+<script>
+  // Sends contact messages through FormSubmit to the same inbox that receives
+  // order notifications from checkout.
+  (function () {
+    var form = document.getElementById('contact-form');
+    var btn = document.getElementById('contact-submit');
+    var errorEl = document.getElementById('contact-error');
+    function val(id) { return document.getElementById(id).value.trim(); }
+
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      errorEl.classList.remove('show');
+      if (!form.checkValidity()) {
+        form.reportValidity();
+        return;
+      }
+      var data = new FormData();
+      data.append('_subject', 'TXBioResearch contact form: ' + val('org'));
+      data.append('Name', val('name'));
+      data.append('Institution', val('org'));
+      data.append('Email', val('email'));
+      data.append('Message', val('message'));
+      data.append('Research-use confirmation', 'Confirmed');
+      data.append('_replyto', val('email'));
+      data.append('_captcha', 'false');
+      data.append('_honey', form.elements['_honey'].value);
+
+      btn.disabled = true;
+      btn.textContent = 'Sending...';
+      fetch('https://formsubmit.co/ajax/txbioresearch@gmail.com', {
+        method: 'POST',
+        headers: { 'Accept': 'application/json' },
+        body: data
+      }).then(function (res) {
+        if (!res.ok) throw new Error('status ' + res.status);
+        form.style.display = 'none';
+        document.getElementById('contact-sent').style.display = 'block';
+      }).catch(function () {
+        btn.disabled = false;
+        btn.textContent = 'Send message';
+        errorEl.innerHTML = 'Your message didn\u2019t send. Email us directly at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a>.';
+        errorEl.classList.add('show');
+      });
+    });
+  })();
+</script>
 </body>
 </html>
