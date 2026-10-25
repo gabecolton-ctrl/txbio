@@ -61,6 +61,12 @@ var OrderEmails = (function () {
     }).join('\n');
   }
 
+  // Link to the buyer's order on the website (orders.html scrolls to it).
+  var SITE_URL = 'https://txbioresearch.com';
+  function orderUrl(order) {
+    return SITE_URL + '/orders.html' + (order.orderNumber ? '#order-' + order.orderNumber : '');
+  }
+
   function nextSteps(paymentMethod) {
     if (paymentMethod === 'bitcoin') {
       return 'Send payment to the Bitcoin address shown on your confirmation screen, then reply to this email with your transaction ID.';
@@ -101,7 +107,8 @@ var OrderEmails = (function () {
         total: money(order.total),
         shipping_address: addressText(order.shippingAddress) || 'Not provided',
         payment_method: order.paymentMethod || '',
-        next_steps: nextSteps(order.paymentMethod)
+        next_steps: nextSteps(order.paymentMethod) + '\n\nView your order anytime: ' + orderUrl(order),
+        order_url: orderUrl(order)
       });
     }).then(function () { return true; });
   }
@@ -116,7 +123,9 @@ var OrderEmails = (function () {
         items: itemsText(order.items),
         shipping_address: addressText(order.shippingAddress) || 'the address on your order',
         tracking_number: trackingNumber || 'Not provided',
-        tracking_line: trackingNumber ? 'Tracking number: ' + trackingNumber : 'We’ll send tracking details if they become available.'
+        tracking_line: (trackingNumber ? 'Tracking number: ' + trackingNumber : 'We’ll send tracking details if they become available.') +
+          '\n\nView your order: ' + orderUrl(order),
+        order_url: orderUrl(order)
       });
     }).then(function () { return true; });
   }

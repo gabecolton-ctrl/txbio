@@ -1,4 +1,4 @@
-// reorder.js — "Reorder" on a past order (account.html). Adds the order's
+// reorder.js — "Reorder" on a past order (orders.html). Adds the order's
 // items back to the cart at today's prices, read from the same places the
 // product pages use: js/products.js for single-price products and each
 // product page's DOSE_PRICES for products with a dosage dropdown. Cases are

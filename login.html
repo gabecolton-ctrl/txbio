@@ -6,7 +6,7 @@
 <title>Researcher Login | TXBioResearch</title>
 <meta name="description" content="Sign in or register to access the TXBioResearch product catalog. Access is restricted to research and institutional buyers.">
 <link rel="icon" type="image/png" href="images/logo-icon.png">
-<link rel="stylesheet" href="css/style.css?v=20261025">
+<link rel="stylesheet" href="css/style.css?v=20261025b">
 </head>
 <body>
 <div id="splash-screen">
@@ -52,8 +52,17 @@
             </ul>
           </details>
         </li>
-        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My account</a></li>
-        <li><a href="login.html" id="nav-account-link">Researcher login</a></li>
+        <li class="nav-myaccount nav-admin-menu nav-account-menu">
+          <details>
+            <summary>My account</summary>
+            <ul>
+              <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
+              <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-login"><a href="login.html" id="nav-account-link">Researcher login</a></li>
       </ul>
     </nav>
   </div>

@@ -4,9 +4,9 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Account | TXBioResearch</title>
-<meta name="description" content="Manage your TXBioResearch account, personal info, and order history.">
+<meta name="description" content="Manage your TXBioResearch account: personal info, shipping address, and password.">
 <link rel="icon" type="image/png" href="images/logo-icon.png">
-<link rel="stylesheet" href="css/style.css?v=20261025">
+<link rel="stylesheet" href="css/style.css?v=20261025b">
 </head>
 <body>
 <div id="splash-screen">
@@ -52,8 +52,17 @@
             </ul>
           </details>
         </li>
-        <li class="nav-myaccount"><a href="account.html" id="nav-myaccount-link">My account</a></li>
-        <li><a href="login.html" id="nav-account-link">Researcher login</a></li>
+        <li class="nav-myaccount nav-admin-menu nav-account-menu">
+          <details>
+            <summary>My account</summary>
+            <ul>
+              <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
+              <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-login"><a href="login.html" id="nav-account-link">Researcher login</a></li>
       </ul>
     </nav>
   </div>
@@ -69,7 +78,7 @@
 <main id="gated-content" style="display:none;">
   <section class="page-head">
     <h1>My account</h1>
-    <p class="lead">Manage your personal info, shipping address, and view your order history.</p>
+    <p class="lead">Manage your personal info, shipping address, and password. Looking for an order? See <a href="orders.html">My orders</a>.</p>
   </section>
 
   <section>
@@ -134,14 +143,24 @@
     </div>
   </section>
 
-  <section>
-    <h2>Order History</h2>
-    <div id="orders-loading" class="cart-empty">Loading your orders&hellip;</div>
-    <div id="orders-empty" class="cart-empty" style="display:none;">
-      <p>You haven't submitted any orders yet.</p>
-      <a href="services.html" class="btn">Browse Products</a>
-    </div>
-    <div id="orders-list" style="display:none;"></div>
+  <section id="password-section">
+    <h2>Password</h2>
+    <div id="password-message" role="status" style="display:none;" class="form-message"></div>
+    <form id="password-form" autocomplete="on">
+      <input type="email" id="password-username" autocomplete="username" hidden>
+      <label for="current-password">Current password</label>
+      <input type="password" id="current-password" required autocomplete="current-password">
+
+      <label for="new-password">New password</label>
+      <input type="password" id="new-password" required minlength="6" autocomplete="new-password">
+      <p class="field-hint">At least 6 characters.</p>
+
+      <label for="confirm-password">Confirm new password</label>
+      <input type="password" id="confirm-password" required minlength="6" autocomplete="new-password">
+
+      <button type="submit" class="btn">Change password</button>
+    </form>
+    <p class="auth-aside" style="margin-top:14px; text-align:left;">Forgot your current password? <a href="#" id="password-reset-link">Email me a reset link</a></p>
   </section>
 </main>
 
@@ -178,9 +197,6 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
-<script src="js/products.js"></script>
-<script src="js/case-pricing.js"></script>
-<script src="js/reorder.js"></script>
 <script src="js/account.js"></script>
 <script src="js/credits.js"></script>
 <script src="js/nav-auth.js"></script>
@@ -207,7 +223,6 @@
       renderAddressDisplay(profile);
     });
 
-    renderOrders();
   });
 
   function renderAddressDisplay(profile) {
@@ -299,154 +314,6 @@
     });
   });
 
-  // Order status for buyers: a friendly label, tracking with a carrier link
-  // when the number's format identifies the carrier, ship date, and any
-  // cancellation reason.
-  var STATUS_LABELS = {
-    pending: 'Order received',
-    confirmed: 'Confirmed',
-    processing: 'Preparing to ship',
-    shipped: 'Shipped',
-    delivered: 'Delivered',
-    cancelled: 'Cancelled'
-  };
-  function escHtml(v) {
-    return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; });
-  }
-  function trackingLink(num) {
-    var n = String(num || '').replace(/\s+/g, '').toUpperCase();
-    if (/^1Z[0-9A-Z]{16}$/.test(n)) return { carrier: 'UPS', url: 'https://www.ups.com/track?tracknum=' + n };
-    if (/^9\d{19,21}$/.test(n) || /^[A-Z]{2}\d{9}US$/.test(n)) return { carrier: 'USPS', url: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + n };
-    if (/^(\d{12}|\d{15})$/.test(n)) return { carrier: 'FedEx', url: 'https://www.fedex.com/fedextrack/?trknbr=' + n };
-    return null;
-  }
-  function orderStatusHtml(order) {
-    var status = order.status || 'pending';
-    var html = '<div class="order-status"><span class="status-pill status-' + escHtml(status) + '">' + escHtml(STATUS_LABELS[status] || status) + '</span>';
-    if (order.trackingNumber && status !== 'cancelled') {
-      var link = trackingLink(order.trackingNumber);
-      html += '<span class="order-status-detail">Tracking: ' + (link
-        ? '<a href="' + link.url + '" target="_blank" rel="noopener">' + escHtml(order.trackingNumber) + '</a> (' + link.carrier + ')'
-        : escHtml(order.trackingNumber)) + '</span>';
-    }
-    if (order.shippedEmailSentAt && status !== 'cancelled') {
-      html += '<span class="order-status-detail">Shipped ' + new Date(order.shippedEmailSentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
-    }
-    if (status === 'cancelled' && order.cancelReason) {
-      html += '<span class="order-status-detail">Reason: ' + escHtml(order.cancelReason) + '</span>';
-    }
-    return html + '</div>';
-  }
-
-  function wireReorder(box, order) {
-    var btn = box.querySelector('.reorder-btn');
-    var msg = box.querySelector('.reorder-msg');
-    btn.addEventListener('click', function () {
-      btn.disabled = true;
-      btn.textContent = 'Adding to cart…';
-      msg.style.display = 'none';
-      Reorder.run(order).then(function (result) {
-        if (result.added.length && !result.skipped.length) {
-          window.location.href = 'cart.html';
-          return;
-        }
-        btn.disabled = false;
-        btn.textContent = 'Reorder';
-        var html = '';
-        if (result.added.length) {
-          html += '<p>Added ' + result.added.length + ' of ' + (result.added.length + result.skipped.length) + ' items to your cart.</p>';
-        }
-        html += '<p>' + (result.added.length ? 'Not added:' : 'None of these items can be reordered:') + '</p><ul>' +
-          result.skipped.map(function (s) {
-            return '<li>' + escHtml(s.name) + (s.packSize ? ' (' + escHtml(s.packSize) + ')' : '') + ': ' + escHtml(s.reason) + '</li>';
-          }).join('') + '</ul>';
-        if (result.added.length) html += '<a href="cart.html" class="btn">View cart</a>';
-        else html += '<a href="services.html" class="btn-outline">Browse the catalog</a>';
-        msg.innerHTML = html;
-        msg.style.display = 'block';
-      }).catch(function (err) {
-        btn.disabled = false;
-        btn.textContent = 'Reorder';
-        msg.innerHTML = '<p>Could not add these items to your cart: ' + escHtml(err.message) + '</p>';
-        msg.style.display = 'block';
-      });
-    });
-  }
-
-  function renderOrders() {
-    var loading = document.getElementById('orders-loading');
-    var empty = document.getElementById('orders-empty');
-    var list = document.getElementById('orders-list');
-
-    Account.getOrderHistory().then(function (orders) {
-      loading.style.display = 'none';
-      if (orders.length === 0) {
-        empty.style.display = 'block';
-        list.style.display = 'none';
-        return;
-      }
-      empty.style.display = 'none';
-      list.style.display = 'block';
-      list.innerHTML = '';
-      orders.forEach(function (order) {
-        var date = new Date(order.createdAt).toLocaleDateString(undefined, { year: 'numeric', month: 'short', day: 'numeric' });
-        var box = document.createElement('div');
-        box.className = 'order-summary-box';
-        box.style.marginBottom = '18px';
-        var itemsHtml = order.items.map(function (item) {
-          var qtyDisplay = item.qty;
-          if (typeof item.backordered === 'number' && item.backordered > 0) {
-            qtyDisplay = item.qty + ' (' + item.fulfilled + ' shipped, ' + item.backordered + ' backordered)';
-          }
-          return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + qtyDisplay + '</td><td data-label="Subtotal">$' + (item.price * item.qty) + '</td></tr>';
-        }).join('');
-        var breakdownHtml = '';
-        if (typeof order.shipping !== 'undefined') {
-          var discountRowHtml = '';
-          if (order.discount && order.discount > 0) {
-            discountRowHtml = '<tr><td>Discount' + (order.promoCode ? ' (' + order.promoCode + ')' : '') + '</td><td>-$' + order.discount + '</td></tr>';
-          }
-          breakdownHtml =
-            '<table class="spec-table" style="margin-bottom:0;">' +
-            '<tr><td>Subtotal</td><td>$' + order.subtotal + '</td></tr>' +
-            '<tr><td>Shipping' + (order.shippingOption ? ' (' + order.shippingOption + ')' : '') + '</td><td>$' + order.shipping + '</td></tr>' +
-            discountRowHtml +
-            (order.bogoDiscount > 0 ? '<tr><td>BOGO discount</td><td>-$' + Number(order.bogoDiscount).toFixed(2) + '</td></tr>' : '') +
-            '<tr><td>Tax</td><td>$' + order.tax + '</td></tr>' +
-            (order.creditUsed > 0 ? '<tr><td>Store credit</td><td>-$' + Number(order.creditUsed).toFixed(2) + '</td></tr>' : '') +
-            '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + order.total + '</td></tr>' +
-            '</table>';
-        } else {
-          breakdownHtml = '<p style="text-align:right; font-weight:700; margin-bottom:0;">Total: $' + order.total + '</p>';
-        }
-        var addressHtml = '';
-        if (order.shippingAddress) {
-          var addr = order.shippingAddress;
-          var addrLines = [];
-          if (addr.addressLine1) addrLines.push(addr.addressLine1);
-          if (addr.addressLine2) addrLines.push(addr.addressLine2);
-          var addrCityStateZip = [addr.city, addr.state].filter(Boolean).join(', ') + (addr.zip ? ' ' + addr.zip : '');
-          if (addrCityStateZip.trim()) addrLines.push(addrCityStateZip.trim());
-          if (addrLines.length > 0) {
-            addressHtml = '<p style="font-size:0.9rem; color:var(--text-light); margin-bottom:10px;"><strong>Ship to:</strong> ' + addrLines.join(', ') + '</p>';
-          }
-        }
-        box.innerHTML =
-          '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
-          orderStatusHtml(order) +
-          addressHtml +
-          '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
-          breakdownHtml +
-          '<div class="order-actions"><button type="button" class="btn reorder-btn">Reorder</button>' +
-          '<span class="reorder-hint">Adds these items to your cart at today’s prices.</span></div>' +
-          '<div class="reorder-msg" role="status" style="display:none;"></div>';
-        wireReorder(box, order);
-        list.appendChild(box);
-      });
-    }).catch(function (err) {
-      loading.textContent = 'Could not load order history: ' + err.message;
-    });
-  }
 </script>
 <script>
   // Store credit: shown only to accounts that have a credit record.
@@ -480,6 +347,71 @@
           document.getElementById('credit-history-wrap').style.display = '';
         });
       }).catch(function (err) { console.error('Could not load store credit:', err); });
+    });
+  })();
+</script>
+<script>
+  // Change password: Firebase requires the current password (re-authentication)
+  // before it lets a signed-in user set a new one.
+  (function () {
+    var form = document.getElementById('password-form');
+    var msg = document.getElementById('password-message');
+    function show(text, ok) {
+      msg.textContent = text;
+      msg.className = 'form-message ' + (ok ? 'is-ok' : 'is-error');
+      msg.style.display = 'block';
+    }
+    function friendly(err) {
+      var code = err && err.code;
+      if (code === 'auth/wrong-password' || code === 'auth/invalid-credential' || code === 'auth/invalid-login-credentials') return 'Your current password is incorrect.';
+      if (code === 'auth/weak-password') return 'Choose a stronger new password (at least 6 characters).';
+      if (code === 'auth/too-many-requests') return 'Too many attempts. Wait a few minutes and try again, or use the reset link below.';
+      if (code === 'auth/network-request-failed') return 'Network error. Check your connection and try again.';
+      return 'Could not change your password: ' + (err && err.message ? err.message : 'unknown error');
+    }
+    document.addEventListener('userReady', function (e) {
+      document.getElementById('password-username').value = e.detail.user.email || '';
+    });
+    form.addEventListener('submit', function (e) {
+      e.preventDefault();
+      var user = firebase.auth().currentUser;
+      var current = document.getElementById('current-password').value;
+      var next = document.getElementById('new-password').value;
+      var confirm = document.getElementById('confirm-password').value;
+      if (!user || !user.email) return show('Please sign in again and retry.', false);
+      if (next.length < 6) return show('Your new password needs at least 6 characters.', false);
+      if (next !== confirm) return show('The new passwords don’t match.', false);
+      if (next === current) return show('Your new password is the same as your current one.', false);
+      var btn = form.querySelector('button[type="submit"]');
+      btn.disabled = true;
+      btn.textContent = 'Changing…';
+      var cred = firebase.auth.EmailAuthProvider.credential(user.email, current);
+      user.reauthenticateWithCredential(cred).then(function () {
+        return user.updatePassword(next);
+      }).then(function () {
+        form.reset();
+        show('Password changed. Use your new password next time you sign in.', true);
+      }).catch(function (err) {
+        show(friendly(err), false);
+      }).then(function () {
+        btn.disabled = false;
+        btn.textContent = 'Change password';
+      });
+    });
+    document.getElementById('password-reset-link').addEventListener('click', function (e) {
+      e.preventDefault();
+      var user = firebase.auth().currentUser;
+      if (!user || !user.email) return;
+      var done = function () { show('We sent a reset link to ' + user.email + '. Check your inbox (and spam folder).', true); };
+      firebase.auth().sendPasswordResetEmail(user.email, { url: window.location.origin + '/login.html' })
+        .then(done)
+        .catch(function (err) {
+          if (err && (err.code === 'auth/unauthorized-continue-uri' || err.code === 'auth/invalid-continue-uri')) {
+            return firebase.auth().sendPasswordResetEmail(user.email).then(done);
+          }
+          throw err;
+        })
+        .catch(function (err) { show(friendly(err), false); });
     });
   })();
 </script>
