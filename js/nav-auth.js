@@ -1,3 +1,7 @@
+// Before first paint: if this browser session was signed in on the last page,
+// show the signed-in layout right away (corrected once Firebase confirms).
+try { if (sessionStorage.getItem('txbio_signed_in') === '1') document.documentElement.classList.add('signed-in'); } catch (e) {}
+
 // nav-auth.js
 // Updates the nav bar's account link and the floating cart button based on sign-in state.
 document.addEventListener('DOMContentLoaded', function () {
@@ -31,6 +35,8 @@ document.addEventListener('DOMContentLoaded', function () {
   }
 
   firebase.auth().onAuthStateChanged(function (user) {
+    document.documentElement.classList.toggle('signed-in', !!user);
+    try { sessionStorage.setItem('txbio_signed_in', user ? '1' : '0'); } catch (e) {}
     if (user) recordCustomer(user);
     if (user) {
       if (acctLink) {

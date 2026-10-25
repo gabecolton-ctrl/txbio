@@ -752,3 +752,8 @@ main.legal section:not(.page-head) p { color: var(--muted); }
 .tracking-controls button { padding: 10px 14px; font-size: 0.86rem; white-space: nowrap; }
 .tracking-status { margin: 8px 0 0; font-size: 0.85rem; color: var(--muted); }
 .tracking-status:empty { display: none; }
+
+/* ---------- Signed-in vs signed-out content (js/nav-auth.js toggles html.signed-in) ---------- */
+.signed-in-only { display: none !important; }
+html.signed-in .signed-in-only { display: inline-flex !important; }
+html.signed-in .signed-out-only { display: none !important; }
