@@ -135,8 +135,7 @@
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
 <script>
-  // Sends contact messages through FormSubmit to the same inbox that receives
-  // order notifications from checkout.
+  // Sends contact messages through FormSubmit to info@txbioresearch.com.
   (function () {
     var form = document.getElementById('contact-form');
     var btn = document.getElementById('contact-submit');
@@ -163,7 +162,7 @@
 
       btn.disabled = true;
       btn.textContent = 'Sending...';
-      fetch('https://formsubmit.co/ajax/txbioresearch@gmail.com', {
+      fetch('https://formsubmit.co/ajax/info@txbioresearch.com', {
         method: 'POST',
         headers: { 'Accept': 'application/json' },
         body: data
