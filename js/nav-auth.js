@@ -16,7 +16,22 @@ document.addEventListener('DOMContentLoaded', function () {
   var loginPath = window.location.pathname.indexOf('/products/') !== -1 ? '../login.html' : 'login.html';
   var indexPath = window.location.pathname.indexOf('/products/') !== -1 ? '../index.html' : 'index.html';
 
+  // Keep a customer record for every signed-in account (once per browser
+  // session) so it appears on the admin Customers page.
+  function recordCustomer(user) {
+    try {
+      if (!user || !firebase.firestore || sessionStorage.getItem('txbio_customer_recorded') === user.uid) return;
+      var fields = { email: (user.email || '').toLowerCase(), lastSignInAt: new Date().toISOString() };
+      if (user.metadata && user.metadata.creationTime) fields.createdAt = new Date(user.metadata.creationTime).toISOString();
+      if (user.displayName) fields.displayName = user.displayName; // "Name — Institution" from sign-up
+      firebase.firestore().collection('users').doc(user.uid).set(fields, { merge: true }).then(function () {
+        sessionStorage.setItem('txbio_customer_recorded', user.uid);
+      }).catch(function () {});
+    } catch (e) {}
+  }
+
   firebase.auth().onAuthStateChanged(function (user) {
+    if (user) recordCustomer(user);
     if (user) {
       if (acctLink) {
         acctLink.textContent = 'Sign out';
@@ -43,6 +58,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (adminOrdersLink && user.email === ADMIN_EMAIL) {
         var adminOrdersLi = adminOrdersLink.closest('li');
         if (adminOrdersLi) adminOrdersLi.style.display = 'list-item';
+      }
+      if (user.email === ADMIN_EMAIL) {
+        document.querySelectorAll('li.nav-admin').forEach(function (li) { li.style.display = 'list-item'; });
       }
       if (floatingCart) {
         floatingCart.style.display = 'flex';
