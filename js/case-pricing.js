@@ -1,8 +1,7 @@
 // case-pricing.js — "Case of 10" bulk pricing on product pages.
 //
-// A case is 10 vials of the same product and dosage at 15% off the single-vial
-// price (rounded down to the whole dollar, so the buyer always saves at least
-// 15%). Research supplies (waters, B12, L-carnitine, capsules, blends in the
+// A case is 10 vials of the same product and dosage where the buyer pays for 7:
+// 3 vials free, which is 30% off the single-vial price. Research supplies (waters, B12, L-carnitine, capsules, blends in the
 // Research Reagents & Supplies section) are sold by the vial only.
 //
 // Case items go into the cart as their own line: slug "<vial-slug>-case",
@@ -13,7 +12,8 @@
 
 var CasePricing = (function () {
   var CASE_SIZE = 10;
-  var CASE_DISCOUNT = 0.15;
+  var FREE_VIALS = 3;
+  var CASE_DISCOUNT = FREE_VIALS / CASE_SIZE; // 30%
 
   // Base product slugs sold by the vial only.
   var NOT_CASE_ELIGIBLE = [
@@ -35,7 +35,7 @@ var CasePricing = (function () {
   }
 
   function casePrice(unitPrice) {
-    return Math.floor(unitPrice * CASE_SIZE * (1 - CASE_DISCOUNT));
+    return unitPrice * (CASE_SIZE - FREE_VIALS);
   }
 
   function isCaseItem(item) {
@@ -43,7 +43,8 @@ var CasePricing = (function () {
   }
 
   function money(n) {
-    return '$' + (Math.round(n * 100) % 100 === 0 ? n.toFixed(0) : n.toFixed(2));
+    var cents = Math.round(n * 100) % 100 !== 0;
+    return '$' + n.toLocaleString('en-US', { minimumFractionDigits: cents ? 2 : 0, maximumFractionDigits: 2 });
   }
 
   function currentUnitPrice() {
@@ -65,16 +66,25 @@ var CasePricing = (function () {
 
     ui.singlePrice.textContent = money(unit);
     ui.casePrice.textContent = money(total);
-    ui.caseSave.textContent = 'Save ' + money(saved);
+    ui.caseSave.textContent = FREE_VIALS + ' vials free';
 
     var priceEl = document.querySelector('.product-info .product-price');
     if (priceEl) priceEl.textContent = mode === 'case' ? money(total) : money(unit);
 
     ui.note.textContent = mode === 'case'
-      ? money(perVial) + ' per vial, ' + CASE_SIZE + ' vials per case. You save ' + money(saved) + ' versus buying single vials.'
+      ? 'Pay for ' + (CASE_SIZE - FREE_VIALS) + ', get ' + CASE_SIZE + ': ' + money(perVial) + ' per vial. You save ' + money(saved) + ' versus buying single vials.'
       : '';
     ui.note.style.display = mode === 'case' ? '' : 'none';
     if (ui.qtyLabel) ui.qtyLabel.textContent = mode === 'case' ? 'Cases' : 'Quantity';
+    // Dosage dropdown: show each dose's case price while "Case of 10" is picked.
+    if (ui.doseOptions) {
+      ui.doseOptions.forEach(function (o) {
+        var unitForDose = window.DOSE_PRICES ? DOSE_PRICES[o.el.value] : null;
+        o.el.textContent = (mode === 'case' && unitForDose != null)
+          ? o.original.replace(/\$[\d,.]+/, money(casePrice(unitForDose)) + ' per case')
+          : o.original;
+      });
+    }
     if (ui.packCell) ui.packCell.textContent = mode === 'case'
       ? ui.packOriginal.replace(/^1 vial/i, 'Case of ' + CASE_SIZE + ' vials')
       : ui.packOriginal;
@@ -111,6 +121,12 @@ var CasePricing = (function () {
       note: wrap.querySelector('[data-role="note"]'),
       qtyLabel: document.querySelector('label[for="qty-input"]')
     };
+    var doseSel = document.getElementById('dose-select');
+    if (doseSel) {
+      ui.doseOptions = Array.prototype.map.call(doseSel.options, function (el) {
+        return { el: el, original: el.textContent };
+      });
+    }
     // The spec table's "Pack size" row follows the selection too.
     Array.prototype.forEach.call(anchor.querySelectorAll('tr'), function (tr) {
       if (tr.cells.length === 2 && /pack size/i.test(tr.cells[0].textContent)) {
@@ -154,6 +170,7 @@ var CasePricing = (function () {
   return {
     CASE_SIZE: CASE_SIZE,
     CASE_DISCOUNT: CASE_DISCOUNT,
+    FREE_VIALS: FREE_VIALS,
     isEligible: isEligible,
     isCaseItem: isCaseItem,
     casePrice: casePrice,
