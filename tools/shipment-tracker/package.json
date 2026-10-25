@@ -1,0 +1,8 @@
+{
+  "name": "txbio-shipment-tracker",
+  "private": true,
+  "description": "Marks orders shipped and emails buyers when UPS first scans the package",
+  "engines": { "node": ">=20" },
+  "scripts": { "start": "node index.js", "test": "node test.js" },
+  "dependencies": { "firebase-admin": "^12.7.0" }
+}

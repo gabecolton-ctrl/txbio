@@ -1,0 +1,54 @@
+# Checks UPS for orders with a tracking number and, at the first scan, marks
+# them shipped and emails the buyer. Setup: tools/shipment-tracker/README.md.
+name: Track shipments
+
+on:
+  schedule:
+    - cron: '7,37 * * * *'   # about every 30 minutes (GitHub may run it late when busy)
+  workflow_dispatch: {}      # "Run workflow" button for a manual check
+
+permissions:
+  contents: read
+  actions: write             # lets the keep-alive step below re-enable this workflow
+
+concurrency:
+  group: track-shipments
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tools/shipment-tracker/package-lock.json
+      - run: npm ci --omit=dev
+        working-directory: tools/shipment-tracker
+      - run: node index.js
+        working-directory: tools/shipment-tracker
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          UPS_CLIENT_ID: ${{ secrets.UPS_CLIENT_ID }}
+          UPS_CLIENT_SECRET: ${{ secrets.UPS_CLIENT_SECRET }}
+          EMAILJS_PRIVATE_KEY: ${{ secrets.EMAILJS_PRIVATE_KEY }}
+      # GitHub pauses scheduled workflows in public repos after 60 days with no
+      # commits. Re-enabling it on each run keeps it from being paused.
+      - name: Keep this schedule active
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/track-shipments.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}
+
+  test:
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20 }
+      - run: npm ci --omit=dev && node test.js
+        working-directory: tools/shipment-tracker

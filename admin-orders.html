@@ -130,6 +130,7 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
+<script src="js/site-config.js"></script>
 <script src="js/account.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/promos.js"></script>
@@ -150,10 +151,17 @@
   }
 
   function shipStatusText(order) {
-    if (!order.shippedEmailSentAt) return '';
+    var auto = [];
+    if (order.status === 'label-created') auto.push('Waiting for UPS’s first scan; it’s then marked shipped and the buyer is emailed automatically.');
+    if (order.trackingStatusText && order.trackingCheckedAt) {
+      auto.push('UPS: ' + order.trackingStatusText + ' (checked ' + new Date(order.trackingCheckedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ').');
+    }
+    if (order.autoShippedAt) auto.push('Marked shipped automatically at the first UPS scan.');
+    if (order.shippedEmailPending && order.shippedEmailError) auto.push('Shipped email failed (' + order.shippedEmailError + '); it retries on the next check, or use Resend shipped email.');
+    if (!order.shippedEmailSentAt) return auto.join(' ');
     var when = new Date(order.shippedEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
     var sentTracking = order.emailedTrackingNumber !== undefined ? order.emailedTrackingNumber : order.trackingNumber;
-    return 'Shipped email sent ' + when + (sentTracking ? ' with tracking ' + sentTracking : ' without tracking') + '.';
+    return ['Shipped email sent ' + when + (sentTracking ? ' with tracking ' + sentTracking : ' without tracking') + '.'].concat(auto).join(' ');
   }
 
   function setShipStatus(orderId, text, isError) {
@@ -168,9 +176,20 @@
     return input ? input.value.trim() : '';
   }
 
+  // With AUTO_SHIP_TRACKING on (js/site-config.js), saving a tracking number on
+  // an order that hasn't shipped moves it to "Label created" for the tracker.
+  var PRE_SHIP = ['pending', 'confirmed', 'processing'];
   function saveTracking(order, tracking) {
-    order.trackingNumber = tracking;
-    return firebase.firestore().collection('orders').doc(order.id).update({ trackingNumber: tracking });
+    var fields = { trackingNumber: tracking };
+    if (window.AUTO_SHIP_TRACKING && tracking && PRE_SHIP.indexOf(order.status || 'pending') !== -1) {
+      fields.status = 'label-created';
+    }
+    if (!tracking && order.status === 'label-created') fields.status = 'processing';
+    return firebase.firestore().collection('orders').doc(order.id).update(fields).then(function () {
+      Object.assign(order, fields);
+      var select = document.querySelector('select[data-order-id="' + order.id + '"]');
+      if (select && fields.status) select.value = fields.status;
+    });
   }
 
   // Sends the shipped email with the tracking number currently in the field.
@@ -367,7 +386,8 @@
     });
   }
 
-  var STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
+  var STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'label-created', 'shipped', 'delivered', 'cancelled'];
+  var STATUS_NAMES = { 'label-created': 'Label created' };
 
   document.addEventListener('userReady', function (e) {
     var user = e.detail.user;
@@ -418,7 +438,7 @@
 
       var statusOptionsHtml = STATUS_OPTIONS.map(function (s) {
         var selected = (order.status || 'pending') === s ? ' selected' : '';
-        return '<option value="' + s + '"' + selected + '>' + s.charAt(0).toUpperCase() + s.slice(1) + '</option>';
+        return '<option value="' + s + '"' + selected + '>' + (STATUS_NAMES[s] || s.charAt(0).toUpperCase() + s.slice(1)) + '</option>';
       }).join('');
 
       var box = document.createElement('div');
@@ -485,7 +505,9 @@
           btn.disabled = false;
           setShipStatus(orderId, order.shippedEmailSentAt
             ? 'Tracking number saved. The buyer was already emailed, so use Resend shipped email to send them this number.'
-            : 'Tracking number saved. It goes in the email when you mark this order shipped.');
+            : order.status === 'label-created'
+              ? 'Tracking number saved. Label created: when UPS first scans the package, this order is marked shipped and the buyer is emailed automatically.'
+              : 'Tracking number saved. It goes in the email when you mark this order shipped.');
         }).catch(function (err) {
           btn.disabled = false;
           setShipStatus(orderId, 'Could not save tracking number: ' + err.message, true);
