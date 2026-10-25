@@ -192,10 +192,16 @@
     <p id="bank-order-number" style="font-weight:600; color:var(--mint-dark); margin-bottom:14px;"></p>
     <p>Use the details below to complete your transfer. Once received, we'll process and ship your order.</p>
     <div id="bank-backorder-notice" class="notice" style="display:none; text-align:left;"></div>
-    <table class="spec-table" style="max-width:400px; margin: 0 auto 16px;">
-      <tr><td>Account Number</td><td>218386587884</td></tr>
-      <tr><td>Routing Number</td><td>101019644</td></tr>
+    <!-- Bank details load from Firestore (settings/bankTransfer) so they
+         aren't published in this public repository. -->
+    <p id="bank-details-loading" style="color:var(--text-light);">Loading transfer details&hellip;</p>
+    <table class="spec-table" id="bank-details-table" style="max-width:400px; margin: 0 auto 16px; display:none;">
+      <tr id="bank-name-row" style="display:none;"><td>Bank</td><td id="bank-name"></td></tr>
+      <tr id="bank-account-name-row" style="display:none;"><td>Account name</td><td id="bank-account-name"></td></tr>
+      <tr><td>Account number</td><td id="bank-account-number"></td></tr>
+      <tr><td>Routing number</td><td id="bank-routing-number"></td></tr>
     </table>
+    <p id="bank-details-fallback" style="display:none;">We'll email your bank transfer details to you shortly.</p>
     <p style="font-size:0.85rem; color:var(--text-light);">Your order inquiry has been recorded. Email us at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with your transfer confirmation once sent, and we'll confirm and ship promptly.</p>
     <a href="services.html" class="btn" style="margin-top:10px;">Back to Catalog</a>
   </div>
@@ -251,6 +257,36 @@
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
 <script>
+  // Bank transfer details live in Firestore at settings/bankTransfer
+  // (fields: accountNumber, routingNumber, optional bankName and accountName),
+  // readable only by signed-in users. If the document is missing, buyers are
+  // told the details will be emailed instead.
+  function loadBankDetails() {
+    var loadingEl = document.getElementById('bank-details-loading');
+    var tableEl = document.getElementById('bank-details-table');
+    var fallbackEl = document.getElementById('bank-details-fallback');
+    function showFallback() {
+      loadingEl.style.display = 'none';
+      fallbackEl.style.display = 'block';
+    }
+    firebase.firestore().collection('settings').doc('bankTransfer').get().then(function (doc) {
+      var d = doc.exists ? doc.data() : null;
+      if (!d || !d.accountNumber || !d.routingNumber) return showFallback();
+      document.getElementById('bank-account-number').textContent = d.accountNumber;
+      document.getElementById('bank-routing-number').textContent = d.routingNumber;
+      if (d.bankName) {
+        document.getElementById('bank-name').textContent = d.bankName;
+        document.getElementById('bank-name-row').style.display = '';
+      }
+      if (d.accountName) {
+        document.getElementById('bank-account-name').textContent = d.accountName;
+        document.getElementById('bank-account-name-row').style.display = '';
+      }
+      loadingEl.style.display = 'none';
+      tableEl.style.display = '';
+    }).catch(showFallback);
+  }
+
   var TAX_RATE = 0.0825;
   var creditAccount = null; // buyer's store credit, loaded on sign-in
   var currentSubtotal = 0;
@@ -716,6 +752,7 @@
           bankNotice.style.display = 'block';
         }
         document.getElementById('bank-instructions').style.display = 'block';
+        loadBankDetails();
       } else {
         if (backorderText) {
           var inquiryNotice = document.getElementById('inquiry-backorder-notice');

@@ -68,6 +68,7 @@
 
   <div id="admin-content" style="display:none;">
     <section>
+      <div id="inventory-orphans" class="notice" style="display:none;"></div>
       <div id="inventory-save-msg" style="display:none; color:var(--mint-dark); font-weight:600; margin-bottom:16px;">Saved.</div>
       <div class="catalog-wrap">
         <table class="catalog-table" id="inventory-table">
@@ -119,37 +120,53 @@
 <script src="js/nav-toggle.js"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
+    // One row per stock-keeping unit. Products with a dosage dropdown are
+  // tracked per dose (e.g. "semaglutide-10mg"), matching the slug the cart
+  // and checkout use, so each dose has its own count. Cases draw 10 units
+  // from these same rows.
   var ALL_PRODUCTS = [
-  { slug: "5-amino-1mq", name: "5-Amino-1MQ" },
+  { slug: "5-amino-1mq-10mg", name: "5-Amino-1MQ 10mg" },
+  { slug: "5-amino-1mq-50mg", name: "5-Amino-1MQ 50mg" },
   { slug: "ahk-cu", name: "AHK-CU" },
   { slug: "aod9604", name: "AOD9604" },
   { slug: "ara290-cibinetide", name: "ARA290 (Cibinetide)" },
   { slug: "acetic-acid-water", name: "Acetic Acid Water" },
   { slug: "b12", name: "B12" },
   { slug: "bpc-10mg-tb10mg", name: "BPC 10mg+TB10mg" },
-  { slug: "bpc-157", name: "BPC 157" },
+  { slug: "bpc-157-5mg", name: "BPC 157 5mg" },
+  { slug: "bpc-157-10mg", name: "BPC 157 10mg" },
+  { slug: "bpc-157-20mg", name: "BPC 157 20mg" },
   { slug: "bpc-15mg-tb15mg", name: "BPC 15mg+TB15mg" },
   { slug: "bpc-5mg-tb5mg", name: "BPC 5mg+TB5mg" },
-  { slug: "bac-water", name: "Bacteriostatic Water" },
-  { slug: "cjc-1295-without-dac", name: "CJC 1295(without DAC)" },
+  { slug: "bac-water-3ml", name: "Bacteriostatic Water 3ml" },
+  { slug: "bac-water-10ml", name: "Bacteriostatic Water 10ml" },
+  { slug: "cjc-1295-without-dac-5mg", name: "CJC 1295(without DAC) 5mg" },
+  { slug: "cjc-1295-without-dac-10mg", name: "CJC 1295(without DAC) 10mg" },
   { slug: "cjc-1295-without-dac-5mg-ipa-5mg", name: "CJC 1295(without DAC)5mg+IPA 5mg" },
   { slug: "cjc1295-with-dac", name: "CJC1295 with DAC" },
   { slug: "cagrilintide", name: "Cagrilintide" },
   { slug: "cagrisema-2-5mg-2-5mg", name: "Cagrisema (2.5mg+2.5mg)" },
   { slug: "cagrisema-5mg-5mg", name: "Cagrisema(5mg+5mg)" },
   { slug: "cartalax", name: "Cartalax" },
-  { slug: "dsip", name: "DSIP" },
+  { slug: "dsip-5mg", name: "DSIP 5mg" },
+  { slug: "dsip-10mg", name: "DSIP 10mg" },
   { slug: "dihexa", name: "Dihexa" },
   { slug: "epithalon", name: "Epithalon" },
-  { slug: "ghk-cu", name: "GHK-Cu" },
+  { slug: "ghk-cu-50mg", name: "GHK-Cu 50mg" },
+  { slug: "ghk-cu-100mg", name: "GHK-Cu 100mg" },
   { slug: "glow-blend", name: "GLOW blend" },
-  { slug: "glutathione", name: "Glutathione" },
-  { slug: "hcg", name: "HCG" },
+  { slug: "glutathione-600mg", name: "Glutathione 600mg" },
+  { slug: "glutathione-1200mg", name: "Glutathione 1200mg" },
+  { slug: "glutathione-1500mg", name: "Glutathione 1500mg" },
+  { slug: "hcg-5000iu", name: "HCG 5000iu" },
+  { slug: "hcg-10000iu", name: "HCG 10000iu" },
   { slug: "humanin", name: "Humanin" },
   { slug: "igf-1-lr3", name: "IGF-1 LR3" },
-  { slug: "ipamorelin", name: "Ipamorelin" },
+  { slug: "ipamorelin-5mg", name: "Ipamorelin 5mg" },
+  { slug: "ipamorelin-10mg", name: "Ipamorelin 10mg" },
   { slug: "klow-blend", name: "KLOW blend" },
-  { slug: "kpv", name: "KPV" },
+  { slug: "kpv-5mg", name: "KPV 5mg" },
+  { slug: "kpv-10mg", name: "KPV 10mg" },
   { slug: "kisspeptin-10", name: "Kisspeptin-10" },
   { slug: "l-carnitine-600mg", name: "L-carnitine 600mg" },
   { slug: "ll37", name: "LL37" },
@@ -157,30 +174,55 @@
   { slug: "lipo-c", name: "Lipo-C" },
   { slug: "lipo-c-fatblaster", name: "Lipo-C (FatBlaster)" },
   { slug: "lipo-c-with-b12", name: "Lipo-C with B12" },
-  { slug: "mots-c-human", name: "MOTS-c (Human)" },
+  { slug: "mots-c-human-10mg", name: "MOTS-c (Human) 10mg" },
+  { slug: "mots-c-human-20mg", name: "MOTS-c (Human) 20mg" },
+  { slug: "mots-c-human-40mg", name: "MOTS-c (Human) 40mg" },
   { slug: "melanotan-i", name: "Melanotan I" },
   { slug: "melanotan-ii", name: "Melanotan II" },
-  { slug: "nad-plus", name: "Nad+" },
-  { slug: "oxytocin", name: "Oxytocin" },
+  { slug: "nad-plus-100mg", name: "Nad+ 100mg" },
+  { slug: "nad-plus-500mg", name: "Nad+ 500mg" },
+  { slug: "nad-plus-1000mg", name: "Nad+ 1000mg" },
+  { slug: "oxytocin-2mg", name: "Oxytocin 2mg" },
+  { slug: "oxytocin-10mg", name: "Oxytocin 10mg" },
   { slug: "pt141", name: "PT141" },
-  { slug: "r-3", name: "R-3" },
+  { slug: "r-3-5mg", name: "R-3 5mg" },
+  { slug: "r-3-10mg", name: "R-3 10mg" },
+  { slug: "r-3-15mg", name: "R-3 15mg" },
+  { slug: "r-3-20mg", name: "R-3 20mg" },
+  { slug: "r-3-30mg", name: "R-3 30mg" },
+  { slug: "r-3-40mg", name: "R-3 40mg" },
+  { slug: "r-3-60mg", name: "R-3 60mg" },
   { slug: "retatrutide-20mg-tirzepatide-40mg", name: "Retatrutide 20mg + Tirzepatide 40mg" },
   { slug: "retatrutide-5mg-cagrilintide-5mg", name: "Retatrutide 5mg+cagrilintide 5mg" },
   { slug: "slu-pp-332-capsule", name: "SLU-PP-332 capsule" },
-  { slug: "ss-31", name: "SS-31" },
+  { slug: "ss-31-10mg", name: "SS-31 10mg" },
+  { slug: "ss-31-50mg", name: "SS-31 50mg" },
   { slug: "super-human-blend", name: "SUPER Human Blend" },
   { slug: "selank", name: "Selank" },
-  { slug: "semaglutide", name: "Semaglutide" },
-  { slug: "semax", name: "Semax" },
+  { slug: "semaglutide-5mg", name: "Semaglutide 5mg" },
+  { slug: "semaglutide-10mg", name: "Semaglutide 10mg" },
+  { slug: "semaglutide-20mg", name: "Semaglutide 20mg" },
+  { slug: "semaglutide-30mg", name: "Semaglutide 30mg" },
+  { slug: "semax-10mg", name: "Semax 10mg" },
+  { slug: "semax-30mg", name: "Semax 30mg" },
   { slug: "semax-10mg-selank-10mg", name: "Semax 10mg+Selank 10mg" },
-  { slug: "sermorelin-acetate", name: "Sermorelin Acetate" },
+  { slug: "sermorelin-acetate-5mg", name: "Sermorelin Acetate 5mg" },
+  { slug: "sermorelin-acetate-10mg", name: "Sermorelin Acetate 10mg" },
   { slug: "sterile-water", name: "Sterile water" },
-  { slug: "tb500-thymosin-beta-4", name: "TB500 Thymosin Beta-4" },
-  { slug: "tesamorelin", name: "Tesamorelin" },
+  { slug: "tb500-thymosin-beta-4-5mg", name: "TB500 Thymosin Beta-4 5mg" },
+  { slug: "tb500-thymosin-beta-4-10mg", name: "TB500 Thymosin Beta-4 10mg" },
+  { slug: "tesamorelin-10mg", name: "Tesamorelin 10mg" },
+  { slug: "tesamorelin-20mg", name: "Tesamorelin 20mg" },
   { slug: "thymalin-thymulin", name: "Thymalin/Thymulin" },
   { slug: "thymosin-alpha-1", name: "Thymosin alpha 1" },
-  { slug: "tirzepatide", name: "Tirzepatide" },
-  { slug: "vip", name: "VIP" },
+  { slug: "tirzepatide-5mg", name: "Tirzepatide 5mg" },
+  { slug: "tirzepatide-10mg", name: "Tirzepatide 10mg" },
+  { slug: "tirzepatide-20mg", name: "Tirzepatide 20mg" },
+  { slug: "tirzepatide-30mg", name: "Tirzepatide 30mg" },
+  { slug: "tirzepatide-40mg", name: "Tirzepatide 40mg" },
+  { slug: "tirzepatide-60mg", name: "Tirzepatide 60mg" },
+  { slug: "vip-5mg", name: "VIP 5mg" },
+  { slug: "vip-10mg", name: "VIP 10mg" },
   { slug: "cerebrolysin", name: "cerebrolysin" },
   { slug: "pinealon", name: "pinealon" }
   ];
@@ -210,6 +252,21 @@
           '<td><button type="button" class="btn" data-save-slug="' + product.slug + '" style="padding:8px 16px; font-size:0.85rem;">Save</button></td>';
         rowsEl.appendChild(tr);
       });
+
+      // Counts saved under slugs that no longer match any row (for example a
+      // single total for a product that is now tracked per dose).
+      var known = ALL_PRODUCTS.map(function (p) { return p.slug; });
+      var orphaned = Object.keys(stockMap).filter(function (slug) { return known.indexOf(slug) === -1; });
+      var orphanEl = document.getElementById('inventory-orphans');
+      if (orphanEl) {
+        if (orphaned.length) {
+          orphanEl.innerHTML = '<strong>Old stock counts not in use</strong><p>These counts were saved before stock was tracked per dose, so checkout no longer reads them. Re-enter the stock under each dose below: ' +
+            orphaned.map(function (slug) { return slug + ' (' + stockMap[slug] + ')'; }).join(', ') + '.</p>';
+          orphanEl.style.display = 'block';
+        } else {
+          orphanEl.style.display = 'none';
+        }
+      }
 
       rowsEl.querySelectorAll('button[data-save-slug]').forEach(function (btn) {
         btn.addEventListener('click', function () {
