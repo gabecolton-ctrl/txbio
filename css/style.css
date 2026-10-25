@@ -880,3 +880,16 @@ nav a { white-space: nowrap; }
 .reorder-msg { margin-top: 12px; padding: 14px 16px; background: var(--raised); border-radius: var(--radius-sm); font-size: 0.92rem; }
 .reorder-msg ul { margin: 0 0 12px; padding-left: 20px; color: var(--muted); }
 .reorder-msg p { margin-bottom: 8px; }
+
+/* Account: password form, messages */
+#password-form, #profile-form { max-width: 520px; }
+.field-hint { margin: -10px 0 16px; font-size: 0.82rem; color: var(--faint); }
+.form-message { max-width: 520px; margin-bottom: 14px; padding: 10px 14px; border-radius: var(--radius-sm); font-size: 0.9rem; font-weight: 600; }
+.form-message.is-ok { color: var(--mint); background: var(--mint-wash); }
+.form-message.is-error { color: var(--alert); background: var(--alert-wash); }
+
+/* Orders page: the order an email linked to */
+.order-highlight { border-color: var(--mint) !important; box-shadow: 0 0 0 3px var(--mint-wash); }
+/* Signed-in nav before Firebase confirms (avoids a flash of the login button) */
+html.signed-in .nav-login { display: none; }
+html.signed-in .nav-myaccount { display: list-item; }

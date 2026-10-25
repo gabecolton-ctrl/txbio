@@ -34,23 +34,34 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {}
   }
 
+  document.querySelectorAll('.nav-signout-link').forEach(function (a) {
+    a.addEventListener('click', function (e) {
+      e.preventDefault();
+      firebase.auth().signOut().then(function () {
+        window.location.href = indexPath;
+      });
+    });
+  });
+
+  // Highlight the current page inside the dropdown menus.
+  var here = window.location.pathname.split('/').pop() || 'index.html';
+  document.querySelectorAll('.nav-admin-menu ul a').forEach(function (a) {
+    if ((a.getAttribute('href') || '').split('/').pop() === here) a.classList.add('active');
+  });
+
   firebase.auth().onAuthStateChanged(function (user) {
     document.documentElement.classList.toggle('signed-in', !!user);
     try { sessionStorage.setItem('txbio_signed_in', user ? '1' : '0'); } catch (e) {}
     if (user) recordCustomer(user);
     if (user) {
+      // Signed in: the "My account" menu (My orders, Account details, Sign out)
+      // replaces the login button.
       if (acctLink) {
-        acctLink.textContent = 'Sign out';
-        acctLink.href = '#';
-        acctLink.onclick = function (e) {
-          e.preventDefault();
-          firebase.auth().signOut().then(function () {
-            window.location.href = indexPath;
-          });
-        };
+        var loginLi = acctLink.closest('li');
+        if (loginLi) loginLi.style.display = 'none';
       }
       if (myAccountLink) {
-        var myAccountLi = myAccountLink.closest('li');
+        var myAccountLi = myAccountLink.closest('li.nav-myaccount');
         if (myAccountLi) myAccountLi.style.display = 'list-item';
       }
       if (adminLink && user.email === ADMIN_EMAIL) {
@@ -82,12 +93,11 @@ document.addEventListener('DOMContentLoaded', function () {
       }
     } else {
       if (acctLink) {
-        acctLink.textContent = 'Researcher login';
-        acctLink.href = loginPath;
-        acctLink.onclick = null;
+        var signedOutLoginLi = acctLink.closest('li');
+        if (signedOutLoginLi) signedOutLoginLi.style.display = '';
       }
       if (myAccountLink) {
-        var signedOutMyAccountLi = myAccountLink.closest('li');
+        var signedOutMyAccountLi = myAccountLink.closest('li.nav-myaccount');
         if (signedOutMyAccountLi) signedOutMyAccountLi.style.display = 'none';
       }
       if (adminLink) {
