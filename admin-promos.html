@@ -82,6 +82,10 @@
           <option value="repeat-order">Repeat Orders Only (not first)</option>
         </select>
 
+        <label for="promo-affiliate-field">Affiliate email (optional)</label>
+        <input type="email" id="promo-affiliate-field" placeholder="Their account email, e.g. partner@example.com" autocomplete="off">
+        <p style="font-size:0.85rem; color:var(--text-light); margin:-10px 0 18px;">Orders using this code earn this account 10% of the order subtotal (after discounts) as store credit when you mark the order shipped.</p>
+
         <div class="checkbox-row" style="margin-bottom: 20px;">
           <input type="checkbox" id="promo-active-field" checked>
           <label for="promo-active-field">Active</label>
@@ -101,7 +105,7 @@
       <div class="catalog-wrap" id="promo-table-wrap" style="display:none;">
         <table class="catalog-table" id="promo-table">
           <thead>
-            <tr><th>Code</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
+            <tr><th>Code</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Affiliate</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
           </thead>
           <tbody id="promo-rows"></tbody>
         </table>
@@ -192,6 +196,7 @@
           '<td>' + promo.discountPercent + '%</td>' +
           '<td>' + typeLabel(promo.type) + '</td>' +
           '<td>' + (promo.active ? 'Active' : 'Inactive') + '</td>' +
+          '<td>' + (promo.affiliateEmail || '&mdash;') + '</td>' +
           '<td>' + (promo.timesUsed || 0) + '</td>' +
           '<td>$' + (promo.totalDiscounted || 0).toFixed(2) + '</td>' +
           '<td><a href="#" data-edit-code="' + promo.code + '" style="margin-right:12px;">Edit</a><a href="#" data-delete-code="' + promo.code + '" style="color:var(--danger);">Delete</a></td>';
@@ -203,6 +208,7 @@
           document.getElementById('promo-discount-field').value = promo.discountPercent;
           document.getElementById('promo-type-field').value = promo.type;
           document.getElementById('promo-active-field').checked = promo.active;
+          document.getElementById('promo-affiliate-field').value = promo.affiliateEmail || '';
           editingCode = promo.code;
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -227,7 +233,12 @@
     var discount = parseInt(document.getElementById('promo-discount-field').value, 10);
     var type = document.getElementById('promo-type-field').value;
     var active = document.getElementById('promo-active-field').checked;
+    var affiliateEmail = document.getElementById('promo-affiliate-field').value.trim().toLowerCase();
 
+    if (affiliateEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(affiliateEmail)) {
+      alert('Please enter a valid affiliate email, or leave it blank.');
+      return;
+    }
     if (!code || isNaN(discount) || discount < 1 || discount > 100) {
       alert('Please enter a valid code and a discount percent between 1 and 100.');
       return;
@@ -236,7 +247,7 @@
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
-    Promos.createOrUpdateCode(code, discount, type, active).then(function () {
+    Promos.createOrUpdateCode(code, discount, type, active, affiliateEmail).then(function () {
       btn.disabled = false;
       btn.textContent = 'Save Code';
       var msg = document.getElementById('promo-save-msg');

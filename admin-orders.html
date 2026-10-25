@@ -111,6 +111,10 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/account.js"></script>
+<script src="js/inventory.js"></script>
+<script src="js/promos.js"></script>
+<script src="js/credits.js"></script>
+<script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
@@ -118,6 +122,231 @@
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
+  // Shipping: each order has a tracking number field. Marking an order
+  // "shipped" saves that number and emails the buyer automatically
+  // (js/order-emails.js), with the tracking number in the email.
+  function escapeAttr(v) {
+    return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
+  }
+
+  function shipStatusText(order) {
+    if (!order.shippedEmailSentAt) return '';
+    var when = new Date(order.shippedEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+    var sentTracking = order.emailedTrackingNumber !== undefined ? order.emailedTrackingNumber : order.trackingNumber;
+    return 'Shipped email sent ' + when + (sentTracking ? ' with tracking ' + sentTracking : ' without tracking') + '.';
+  }
+
+  function setShipStatus(orderId, text, isError) {
+    var el = document.querySelector('[data-ship-status-for="' + orderId + '"]');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+
+  function trackingInputValue(orderId) {
+    var input = document.querySelector('input[data-tracking-for="' + orderId + '"]');
+    return input ? input.value.trim() : '';
+  }
+
+  function saveTracking(order, tracking) {
+    order.trackingNumber = tracking;
+    return firebase.firestore().collection('orders').doc(order.id).update({ trackingNumber: tracking });
+  }
+
+  // Sends the shipped email with the tracking number currently in the field.
+  function sendShippedEmail(order) {
+    var tracking = trackingInputValue(order.id);
+    if (!window.OrderEmails || !OrderEmails.isConfigured()) {
+      setShipStatus(order.id, 'Buyer emails aren’t set up, so no email was sent.', true);
+      return Promise.resolve();
+    }
+    if (!order.userEmail) {
+      setShipStatus(order.id, 'This order has no buyer email, so no email was sent.', true);
+      return Promise.resolve();
+    }
+    setShipStatus(order.id, 'Sending shipped email…');
+    return OrderEmails.sendShipped(order, tracking).then(function () {
+      var sentAt = new Date().toISOString();
+      order.shippedEmailSentAt = sentAt;
+      order.trackingNumber = tracking;
+      order.emailedTrackingNumber = tracking;
+      return firebase.firestore().collection('orders').doc(order.id).update({ trackingNumber: tracking, emailedTrackingNumber: tracking, shippedEmailSentAt: sentAt });
+    }).then(function () {
+      setShipStatus(order.id, shipStatusText(order));
+      var resend = document.querySelector('button[data-resend-for="' + order.id + '"]');
+      if (resend) resend.style.display = '';
+    }).catch(function (err) {
+      setShipStatus(order.id, 'The shipped email didn’t send: ' + (err && (err.text || err.message) || err) + '. Use Resend shipped email to try again.', true);
+      var resend = document.querySelector('button[data-resend-for="' + order.id + '"]');
+      if (resend) resend.style.display = '';
+    });
+  }
+
+  // Cancellation: setting an order to "cancelled" returns its stock (once per
+  // order) and emails the buyer, with the optional reason from the card.
+  function stockReturnPlan(order) {
+    // Only units checkout actually took from stock (item.fulfilled) go back.
+    return (order.items || []).filter(function (item) {
+      return typeof item.fulfilled === 'number' && item.fulfilled > 0;
+    }).map(function (item) {
+      var slug = item.caseOf ? (item.unitSlug || item.slug.replace(/-case$/, '')) : item.slug;
+      return { slug: slug, units: item.fulfilled, label: item.name + ' (' + item.packSize + ')' };
+    });
+  }
+
+  function cancelStatusText(order) {
+    var parts = [];
+    if (order.restockedAt) parts.push('Stock returned.');
+    if (order.cancellationEmailSentAt) {
+      parts.push('Cancellation email sent ' + new Date(order.cancellationEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.');
+    }
+    return parts.join(' ');
+  }
+
+  function setCancelStatus(orderId, text, isError) {
+    var el = document.querySelector('[data-cancel-status-for="' + orderId + '"]');
+    if (!el) return;
+    el.textContent = text;
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+
+  function cancelReasonValue(orderId) {
+    var input = document.querySelector('input[data-cancel-reason-for="' + orderId + '"]');
+    return input ? input.value.trim() : '';
+  }
+
+  function cancelOrder(order) {
+    var reason = cancelReasonValue(order.id);
+    var update = { cancelReason: reason };
+    var notes = [];
+    var errors = [];
+
+    var restock = Promise.resolve();
+    if (!order.restockedAt) {
+      var plan = stockReturnPlan(order);
+      restock = Promise.all(plan.map(function (line) {
+        return Inventory.restockStock(line.slug, line.units);
+      })).then(function () {
+        order.restockedAt = update.restockedAt = new Date().toISOString();
+      }).catch(function (err) {
+        errors.push('Stock was not returned (' + err.message + '); adjust it on the Inventory page.');
+      });
+    }
+
+    return restock.then(function () {
+      if (!window.Credits) return;
+      return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order)]).then(function (msgs) {
+        msgs.filter(Boolean).forEach(function (m) { notes.push(m); });
+      }).catch(function (err) {
+        errors.push('Store credit was not adjusted (' + err.message + '); fix it before re-crediting.');
+      });
+    }).then(function () {
+      if (!window.OrderEmails || !OrderEmails.canSendCancelled()) {
+        errors.push('No cancellation email was sent because the cancellation template isn’t set up yet.');
+        return;
+      }
+      if (!order.userEmail) {
+        errors.push('This order has no buyer email, so no email was sent.');
+        return;
+      }
+      return OrderEmails.sendCancelled(order, reason).then(function () {
+        order.cancellationEmailSentAt = update.cancellationEmailSentAt = new Date().toISOString();
+      }).catch(function (err) {
+        errors.push('The cancellation email didn’t send: ' + (err && (err.text || err.message) || err) + '.');
+      });
+    }).then(function () {
+      order.cancelReason = reason;
+      return firebase.firestore().collection('orders').doc(order.id).update(update);
+    }).then(function () {
+      var text = [cancelStatusText(order)].concat(notes, errors).filter(Boolean).join(' ');
+      setCancelStatus(order.id, text, errors.length > 0);
+    });
+  }
+
+  // Affiliate store credit: when an order that used an affiliate's promo code
+  // is marked shipped, the code's affiliate earns 10% of the order subtotal
+  // after discounts (credits.js). Cancelling a credited order takes it back.
+  function affiliateCodeOf(order) {
+    return order.affiliateCode || order.promoCode || '';
+  }
+
+  function affiliateText(order) {
+    var code = affiliateCodeOf(order);
+    if (order.affiliateCreditedAt && order.affiliateReversedAt) {
+      return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + ', then reversed.';
+    }
+    if (order.affiliateCreditedAt) {
+      return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + '.';
+    }
+    if (order.affiliateSkipped) return 'Referral ' + code + ': ' + order.affiliateSkipped;
+    return '';
+  }
+
+  function setAffiliateText(order, extra, isError) {
+    var el = document.querySelector('[data-affiliate-for="' + order.id + '"]');
+    if (!el) return;
+    el.textContent = [affiliateText(order), extra].filter(Boolean).join(' ');
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+
+  function updateOrder(order, fields) {
+    Object.assign(order, fields);
+    return firebase.firestore().collection('orders').doc(order.id).update(fields);
+  }
+
+  function creditAffiliate(order) {
+    if (order.affiliateCreditedAt && !order.affiliateReversedAt) return Promise.resolve();
+    var code = affiliateCodeOf(order);
+    if (!code || !window.Credits || !window.Promos) return Promise.resolve();
+    return Promos.getCode(code).then(function (promo) {
+      var email = promo && promo.affiliateEmail ? promo.affiliateEmail.toLowerCase() : '';
+      if (!email) return;
+      if (email === String(order.userEmail || '').toLowerCase()) {
+        return updateOrder(order, { affiliateSkipped: 'no credit, the affiliate placed this order themselves.' })
+          .then(function () { setAffiliateText(order); });
+      }
+      var cents = Credits.commissionCents(order);
+      if (cents <= 0) return;
+      return Credits.adminAdjust(email, cents, {
+        type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: ''
+      }).then(function () {
+        return updateOrder(order, {
+          affiliateEmail: email,
+          affiliateCreditCents: cents,
+          affiliateCreditedAt: new Date().toISOString(),
+          affiliateReversedAt: null
+        });
+      }).then(function () {
+        setAffiliateText(order);
+      });
+    }).catch(function (err) {
+      setAffiliateText(order, 'Referral credit failed: ' + err.message, true);
+    });
+  }
+
+  function reverseAffiliateCredit(order) {
+    if (!order.affiliateCreditedAt || order.affiliateReversedAt || !order.affiliateEmail) return Promise.resolve('');
+    return Credits.adminAdjust(order.affiliateEmail, -order.affiliateCreditCents, {
+      type: 'reversed', orderId: order.id, orderNumber: order.orderNumber || '', code: affiliateCodeOf(order), note: ''
+    }).then(function () {
+      return updateOrder(order, { affiliateReversedAt: new Date().toISOString() });
+    }).then(function () {
+      setAffiliateText(order);
+      return 'Referral credit reversed.';
+    });
+  }
+
+  function refundBuyerCredit(order) {
+    if (!(order.creditUsedCents > 0) || order.creditRefundedAt || !order.userEmail) return Promise.resolve('');
+    return Credits.adminAdjust(order.userEmail, order.creditUsedCents, {
+      type: 'refunded', orderId: order.id, orderNumber: order.orderNumber || '', code: '', note: ''
+    }).then(function () {
+      return updateOrder(order, { creditRefundedAt: new Date().toISOString() });
+    }).then(function () {
+      return Credits.formatCents(order.creditUsedCents) + ' store credit returned to the buyer.';
+    });
+  }
+
   var STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled'];
 
   document.addEventListener('userReady', function (e) {
@@ -191,8 +420,23 @@
             '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
           '</div>' +
         '</div>' +
-        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + '</p>' +
+        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
+        '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
+        '<div class="tracking-row">' +
+          '<label for="tracking-' + order.id + '">Tracking number</label>' +
+          '<div class="tracking-controls">' +
+            '<input type="text" id="tracking-' + order.id + '" data-tracking-for="' + order.id + '" value="' + escapeAttr(order.trackingNumber) + '" placeholder="Enter before marking shipped" autocomplete="off">' +
+            '<button type="button" class="btn-outline-light" data-save-tracking-for="' + order.id + '">Save</button>' +
+            '<button type="button" class="btn-outline-light" data-resend-for="' + order.id + '"' + (order.status === 'shipped' || order.shippedEmailSentAt ? '' : ' style="display:none;"') + '>Resend shipped email</button>' +
+          '</div>' +
+          '<p class="tracking-status" data-ship-status-for="' + order.id + '">' + shipStatusText(order) + '</p>' +
+        '</div>' +
+        '<div class="tracking-row">' +
+          '<label for="cancel-reason-' + order.id + '">Cancellation reason (optional)</label>' +
+          '<input type="text" id="cancel-reason-' + order.id + '" data-cancel-reason-for="' + order.id + '" value="' + escapeAttr(order.cancelReason) + '" placeholder="Included in the email if you cancel this order" autocomplete="off">' +
+          '<p class="tracking-status" data-cancel-status-for="' + order.id + '">' + cancelStatusText(order) + '</p>' +
+        '</div>' +
         '<div style="overflow-x:auto;">' +
           '<table class="cart-table" style="margin-bottom:10px;">' +
             '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
@@ -204,10 +448,39 @@
           '<tr><td>Shipping</td><td>$' + (order.shipping || 0).toFixed(2) + '</td></tr>' +
           (order.discount > 0 ? '<tr><td>Discount</td><td>-$' + order.discount.toFixed(2) + '</td></tr>' : '') +
           '<tr><td>Tax</td><td>$' + (order.tax || 0).toFixed(2) + '</td></tr>' +
+          (order.creditUsed > 0 ? '<tr><td>Store credit</td><td>-$' + Number(order.creditUsed).toFixed(2) + '</td></tr>' : '') +
           '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + (order.total || 0).toFixed(2) + '</td></tr>' +
         '</table>';
 
       listEl.appendChild(box);
+    });
+
+    listEl.querySelectorAll('button[data-save-tracking-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var orderId = btn.getAttribute('data-save-tracking-for');
+        var order = allOrders.find(function (o) { return o.id === orderId; });
+        if (!order) return;
+        btn.disabled = true;
+        saveTracking(order, trackingInputValue(orderId)).then(function () {
+          btn.disabled = false;
+          setShipStatus(orderId, order.shippedEmailSentAt
+            ? 'Tracking number saved. The buyer was already emailed, so use Resend shipped email to send them this number.'
+            : 'Tracking number saved. It goes in the email when you mark this order shipped.');
+        }).catch(function (err) {
+          btn.disabled = false;
+          setShipStatus(orderId, 'Could not save tracking number: ' + err.message, true);
+        });
+      });
+    });
+
+    listEl.querySelectorAll('button[data-resend-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var orderId = btn.getAttribute('data-resend-for');
+        var order = allOrders.find(function (o) { return o.id === orderId; });
+        if (!order) return;
+        btn.disabled = true;
+        sendShippedEmail(order).then(function () { btn.disabled = false; });
+      });
     });
 
     listEl.querySelectorAll('.order-status-select').forEach(function (select) {
@@ -215,10 +488,41 @@
         var orderId = select.getAttribute('data-order-id');
         var newStatus = select.value;
         select.disabled = true;
+        var order = allOrders.find(function (o) { return o.id === orderId; });
+        var previousStatus = order ? (order.status || 'pending') : 'pending';
+        if (order && newStatus === 'shipped') {
+          var tracking = trackingInputValue(orderId);
+          var question = order.shippedEmailSentAt
+            ? 'A shipped email was already sent for this order. Mark it shipped and email the buyer again?'
+            : (tracking ? null : 'There\u2019s no tracking number for this order. Mark it shipped and email the buyer without one?');
+          if (question && !window.confirm(question)) {
+            select.value = previousStatus;
+            select.disabled = false;
+            return;
+          }
+        }
+        if (order && newStatus === 'cancelled') {
+          var plan = order.restockedAt ? [] : stockReturnPlan(order);
+          var units = plan.reduce(function (n, l) { return n + l.units; }, 0);
+          var msg = 'Cancel order #' + (order.orderNumber || order.id) + '?' +
+            (order.cancellationEmailSentAt ? ' The buyer was already sent a cancellation email and will get another.' : ' The buyer will be emailed.') +
+            (units ? ' ' + units + ' unit' + (units === 1 ? '' : 's') + ' will go back into stock.' : '');
+          if (!window.confirm(msg)) {
+            select.value = previousStatus;
+            select.disabled = false;
+            return;
+          }
+        }
         Account.updateOrderStatus(orderId, newStatus).then(function () {
           select.disabled = false;
-          var order = allOrders.find(function (o) { return o.id === orderId; });
           if (order) order.status = newStatus;
+          if (order && newStatus === 'shipped') { sendShippedEmail(order); creditAffiliate(order); }
+          if (order && newStatus === 'cancelled') {
+            setCancelStatus(orderId, 'Cancelling\u2026');
+            cancelOrder(order).catch(function (err) {
+              setCancelStatus(orderId, 'Status saved as cancelled, but follow-up failed: ' + err.message, true);
+            });
+          }
         }).catch(function (err) {
           select.disabled = false;
           alert('Could not update status: ' + err.message);

@@ -120,12 +120,18 @@
         </div>
         <p id="promo-message" style="font-size:0.85rem; margin-top:6px; margin-bottom:14px; display:none;"></p>
 
+        <div id="credit-box" class="checkbox-row" style="display:none; margin-top:4px;">
+          <input type="checkbox" id="use-credit">
+          <label for="use-credit">Use my store credit (<span id="credit-available">$0.00</span> available)</label>
+        </div>
+
         <table class="spec-table" style="margin-bottom:0;">
           <tr><td>Subtotal</td><td id="summary-subtotal">$0</td></tr>
           <tr><td>Shipping</td><td id="summary-shipping">$20</td></tr>
           <tr id="summary-discount-row" style="display:none;"><td>Discount</td><td id="summary-discount">-$0</td></tr>
           <tr id="summary-bogo-row" style="display:none;"><td>BOGO Discount</td><td id="summary-bogo">-$0</td></tr>
           <tr><td>Tax (8.25%)</td><td id="summary-tax">$0</td></tr>
+          <tr id="summary-credit-row" style="display:none;"><td>Store credit</td><td id="summary-credit">-$0</td></tr>
           <tr><td style="font-weight:700; color:var(--bg-darker);">Total</td><td id="summary-total" style="font-weight:700; font-size:1.2rem;">$0</td></tr>
         </table>
         <p id="bogo-detail-text" style="font-size:0.85rem; color:var(--mint-dark); margin-top:8px; display:none;"></p>
@@ -243,6 +249,8 @@
 <script src="js/inventory.js"></script>
 <script src="js/promos.js"></script>
 <script src="js/bogo.js"></script>
+<script src="js/credits.js"></script>
+<script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
@@ -279,6 +287,7 @@
   }
 
   var TAX_RATE = 0.0825;
+  var creditAccount = null; // buyer's store credit, loaded on sign-in
   var currentSubtotal = 0;
   var currentCartItems = [];
   var appliedPromoCode = null;
@@ -294,6 +303,22 @@
     var discountedSubtotal = currentSubtotal - discountAmount - appliedBogoDiscount;
     var tax = Math.round(discountedSubtotal * TAX_RATE * 100) / 100;
     var total = discountedSubtotal + shipping + tax;
+
+    // Store credit pays down the total (after tax), up to the balance.
+    var useCredit = document.getElementById('use-credit');
+    var creditUsedCents = 0;
+    if (creditAccount && useCredit && useCredit.checked) {
+      creditUsedCents = Math.min(creditAccount.balanceCents, Math.round(total * 100));
+    }
+    var totalBeforeCredit = total;
+    total = Math.round((total - creditUsedCents / 100) * 100) / 100;
+    var creditRow = document.getElementById('summary-credit-row');
+    if (creditUsedCents > 0) {
+      document.getElementById('summary-credit').textContent = '-$' + (creditUsedCents / 100).toFixed(2);
+      creditRow.style.display = 'table-row';
+    } else {
+      creditRow.style.display = 'none';
+    }
 
     document.getElementById('summary-subtotal').textContent = '$' + currentSubtotal.toFixed(2);
     document.getElementById('summary-shipping').textContent = '$' + shipping.toFixed(2);
@@ -331,6 +356,9 @@
       bogoDiscount: appliedBogoDiscount,
       bogoBreakdown: bogoBreakdown,
       tax: tax,
+      totalBeforeCredit: totalBeforeCredit,
+      creditUsed: creditUsedCents / 100,
+      creditUsedCents: creditUsedCents,
       total: total
     };
   }
@@ -389,6 +417,20 @@
       msg.textContent = 'Could not check promo code: ' + (err.message || err);
     });
   });
+
+  function loadStoreCredit(user) {
+    if (!window.Credits || !user || !user.email) return;
+    Credits.getAccount(user.email).then(function (account) {
+      if (!account.exists || account.balanceCents <= 0) return;
+      creditAccount = account;
+      document.getElementById('credit-available').textContent = Credits.formatCents(account.balanceCents);
+      document.getElementById('credit-box').style.display = 'flex';
+    }).catch(function (err) {
+      console.error('Could not load store credit:', err);
+    });
+  }
+  document.addEventListener('userReady', function (e) { loadStoreCredit(e.detail.user); });
+  document.getElementById('use-credit').addEventListener('change', function () { computeAndDisplayTotals(); });
 
   function renderSummary() {
     var loading = document.getElementById('summary-loading');
@@ -518,6 +560,8 @@
       formData.append('BOGO Discount', '-$' + order.bogoDiscount.toFixed(2) + ' (' + bogoLines + ')');
     }
     formData.append('Tax', '$' + order.tax.toFixed(2));
+    if (order.creditUsed > 0) formData.append('Store Credit Used', '-$' + order.creditUsed.toFixed(2));
+    if (order.affiliateCode) formData.append('Affiliate Code', order.affiliateCode);
     formData.append('Total', '$' + order.total.toFixed(2));
     formData.append('Customer Notes', order.notes || '(none)');
     formData.append('_captcha', 'false');
@@ -535,6 +579,15 @@
 
   function sendCustomerConfirmationEmail(order) {
     if (!currentUserEmail) return Promise.resolve();
+
+    // Send from orders@txbioresearch.com through EmailJS once it's set up
+    // (js/order-emails.js). The FormSubmit fallback below only reaches buyers
+    // who have activated FormSubmit, so most never see it.
+    if (window.OrderEmails && OrderEmails.isConfigured()) {
+      return OrderEmails.sendConfirmation(order, currentUserEmail).catch(function (err) {
+        console.error('Order confirmation email failed to send:', err);
+      });
+    }
 
     var addr = order.shippingAddress || {};
     var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
@@ -639,6 +692,10 @@
           bogoDiscount: totals.bogoDiscount,
           bogoBreakdown: totals.bogoBreakdown,
           tax: totals.tax,
+          totalBeforeCredit: totals.totalBeforeCredit,
+          creditUsed: totals.creditUsed,
+          creditUsedCents: totals.creditUsedCents,
+          affiliateCode: totals.promoCode || '',
           total: totals.total,
           shippingAddress: checkoutAddress,
           notes: notes,
@@ -646,7 +703,7 @@
           hasBackorder: hasBackorder,
           status: 'pending'
         };
-        return Account.createOrder(orderData).then(function (result) {
+        return Account.createOrder(orderData, { creditSpendCents: totals.creditUsedCents, creditAccount: creditAccount }).then(function (result) {
           orderData.orderNumber = result.orderNumber;
           sendOrderNotificationEmail(orderData);
           sendCustomerConfirmationEmail(orderData);
