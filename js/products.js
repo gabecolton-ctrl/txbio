@@ -584,17 +584,6 @@ var PRODUCTS = [
     form: "Lyophilized powder"
   },
   {
-    slug: "slu-pp-332-capsule",
-    name: "SLU-PP-332 capsule",
-    packSize: "1 bottle x 100 capsules, 500mcg each",
-    price: 25,
-    category: "Research Compound",
-    description: "SLU-PP-332 is a small-molecule agonist of the estrogen-related receptors ERRα, ERRβ, and ERRγ.",
-    storage: "Store at room temperature, protect from light and moisture.",
-    purity: "99% Pure",
-    form: "Capsule"
-  },
-  {
     slug: "ss-31",
     name: "SS-31",
     packSize: "1 vial, dosage selectable",

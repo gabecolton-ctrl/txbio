@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-25T20:28:52.538Z",
+  "generatedAt": "2026-10-25T20:29:33.255Z",
   "taxRate": 0.0825,
   "shipping": {
     "20": {
@@ -620,13 +620,6 @@
           "packSize": "1 vial x 10mg"
         }
       }
-    },
-    "slu-pp-332-capsule": {
-      "name": "SLU-PP-332 capsule",
-      "packSize": "1 bottle x 100 capsules, 500mcg each",
-      "price": 25,
-      "caseEligible": false,
-      "doses": null
     },
     "ss-31": {
       "name": "SS-31",

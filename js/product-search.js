@@ -54,7 +54,6 @@ var PRODUCT_SEARCH = {
  "semax-10mg-selank-10mg": "Semax 10mg+Selank 10mg | 10mg Semax + 10mg Selank per vial | Semax | MEHFPGP; ACTH (4-7)-Pro-Gly-Pro | Synthetic heptapeptide (ACTH fragment analog) | Selank | TKPRPGP | Synthetic heptapeptide (tuftsin analog)",
  "semax": "Semax | MEHFPGP; ACTH (4-7)-Pro-Gly-Pro | Synthetic heptapeptide (ACTH fragment analog)",
  "sermorelin-acetate": "Sermorelin Acetate | Sermorelin | GRF (1-29)-NH2; human growth hormone-releasing factor (1-29) amide | Synthetic 29-amino-acid GHRH fragment",
- "slu-pp-332-capsule": "SLU-PP-332 capsule | SLU-PP-332 | 4-hydroxy-benzoic acid, 2-(2-naphthalenylmethylene)hydrazide | Small molecule; ERRα/β/γ agonist",
  "ss-31": "SS-31 | SS-31 (Elamipretide) | Elamipretide; MTP-131 | Synthetic tetrapeptide; cardiolipin-binding",
  "sterile-water": "Sterile water | Sterile, preservative-free water",
  "super-human-blend": "SUPER Human Blend",

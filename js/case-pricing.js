@@ -22,7 +22,6 @@ var CasePricing = (function () {
     'bac-water',
     'sterile-water',
     'acetic-acid-water',
-    'slu-pp-332-capsule',
     'super-human-blend'
   ];
 
