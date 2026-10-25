@@ -105,7 +105,7 @@
         <h2>By product</h2>
         <div class="catalog-wrap"><table class="catalog-table pnl-table" id="pnl-products"></table></div>
 
-        <p class="section-note" style="margin-top:18px;">How it’s counted: <strong>Net sales</strong> are product sales after promo, BOGO and at-cost discounts. They don’t include shipping or sales tax, which are shown separately. <strong>Cost</strong> is vials × cost per vial. <strong>Affiliate credit</strong> is store credit earned by affiliates (reversals excluded). Cancelled orders aren’t counted. Postage you pay isn’t tracked here.</p>
+        <p class="section-note" style="margin-top:18px;">How it’s counted: <strong>Net sales</strong> are product sales after promo, BOGO and at-cost discounts. They don’t include shipping or sales tax, which are shown separately. <strong>Cost</strong> is vials × cost per vial. <strong>Affiliate credit</strong> is store credit earned by affiliates (reversals excluded). <strong>Payment fees</strong> use the rates on the <a href="admin-payments.html">Payments</a> page, applied to each order’s total. Cancelled orders aren’t counted. Postage you pay isn’t tracked here.</p>
       </div>
     </section>
   </div>
@@ -145,6 +145,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/at-cost.js"></script>
+<script src="js/payment-apps.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/auth-guard.js"></script>
 <script src="js/main.js"></script>
@@ -152,7 +153,7 @@
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var COUNTED = ['confirmed', 'processing', 'label-created', 'shipped', 'delivered'];
-  var orders = [], costDocs = {}, unitLabels = {}, lines = [];
+  var orders = [], costDocs = {}, unitLabels = {}, lines = [], fees = {};
 
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function money(n) { var neg = n < 0; return (neg ? '-$' : '$') + Math.abs(n).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -168,11 +169,13 @@
     Promise.all([
       db.collection('orders').get(),
       db.collection('costs').get(),
+      db.collection('settings').doc('paymentFees').get().catch(function () { return null; }),
       fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).catch(function () { return null; })
     ]).then(function (res) {
       res[0].forEach(function (d) { orders.push(Object.assign({ id: d.id }, d.data())); });
       res[1].forEach(function (d) { costDocs[d.id] = d.data(); });
-      var cat = res[2];
+      if (res[2] && res[2].exists) fees = res[2].data();
+      var cat = res[3];
       if (cat) Object.keys(cat.products).forEach(function (slug) {
         var p = cat.products[slug];
         if (p.doses) Object.keys(p.doses).forEach(function (ds) { unitLabels[ds] = p.name + ' ' + p.doses[ds].label; });
@@ -242,20 +245,22 @@
   }
 
   function totalsFor(ordersSet, linesSet) {
-    var t = { orders: ordersSet.length, gross: 0, discounts: 0, net: 0, cost: 0, missingNet: 0, affiliate: 0, shipping: 0, tax: 0, atCostOrders: 0 };
+    var t = { orders: ordersSet.length, gross: 0, discounts: 0, net: 0, cost: 0, missingNet: 0, affiliate: 0, fees: 0, shipping: 0, tax: 0, atCostOrders: 0 };
     ordersSet.forEach(function (o) {
       t.discounts += (Number(o.discount) || 0) + (Number(o.bogoDiscount) || 0);
       t.shipping += Number(o.shipping) || 0;
       t.tax += Number(o.tax) || 0;
       if (o.affiliateCreditedAt && !o.affiliateReversedAt) t.affiliate += (o.affiliateCreditCents || 0) / 100;
       if (o.atCostCode) t.atCostOrders++;
+      // Fees are charged on what the buyer actually paid (after store credit).
+      t.fees += PaymentApps.feeFor(fees, o.paymentMethod || 'inquiry', Number(o.total) || 0);
     });
     linesSet.forEach(function (l) {
       t.gross += l.gross; t.net += l.net;
       if (l.cost == null) t.missingNet += l.net; else t.cost += l.cost;
     });
     t.profit = t.net - t.cost - t.missingNet; // lines with no cost count as no profit until a cost is entered
-    t.netProfit = t.profit - t.affiliate;
+    t.netProfit = t.profit - t.affiliate - t.fees;
     return t;
   }
 
@@ -271,6 +276,7 @@
       ['Cost of product', money(t.cost)],
       ['Gross profit', money(t.profit) + ' <span class="pnl-sub">' + pct(t.profit, t.net - t.missingNet) + ' margin</span>'],
       ['Affiliate credit', money(t.affiliate)],
+      ['Payment fees', money(t.fees)],
       ['Net profit', '<strong>' + money(t.netProfit) + '</strong>'],
       ['Shipping collected', money(t.shipping)],
       ['Sales tax collected', money(t.tax)]
@@ -294,11 +300,11 @@
     var mrows = Object.keys(months).sort().reverse().map(function (m) {
       var x = totalsFor(months[m].o, months[m].l);
       return '<tr><td>' + esc(monthName(m)) + '</td><td>' + x.orders + '</td><td>' + money(x.gross) + '</td><td>' + money(-x.discounts) + '</td><td>' + money(x.net) +
-        '</td><td>' + money(x.cost) + '</td><td>' + money(x.profit) + '</td><td>' + pct(x.profit, x.net - x.missingNet) + '</td><td>' + money(x.affiliate) +
+        '</td><td>' + money(x.cost) + '</td><td>' + money(x.profit) + '</td><td>' + pct(x.profit, x.net - x.missingNet) + '</td><td>' + money(x.affiliate) + '</td><td>' + money(x.fees) +
         '</td><td><strong>' + money(x.netProfit) + '</strong></td><td>' + money(x.shipping) + '</td></tr>';
     });
-    document.getElementById('pnl-months').innerHTML = '<thead><tr><th>Month</th><th>Orders</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Cost</th><th>Gross profit</th><th>Margin</th><th>Affiliate</th><th>Net profit</th><th>Shipping</th></tr></thead><tbody>' +
-      (mrows.join('') || '<tr><td colspan="11">No orders in this period.</td></tr>') + '</tbody>';
+    document.getElementById('pnl-months').innerHTML = '<thead><tr><th>Month</th><th>Orders</th><th>Gross sales</th><th>Discounts</th><th>Net sales</th><th>Cost</th><th>Gross profit</th><th>Margin</th><th>Affiliate</th><th>Fees</th><th>Net profit</th><th>Shipping</th></tr></thead><tbody>' +
+      (mrows.join('') || '<tr><td colspan="12">No orders in this period.</td></tr>') + '</tbody>';
 
     // By product.
     var prods = {};

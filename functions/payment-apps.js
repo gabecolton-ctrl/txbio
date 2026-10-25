@@ -42,6 +42,17 @@ var PaymentApps = (function () {
       ' with "' + note(orderNumber) + '" as the note (nothing else in the note). We ship once it arrives.';
   }
 
+  // Processing fees per payment method, for the P&L: settings/paymentFees
+  //   { venmo: { pct, flat }, cashapp: { pct, flat }, bank: {...}, bitcoin: {...}, inquiry: {...} }
+  // pct is a percent of the amount received; flat is dollars per payment.
+  var FEE_METHODS = ['venmo', 'cashapp', 'bank', 'bitcoin', 'inquiry'];
+  function feeFor(fees, method, amount) {
+    var f = fees && fees[method];
+    if (!f || !(amount > 0)) return 0;
+    var pct = Number(f.pct) || 0, flat = Number(f.flat) || 0;
+    return Math.round((amount * pct / 100 + flat) * 100) / 100;
+  }
+
   function load() {
     return firebase.firestore().collection('settings').doc('paymentApps').get().then(function (doc) {
       var d = doc.exists ? doc.data() : {};
@@ -51,7 +62,8 @@ var PaymentApps = (function () {
 
   return {
     LABELS: LABELS, cleanVenmo: cleanVenmo, cleanCashtag: cleanCashtag, display: display,
-    note: note, payLink: payLink, instructions: instructions, load: load
+    note: note, payLink: payLink, instructions: instructions, load: load,
+    FEE_METHODS: FEE_METHODS, feeFor: feeFor
   };
 })();
 

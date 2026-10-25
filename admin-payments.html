@@ -101,6 +101,19 @@
     </section>
 
     <section>
+      <h2>Processing fees</h2>
+      <form id="fees-form" class="card admin-form">
+        <p class="section-note" style="margin-top:0;">What each payment method charges you per payment, from your Venmo, Cash App or bank account. The <a href="admin-pnl.html">P&amp;L</a> subtracts these from profit. Leave blank for no fee.</p>
+        <table class="catalog-table fee-table">
+          <thead><tr><th>Method</th><th>Percent</th><th>Flat per payment</th></tr></thead>
+          <tbody id="fee-rows"></tbody>
+        </table>
+        <p id="fees-msg" class="form-message" style="display:none; margin-top:14px;"></p>
+        <button type="submit" class="btn" style="margin-top:14px;">Save fees</button>
+      </form>
+    </section>
+
+    <section>
       <h2>Bank transfer</h2>
       <form id="bank-form" class="card admin-form">
         <label for="bank-name-in">Bank name <span class="field-note">(optional)</span></label>
@@ -192,6 +205,35 @@
         var on = [venmo && 'Venmo (@' + venmo + ')', cashapp && 'Cash App ($' + cashapp + ')'].filter(Boolean);
         msg('apps-msg', on.length ? 'Saved. Checkout now offers ' + on.join(' and ') + '.' : 'Saved. Venmo and Cash App are hidden at checkout.', true);
       }).catch(function (err) { msg('apps-msg', 'Could not save: ' + err.message, false); });
+    });
+
+    // Processing fees.
+    var feeRows = document.getElementById('fee-rows');
+    feeRows.innerHTML = PaymentApps.FEE_METHODS.map(function (m) {
+      return '<tr><td>' + PaymentApps.LABELS[m] + '</td>' +
+        '<td><input type="number" min="0" max="20" step="0.01" data-fee="' + m + '" data-part="pct" placeholder="0" aria-label="' + PaymentApps.LABELS[m] + ' percent"> %</td>' +
+        '<td>$ <input type="number" min="0" step="0.01" data-fee="' + m + '" data-part="flat" placeholder="0" aria-label="' + PaymentApps.LABELS[m] + ' flat fee"></td></tr>';
+    }).join('');
+    settings.doc('paymentFees').get().then(function (doc) {
+      var d = doc.exists ? doc.data() : {};
+      feeRows.querySelectorAll('input[data-fee]').forEach(function (inp) {
+        var v = d[inp.getAttribute('data-fee')] && d[inp.getAttribute('data-fee')][inp.getAttribute('data-part')];
+        if (v) inp.value = v;
+      });
+    }).catch(function (err) { msg('fees-msg', 'Could not load: ' + err.message, false); });
+    document.getElementById('fees-form').addEventListener('submit', function (ev) {
+      ev.preventDefault();
+      var out = { updatedAt: new Date().toISOString() };
+      var bad = false;
+      PaymentApps.FEE_METHODS.forEach(function (m) {
+        var pct = Number(feeRows.querySelector('[data-fee="' + m + '"][data-part="pct"]').value || 0);
+        var flat = Number(feeRows.querySelector('[data-fee="' + m + '"][data-part="flat"]').value || 0);
+        if (!(pct >= 0 && pct <= 20 && flat >= 0)) bad = true;
+        out[m] = { pct: Math.round(pct * 100) / 100, flat: Math.round(flat * 100) / 100 };
+      });
+      if (bad) return msg('fees-msg', 'Use a percent between 0 and 20 and a flat fee of 0 or more.', false);
+      settings.doc('paymentFees').set(out).then(function () { msg('fees-msg', 'Saved. The P&L now subtracts these fees.', true); })
+        .catch(function (err) { msg('fees-msg', 'Could not save: ' + err.message, false); });
     });
 
     document.getElementById('bank-form').addEventListener('submit', function (ev) {
