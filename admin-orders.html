@@ -6,7 +6,7 @@
 <title>Orders | TXBioResearch</title>
 <meta name="description" content="Admin order management for TXBioResearch.">
 <link rel="icon" type="image/png" href="images/logo-icon.png">
-<link rel="stylesheet" href="css/style.css?v=20261025c">
+<link rel="stylesheet" href="css/style.css?v=20261025d">
 </head>
 <body>
 <div id="splash-screen">
@@ -49,6 +49,7 @@
               <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
               <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
               <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
+              <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
             </ul>
           </details>
         </li>
@@ -133,6 +134,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
 <script src="js/site-config.js"></script>
+<script src="js/payment-apps.js"></script>
 <script src="js/account.js"></script>
 <script src="js/inventory.js"></script>
 <script src="js/promos.js"></script>
@@ -463,7 +465,7 @@
             '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
           '</div>' +
         '</div>' +
-        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod || 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
+        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
         '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
         '<div class="tracking-row">' +

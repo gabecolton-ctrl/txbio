@@ -1,0 +1,57 @@
+// payment-apps.js — Venmo and Cash App payment details.
+// The handles live in Firestore at settings/paymentApps { venmo, cashapp }
+// (edited on admin-payments.html), not in this public repository. A method
+// with no handle saved isn't offered at checkout.
+
+var PaymentApps = (function () {
+  var LABELS = { inquiry: 'Other (we follow up)', bitcoin: 'Bitcoin', bank: 'Bank transfer', venmo: 'Venmo', cashapp: 'Cash App' };
+
+  // "@Name", "venmo.com/Name" → "Name";  "$Tag", "cash.app/$Tag" → "Tag"
+  function cleanVenmo(v) {
+    return String(v || '').trim().replace(/^(https?:\/\/)?(www\.)?(account\.)?venmo\.com\/(u\/)?/i, '').replace(/^@/, '').replace(/[^A-Za-z0-9_-]/g, '');
+  }
+  function cleanCashtag(v) {
+    return String(v || '').trim().replace(/^(https?:\/\/)?(www\.)?cash\.app\//i, '').replace(/^\$/, '').replace(/[^A-Za-z0-9_-]/g, '');
+  }
+  function display(method, handle) {
+    if (!handle) return '';
+    return method === 'venmo' ? '@' + handle : method === 'cashapp' ? '$' + handle : handle;
+  }
+  function note(orderNumber) {
+    return 'Order ' + (orderNumber || '');
+  }
+  function money(n) { return Number(n || 0).toFixed(2); }
+
+  // A link that opens the app (or the web page) to pay this handle.
+  function payLink(method, handle, amount, orderNumber) {
+    if (!handle) return '';
+    if (method === 'venmo') {
+      return 'https://venmo.com/' + encodeURIComponent(handle) + '?txn=pay&amount=' + money(amount) + '&note=' + encodeURIComponent(note(orderNumber));
+    }
+    if (method === 'cashapp') {
+      return 'https://cash.app/$' + encodeURIComponent(handle) + '/' + money(amount);
+    }
+    return '';
+  }
+
+  // Plain-text instructions for emails and the orders page.
+  function instructions(method, handle, amount, orderNumber) {
+    var app = method === 'venmo' ? 'Venmo' : 'Cash App';
+    return 'Send $' + money(amount) + ' on ' + app + ' to ' + display(method, handle) +
+      ' with "' + note(orderNumber) + '" as the note (nothing else in the note). We ship once it arrives.';
+  }
+
+  function load() {
+    return firebase.firestore().collection('settings').doc('paymentApps').get().then(function (doc) {
+      var d = doc.exists ? doc.data() : {};
+      return { venmo: cleanVenmo(d.venmo), cashapp: cleanCashtag(d.cashapp) };
+    });
+  }
+
+  return {
+    LABELS: LABELS, cleanVenmo: cleanVenmo, cleanCashtag: cleanCashtag, display: display,
+    note: note, payLink: payLink, instructions: instructions, load: load
+  };
+})();
+
+if (typeof module !== 'undefined' && module.exports) module.exports = PaymentApps;

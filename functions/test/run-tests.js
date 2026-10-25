@@ -242,6 +242,15 @@ test('family code: one shipping option (default 2nd Day Air $15), others rejecte
   await rejects(run(seed, { shippingValue: 'family' }), 'invalid-argument', 'shipping');
 });
 
+test('Venmo / Cash App: handle from settings; unavailable when not set', async () => {
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'settings/paymentApps': { venmo: '@TXBio-Research', cashapp: '' } });
+  const r = await run(seed, { paymentMethod: 'venmo' });
+  assert.deepStrictEqual([r.order.paymentMethod, r.order.paymentHandle], ['venmo', 'TXBio-Research']);
+  await rejects(run(seed, { paymentMethod: 'cashapp' }), 'invalid-argument', 'payment method');
+  const plain = await run(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { paymentMethod: 'bank' });
+  assert.strictEqual(plain.order.paymentHandle, '');
+});
+
 test('functions/at-cost.js matches js/at-cost.js', async () => {
   const fs = require('fs');
   const a = fs.readFileSync(path.join(__dirname, '..', 'at-cost.js'), 'utf8').split('\n').slice(1).join('\n');
