@@ -6,7 +6,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 32,
     category: "Research Compound",
-    description: "5-Amino-1MQ is a research compound intended for laboratory research applications.",
+    description: "5-Amino-1MQ is a small-molecule, selective inhibitor of nicotinamide N-methyltransferase (NNMT).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -17,7 +17,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 7,
     category: "Research Compound",
-    description: "Acetic Acid Water is a research compound intended for laboratory research applications.",
+    description: "Acetic acid water is sterile water containing a small amount of acetic acid.",
     storage: "Store at room temperature, protect from light. Refrigerate after opening per standard lab protocol.",
     purity: "99% Pure",
     form: "Sterile liquid"
@@ -28,7 +28,7 @@ var PRODUCTS = [
     packSize: "1 vial x 100mg",
     price: 38,
     category: "Research Compound",
-    description: "AHK-CU is a research compound intended for laboratory research applications.",
+    description: "AHK-Cu is the copper complex of the tripeptide Ala-His-Lys.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -39,7 +39,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 89,
     category: "Research Compound",
-    description: "AOD9604 is a research compound intended for laboratory research applications.",
+    description: "AOD9604 is a 16-amino-acid fragment of the C-terminal region of human growth hormone (residues 176–191) with a tyrosine added at the N-terminus.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -50,7 +50,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 38,
     category: "Research Compound",
-    description: "ARA290 (Cibinetide) is a research compound intended for laboratory research applications.",
+    description: "ARA-290 (cibinetide) is an 11-amino-acid peptide that acts on the erythropoietin receptor.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -61,7 +61,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 18,
     category: "Research Compound",
-    description: "B12 is a research compound intended for laboratory research applications.",
+    description: "Cyanocobalamin is the stable, cyanide-bound form of vitamin B12, a cobalt-containing cofactor needed by methionine synthase and methylmalonyl-CoA mutase.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -72,7 +72,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 16,
     category: "Research Compound",
-    description: "Bacteriostatic Water is a research compound intended for laboratory research applications.",
+    description: "Bacteriostatic water is sterile, nonpyrogenic water containing 0.9% (9 mg/mL) benzyl alcohol as a bacteriostatic preservative.",
     storage: "Store at room temperature, protect from light. Refrigerate after opening per standard lab protocol.",
     purity: "99% Pure",
     form: "Sterile liquid"
@@ -83,7 +83,7 @@ var PRODUCTS = [
     packSize: "1 vial x 20mg",
     price: 106,
     category: "Research Compound",
-    description: "BPC 10mg+TB10mg is a research compound intended for laboratory research applications.",
+    description: "BPC 10mg+TB10mg is a research blend of BPC-157 and TB-500.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -94,7 +94,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 30,
     category: "Research Compound",
-    description: "BPC 157 is a research compound intended for laboratory research applications.",
+    description: "BPC-157 is a synthetic 15-amino-acid peptide derived from a protein found in human gastric juice.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -105,7 +105,7 @@ var PRODUCTS = [
     packSize: "1 vial x 30mg",
     price: 139,
     category: "Research Compound",
-    description: "BPC 15mg+TB15mg is a research compound intended for laboratory research applications.",
+    description: "BPC 15mg+TB15mg is a research blend of BPC-157 and TB-500.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -116,7 +116,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 53,
     category: "Research Compound",
-    description: "BPC 5mg+TB5mg is a research compound intended for laboratory research applications.",
+    description: "BPC 5mg+TB5mg is a research blend of BPC-157 and TB-500.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -127,7 +127,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 121,
     category: "Research Compound",
-    description: "Cagrilintide is a research compound intended for laboratory research applications.",
+    description: "Cagrilintide is a long-acting, acylated analog of the hormone amylin.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -138,7 +138,7 @@ var PRODUCTS = [
     packSize: "1 vial x 5mg",
     price: 46,
     category: "Research Compound",
-    description: "Cagrisema (2.5mg+2.5mg) is a research compound intended for laboratory research applications.",
+    description: "Cagrisema (2.5mg+2.5mg) is a research blend of Cagrilintide and Semaglutide.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -149,7 +149,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 89,
     category: "Research Compound",
-    description: "Cagrisema(5mg+5mg) is a research compound intended for laboratory research applications.",
+    description: "Cagrisema(5mg+5mg) is a research blend of Cagrilintide and Semaglutide.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -160,7 +160,7 @@ var PRODUCTS = [
     packSize: "1 vial x 20mg",
     price: 61,
     category: "Research Compound",
-    description: "Cartalax is a research compound intended for laboratory research applications.",
+    description: "Cartalax is a synthetic tripeptide (Ala-Glu-Asp) from the group of short \"peptide bioregulators\" developed in Russian gerontology research, studied there in cartilage and connective-tissue models.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -171,7 +171,7 @@ var PRODUCTS = [
     packSize: "1 vial x 60mg",
     price: 35,
     category: "Research Compound",
-    description: "cerebrolysin is a research compound intended for laboratory research applications.",
+    description: "Cerebrolysin is a mixture of low-molecular-weight peptides and amino acids derived from pig brain tissue, widely used in Russia and China.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -182,7 +182,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 58,
     category: "Research Compound",
-    description: "CJC 1295(without DAC)5mg+IPA 5mg is a research compound intended for laboratory research applications.",
+    description: "CJC 1295(without DAC)5mg+IPA 5mg is a research blend of CJC-1295 (without DAC) and Ipamorelin.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -193,7 +193,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 40,
     category: "Research Compound",
-    description: "CJC 1295(without DAC) is a research compound intended for laboratory research applications.",
+    description: "CJC-1295 without DAC (Modified GRF 1-29) is a 29-amino-acid analog of growth hormone-releasing hormone (GHRH).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -204,7 +204,7 @@ var PRODUCTS = [
     packSize: "1 vial x 5mg",
     price: 45,
     category: "Research Compound",
-    description: "CJC1295 with DAC is a research compound intended for laboratory research applications.",
+    description: "CJC-1295 with DAC is a growth hormone-releasing hormone (GHRH) analog with an added lysine bearing a maleimidopropionic acid group, its \"drug affinity complex\" (DAC).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -215,7 +215,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 44,
     category: "Research Compound",
-    description: "Dihexa is a research compound intended for laboratory research applications.",
+    description: "Dihexa is an oligopeptide derived from angiotensin IV.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -226,7 +226,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 31,
     category: "Research Compound",
-    description: "DSIP is a research compound intended for laboratory research applications.",
+    description: "Delta sleep-inducing peptide (DSIP) is a nonapeptide found in neurons, peripheral organs, and plasma.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -237,7 +237,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 25,
     category: "Research Compound",
-    description: "Epithalon is a research compound intended for laboratory research applications.",
+    description: "Epitalon is a synthetic tetrapeptide identified as the putative active component of epithalamin, a bovine pineal gland extract.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -248,7 +248,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 55,
     category: "Research Compound",
-    description: "GHK-Cu is a research compound intended for laboratory research applications.",
+    description: "GHK-Cu is a naturally occurring copper complex of the tripeptide glycyl-L-histidyl-L-lysine, first isolated from human plasma and also found in saliva and urine.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -259,7 +259,7 @@ var PRODUCTS = [
     packSize: "1 vial x 70mg",
     price: 95,
     category: "Research Compound",
-    description: "GLOW blend is a research compound intended for laboratory research applications.",
+    description: "GLOW blend is a multi-compound research blend.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -270,7 +270,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 37,
     category: "Research Compound",
-    description: "Glutathione is a research compound intended for laboratory research applications.",
+    description: "Glutathione is a tripeptide of glutamate, cysteine, and glycine with an unusual gamma-peptide bond, and the main non-protein thiol in cells.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -281,7 +281,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 42,
     category: "Research Compound",
-    description: "HCG is a research compound intended for laboratory research applications.",
+    description: "Human chorionic gonadotropin is a 237-amino-acid glycoprotein hormone produced naturally by the placenta.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -292,7 +292,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 146,
     category: "Research Compound",
-    description: "Humanin is a research compound intended for laboratory research applications.",
+    description: "Humanin is a peptide encoded in the mitochondrial genome within the 16S ribosomal RNA gene (MT-RNR2).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -303,7 +303,7 @@ var PRODUCTS = [
     packSize: "1 vial x 100mcg",
     price: 27,
     category: "Research Compound",
-    description: "IGF-1 LR3 is a research compound intended for laboratory research applications.",
+    description: "IGF-1 LR3 is a long-acting analog of human insulin-like growth factor 1, made as a single 83-amino-acid chain.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -314,7 +314,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 29,
     category: "Research Compound",
-    description: "Ipamorelin is a research compound intended for laboratory research applications.",
+    description: "Ipamorelin is a synthetic pentapeptide that acts as a selective agonist of the ghrelin / growth hormone secretagogue receptor (GHS-R).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -325,7 +325,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 56,
     category: "Research Compound",
-    description: "Kisspeptin-10 is a research compound intended for laboratory research applications.",
+    description: "Kisspeptin-10 is the C-terminal decapeptide of kisspeptin, a product of the KISS1 metastasis-suppressor gene, and a ligand of the kisspeptin receptor (GPR54).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -336,7 +336,7 @@ var PRODUCTS = [
     packSize: "1 vial x 80mg",
     price: 139,
     category: "Research Compound",
-    description: "KLOW blend is a research compound intended for laboratory research applications.",
+    description: "KLOW blend is a multi-compound research blend.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -347,7 +347,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 22,
     category: "Research Compound",
-    description: "KPV is a research compound intended for laboratory research applications.",
+    description: "KPV is a tripeptide derived from the C-terminal fragment of alpha-melanocyte-stimulating hormone (α-MSH).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -358,7 +358,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 24,
     category: "Research Compound",
-    description: "L-carnitine 600mg is a research compound intended for laboratory research applications.",
+    description: "L-carnitine is a naturally occurring amino acid derivative that carries long-chain fatty acids into mitochondria for beta-oxidation.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -369,7 +369,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 35,
     category: "Research Compound",
-    description: "Lemon Bottle is a research compound intended for laboratory research applications.",
+    description: "Lemon Bottle is a multi-compound research blend.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -380,7 +380,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 31,
     category: "Research Compound",
-    description: "Lipo-C (FatBlaster) is a research compound intended for laboratory research applications.",
+    description: "Lipo-C (FatBlaster) is a multi-compound research blend.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -391,7 +391,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 31,
     category: "Research Compound",
-    description: "Lipo-C with B12 is a research compound intended for laboratory research applications.",
+    description: "Lipo-C with B12 is a multi-compound research blend.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -402,7 +402,7 @@ var PRODUCTS = [
     packSize: "1 vial",
     price: 90,
     category: "Research Compound",
-    description: "Lipo-C is a research compound intended for laboratory research applications.",
+    description: "Lipo-C is a multi-compound research blend.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -413,7 +413,7 @@ var PRODUCTS = [
     packSize: "1 vial x 5mg",
     price: 53,
     category: "Research Compound",
-    description: "LL37 is a research compound intended for laboratory research applications.",
+    description: "LL-37 is the 37-amino-acid, amphipathic antimicrobial peptide derived from human cathelicidin.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -424,7 +424,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 31,
     category: "Research Compound",
-    description: "Melanotan I is a research compound intended for laboratory research applications.",
+    description: "Melanotan I (afamelanotide) is a synthetic 13-amino-acid analog of alpha-melanocyte-stimulating hormone (α-MSH) that binds mainly the MC1 receptor.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -435,7 +435,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 31,
     category: "Research Compound",
-    description: "Melanotan II is a research compound intended for laboratory research applications.",
+    description: "Melanotan II is a synthetic, cyclic analog of alpha-melanocyte-stimulating hormone developed at the University of Arizona in the 1980s.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -446,7 +446,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 35,
     category: "Research Compound",
-    description: "MOTS-c (Human) is a research compound intended for laboratory research applications.",
+    description: "MOTS-c is a 16-amino-acid peptide encoded by the mitochondrial MT-RNR1 (12S rRNA) gene, described in 2015 by researchers at the USC Davis School of Gerontology.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -457,7 +457,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 24,
     category: "Research Compound",
-    description: "Nad+ is a research compound intended for laboratory research applications.",
+    description: "Nicotinamide adenine dinucleotide (NAD+) is the oxidized form of a coenzyme central to cellular redox reactions and energy metabolism.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -468,7 +468,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 22,
     category: "Research Compound",
-    description: "Oxytocin is a research compound intended for laboratory research applications.",
+    description: "Oxytocin is a mammalian peptide hormone that also acts as a neurotransmitter in the brain.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -479,7 +479,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 38,
     category: "Research Compound",
-    description: "pinealon is a research compound intended for laboratory research applications.",
+    description: "Pinealon is a synthetic tripeptide (Glu-Asp-Arg), one of several \"peptide bioregulators\" developed and studied mainly in Russia.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -490,7 +490,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 37,
     category: "Research Compound",
-    description: "PT141 is a research compound intended for laboratory research applications.",
+    description: "PT-141 (bremelanotide) is a cyclic heptapeptide analog of alpha-melanocyte-stimulating hormone that acts mainly on the MC3 and MC4 melanocortin receptors.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -501,7 +501,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 70,
     category: "Research Compound",
-    description: "R-3 is a research compound intended for laboratory research applications.",
+    description: "Retatrutide is a single peptide that activates three receptors: the glucagon receptor, the GLP-1 receptor, and the GIP receptor.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -512,7 +512,7 @@ var PRODUCTS = [
     packSize: "1 vial x 60mg",
     price: 157,
     category: "Research Compound",
-    description: "Retatrutide 20mg + Tirzepatide 40mg is a research compound intended for laboratory research applications.",
+    description: "Retatrutide 20mg + Tirzepatide 40mg is a research blend of Retatrutide and Tirzepatide.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -523,7 +523,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 84,
     category: "Research Compound",
-    description: "Retatrutide 5mg+cagrilintide 5mg is a research compound intended for laboratory research applications.",
+    description: "Retatrutide 5mg+cagrilintide 5mg is a research blend of Retatrutide and Cagrilintide.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -534,7 +534,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 35,
     category: "Research Compound",
-    description: "Selank is a research compound intended for laboratory research applications.",
+    description: "Selank is a synthetic analog of the human immunomodulatory peptide tuftsin, developed at the Institute of Molecular Genetics of the Russian Academy of Sciences.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -545,7 +545,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 69,
     category: "Research Compound",
-    description: "Semaglutide is a research compound intended for laboratory research applications.",
+    description: "Semaglutide is a synthetic analog of glucagon-like peptide-1 (GLP-1).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -556,7 +556,7 @@ var PRODUCTS = [
     packSize: "1 vial x 20mg",
     price: 80,
     category: "Research Compound",
-    description: "Semax 10mg+Selank 10mg is a research compound intended for laboratory research applications.",
+    description: "Semax 10mg+Selank 10mg is a research blend of Semax and Selank.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -567,7 +567,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 35,
     category: "Research Compound",
-    description: "Semax is a research compound intended for laboratory research applications.",
+    description: "Semax is a synthetic heptapeptide analog of a fragment of adrenocorticotropic hormone (ACTH 4–10).",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -578,7 +578,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 38,
     category: "Research Compound",
-    description: "Sermorelin Acetate is a research compound intended for laboratory research applications.",
+    description: "Sermorelin is the amidated 1–29 fragment of human growth hormone-releasing hormone (somatoliberin), the shortest fully active portion of the hormone.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -589,7 +589,7 @@ var PRODUCTS = [
     packSize: "1 bottle x 100 capsules, 500mcg each",
     price: 25,
     category: "Research Compound",
-    description: "SLU-PP-332 capsule is a research compound intended for laboratory research applications.",
+    description: "SLU-PP-332 is a small-molecule agonist of the estrogen-related receptors ERRα, ERRβ, and ERRγ.",
     storage: "Store at room temperature, protect from light and moisture.",
     purity: "99% Pure",
     form: "Capsule"
@@ -600,7 +600,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 47,
     category: "Research Compound",
-    description: "SS-31 is a research compound intended for laboratory research applications.",
+    description: "SS-31 (elamipretide) is a synthetic tetrapeptide that binds with high affinity to cardiolipin, a phospholipid of the inner mitochondrial membrane, and inhibits cytochrome c peroxidase activity.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -611,7 +611,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 4,
     category: "Research Compound",
-    description: "Sterile water is a research compound intended for laboratory research applications.",
+    description: "Sterile water is water purified and sterilized without added preservatives.",
     storage: "Store at room temperature, protect from light. Refrigerate after opening per standard lab protocol.",
     purity: "99% Pure",
     form: "Sterile liquid"
@@ -622,7 +622,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 35,
     category: "Research Compound",
-    description: "SUPER Human Blend is a research compound intended for laboratory research applications.",
+    description: "SUPER Human Blend is a multi-compound research blend.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -633,7 +633,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 42,
     category: "Research Compound",
-    description: "TB500 Thymosin Beta-4 is a research compound intended for laboratory research applications.",
+    description: "TB-500 is a synthetic, N-acetylated heptapeptide matching residues 17–23 of thymosin β4, the actin-binding region of that protein.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -644,7 +644,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 98,
     category: "Research Compound",
-    description: "Tesamorelin is a research compound intended for laboratory research applications.",
+    description: "Tesamorelin is a synthetic peptide made of all 44 amino acids of human growth hormone-releasing hormone with a trans-3-hexenoic acid group added.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -655,7 +655,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 40,
     category: "Research Compound",
-    description: "Thymalin/Thymulin is a research compound intended for laboratory research applications.",
+    description: "Thymulin (serum thymic factor) is a zinc-dependent nonapeptide hormone produced by the thymus with immunomodulatory activity; it needs bound zinc to be biologically active.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -666,7 +666,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10mg",
     price: 89,
     category: "Research Compound",
-    description: "Thymosin alpha 1 is a research compound intended for laboratory research applications.",
+    description: "Thymosin α1 is an immunomodulatory peptide formed by cleavage of prothymosin α and first found in thymosin fraction 5, a crude thymus extract; it is now made synthetically.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -677,7 +677,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 62,
     category: "Research Compound",
-    description: "Tirzepatide is a research compound intended for laboratory research applications.",
+    description: "Tirzepatide is a synthetic peptide that activates both the glucose-dependent insulinotropic polypeptide (GIP) receptor and the GLP-1 receptor, with greater affinity for GIP receptors.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
@@ -688,7 +688,7 @@ var PRODUCTS = [
     packSize: "1 vial, dosage selectable",
     price: 49,
     category: "Research Compound",
-    description: "VIP is a research compound intended for laboratory research applications.",
+    description: "Vasoactive intestinal peptide (VIP) is a 28-amino-acid neuropeptide and gastrointestinal hormone related to glucagon and secretin.",
     storage: "Store lyophilized powder at -20°C. Once reconstituted, refrigerate at 2-8°C and use within the timeframe indicated by your lab protocol.",
     purity: "99% Pure",
     form: "Lyophilized powder"
