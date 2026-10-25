@@ -224,6 +224,24 @@ test('at-cost code: email not listed is treated as an unknown code', async () =>
   await rejects(run(seed, { promoCode: 'FAMILY' }), 'failed-precondition', 'does not exist');
 });
 
+test('family code: one shipping option (default 2nd Day Air $15), others rejected without the code', async () => {
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), {
+    'atCostCodes/FAMILY': { active: true, emails: ['buyer@example.com'] }, 'costs/semaglutide-10mg': { perVialCost: 6.6 }
+  });
+  let r = await run(seed, { promoCode: 'FAMILY', shippingValue: 'family' });
+  assert.deepStrictEqual([r.order.shipping, r.order.shippingOption], [15, '2nd Day Air — $15']);
+  assert.strictEqual(r.order.total, P.round2(9.6 + 15 + P.round2(9.6 * catalog.taxRate)));
+  // Family code with a regular shipping value still gets the family shipping.
+  r = await run(seed, { promoCode: 'FAMILY', shippingValue: '40' });
+  assert.strictEqual(r.order.shipping, 15);
+  // Custom price on the code.
+  seed['atCostCodes/FAMILY'].shippingPrice = 12;
+  r = await run(seed, { promoCode: 'FAMILY', shippingValue: 'family' });
+  assert.strictEqual(r.order.shipping, 12);
+  // No family code: "family" shipping isn't available.
+  await rejects(run(seed, { shippingValue: 'family' }), 'invalid-argument', 'shipping');
+});
+
 test('functions/at-cost.js matches js/at-cost.js', async () => {
   const fs = require('fs');
   const a = fs.readFileSync(path.join(__dirname, '..', 'at-cost.js'), 'utf8').split('\n').slice(1).join('\n');

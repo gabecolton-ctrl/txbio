@@ -77,7 +77,7 @@
 <main id="gated-content" style="display:none;">
   <section class="page-head">
     <h1>At cost</h1>
-    <p class="lead">Family pricing and your product costs. A family code makes every vial cost + a small add-on (default $3). It works only for the emails you list. Costs here also power the P&amp;L report.</p>
+    <p class="lead">Family pricing and your product costs. A family code makes every vial cost + a small add-on (default $3) with one shipping option (default 2nd Day Air, $15). It works only for the emails you list, and it's applied automatically when they check out. Costs here also power the P&amp;L report.</p>
   </section>
 
   <div id="admin-denied" class="notice" style="display:none;">
@@ -90,8 +90,8 @@
       <h2>Family codes</h2>
       <div id="codes-wrap" class="catalog-wrap" style="margin-bottom:18px;">
         <table class="catalog-table">
-          <thead><tr><th>Code</th><th>Allowed emails</th><th>Added per vial</th><th>Status</th><th></th></tr></thead>
-          <tbody id="code-rows"><tr><td colspan="5">Loading…</td></tr></tbody>
+          <thead><tr><th>Code</th><th>Allowed emails</th><th>Added per vial</th><th>Shipping</th><th>Status</th><th></th></tr></thead>
+          <tbody id="code-rows"><tr><td colspan="6">Loading…</td></tr></tbody>
         </table>
       </div>
       <form id="code-form" class="card admin-form">
@@ -102,6 +102,11 @@
         <textarea id="code-emails" rows="4" required placeholder="mom@example.com&#10;brother@example.com"></textarea>
         <label for="code-markup">Added per vial ($)</label>
         <input type="number" id="code-markup" min="0" step="0.01" value="3" required>
+        <label for="code-ship-label">Family shipping <span class="field-note">(the only option they see at checkout)</span></label>
+        <div style="display:flex; gap:10px;">
+          <input type="text" id="code-ship-label" value="2nd Day Air" maxlength="40" required style="flex:2;" aria-label="Shipping name">
+          <input type="number" id="code-ship-price" min="0" step="0.01" value="15" required style="flex:1;" aria-label="Shipping price in dollars">
+        </div>
         <label class="checkbox-row"><input type="checkbox" id="code-active" checked> <span>Active</span></label>
         <p id="code-msg" class="form-message" style="display:none;"></p>
         <button type="submit" class="btn">Save code</button>
@@ -241,10 +246,11 @@
     var rows = Object.keys(codes).sort().map(function (c) {
       var d = codes[c];
       return '<tr><td><strong>' + esc(c) + '</strong></td><td>' + (d.emails || []).map(esc).join('<br>') + '</td><td>' + money(d.markupPerVial) +
+        '</td><td>' + esc(AtCost.shippingOf(d).label) +
         '</td><td>' + (d.active ? 'Active' : 'Off') + '</td><td><button type="button" class="btn-outline-light" data-edit-code="' + esc(c) + '">Edit</button> ' +
         '<button type="button" class="btn-outline-light" data-delete-code="' + esc(c) + '">Delete</button></td></tr>';
     });
-    document.getElementById('code-rows').innerHTML = rows.join('') || '<tr><td colspan="5">No family codes yet. Create one below.</td></tr>';
+    document.getElementById('code-rows').innerHTML = rows.join('') || '<tr><td colspan="6">No family codes yet. Create one below.</td></tr>';
     document.querySelectorAll('[data-edit-code]').forEach(function (b) {
       b.addEventListener('click', function () { startEdit(b.getAttribute('data-edit-code')); });
     });
@@ -268,6 +274,9 @@
     document.getElementById('code-emails').value = (d.emails || []).join('\n');
     document.getElementById('code-markup').value = d.markupPerVial;
     document.getElementById('code-active').checked = !!d.active;
+    var ship = AtCost.shippingOf(d);
+    document.getElementById('code-ship-label').value = d.shippingLabel || AtCost.DEFAULT_SHIPPING.label;
+    document.getElementById('code-ship-price').value = ship.price;
     document.getElementById('code-cancel').style.display = '';
     document.getElementById('code-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
   }
@@ -275,6 +284,8 @@
     editingCode = null;
     document.getElementById('code-form').reset();
     document.getElementById('code-markup').value = AtCost.DEFAULT_MARKUP;
+    document.getElementById('code-ship-label').value = AtCost.DEFAULT_SHIPPING.label;
+    document.getElementById('code-ship-price').value = AtCost.DEFAULT_SHIPPING.price;
     document.getElementById('code-input').disabled = false;
     document.getElementById('code-form-title').textContent = 'New family code';
     document.getElementById('code-cancel').style.display = 'none';
@@ -297,13 +308,16 @@
     if (!emails.length) return codeMsg('Add at least one email.', false);
     if (bad.length) return codeMsg('These don’t look like emails: ' + bad.join(', '), false);
     if (!(markup >= 0)) return codeMsg('Enter the amount added per vial (0 or more).', false);
+    var shipLabel = document.getElementById('code-ship-label').value.trim();
+    var shipPrice = Math.round(Number(document.getElementById('code-ship-price').value) * 100) / 100;
+    if (!shipLabel || !(shipPrice >= 0)) return codeMsg('Enter the family shipping name and price.', false);
     var btn = e.target.querySelector('button[type="submit"]');
     btn.disabled = true;
     // A family code can't share a name with a regular promo code.
     db.collection('promoCodes').doc(code).get().then(function (p) {
       if (p.exists) throw new Error(code + ' is already a regular promo code. Pick another name.');
       if (!editingCode && codes[code]) throw new Error(code + ' already exists. Use Edit to change it.');
-      var data = { active: document.getElementById('code-active').checked, emails: emails, markupPerVial: markup, updatedAt: new Date().toISOString() };
+      var data = { active: document.getElementById('code-active').checked, emails: emails, markupPerVial: markup, shippingLabel: shipLabel, shippingPrice: shipPrice, updatedAt: new Date().toISOString() };
       if (!codes[code]) data.createdAt = data.updatedAt;
       return db.collection('atCostCodes').doc(code).set(Object.assign({}, codes[code] || {}, data)).then(function () {
         codes[code] = Object.assign({}, codes[code] || {}, data);
@@ -311,7 +325,7 @@
       });
     }).then(function () {
       btn.disabled = false;
-      codeMsg(code + ' saved. Listed family members can enter it at checkout.', true);
+      codeMsg(code + ' saved. Listed family members get it automatically at checkout.', true);
       resetForm();
       renderCodes();
       renderCosts();

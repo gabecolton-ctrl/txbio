@@ -6,13 +6,16 @@
 //   costs/{unitSlug}       { perVialCost, kitCost, updatedAt, history: [{ perVialCost, from }] }
 //                          unitSlug is the single-vial cart slug, e.g. "semaglutide-5mg"
 //                          or "cagrilintide". Kit = 10 vials; perVialCost = kitCost / 10.
-//   atCostCodes/{CODE}     { active, emails: [lowercase], markupPerVial, note }
+//   atCostCodes/{CODE}     { active, emails: [lowercase], markupPerVial, shippingLabel, shippingPrice }
 //   atCostMembers/{email}  { codes: [CODE] }   (lets listed emails read costs/)
 // Only the admin can write these; see firestore.rules.
 
 var AtCost = (function () {
   var KIT_SIZE = 10;
   var DEFAULT_MARKUP = 3; // dollars added per vial on top of cost
+  // Family orders get one shipping choice (set per code on the admin page).
+  var FAMILY_SHIPPING_VALUE = 'family';
+  var DEFAULT_SHIPPING = { label: '2nd Day Air', price: 15 };
 
   function round2(n) { return Math.round(n * 100) / 100; }
 
@@ -64,7 +67,14 @@ var AtCost = (function () {
       return { valid: false, reason: 'This promo code does not exist.' };
     }
     var markup = doc.markupPerVial == null ? DEFAULT_MARKUP : Number(doc.markupPerVial);
-    return { valid: true, code: code, markupPerVial: markup };
+    return { valid: true, code: code, markupPerVial: markup, shipping: shippingOf(doc) };
+  }
+
+  // The single shipping option a family code gives, e.g. { label, price }.
+  function shippingOf(doc) {
+    var price = doc && doc.shippingPrice != null && !isNaN(Number(doc.shippingPrice)) ? Number(doc.shippingPrice) : DEFAULT_SHIPPING.price;
+    var label = (doc && doc.shippingLabel) || DEFAULT_SHIPPING.label;
+    return { value: FAMILY_SHIPPING_VALUE, label: label + ' — $' + (price % 1 ? price.toFixed(2) : price), price: round2(price) };
   }
 
   // Cost per vial in effect at a date (ISO), from a costs/{slug} document's
@@ -84,6 +94,9 @@ var AtCost = (function () {
   return {
     KIT_SIZE: KIT_SIZE,
     DEFAULT_MARKUP: DEFAULT_MARKUP,
+    DEFAULT_SHIPPING: DEFAULT_SHIPPING,
+    FAMILY_SHIPPING_VALUE: FAMILY_SHIPPING_VALUE,
+    shippingOf: shippingOf,
     round2: round2,
     unitSlugOf: unitSlugOf,
     vialsOf: vialsOf,
