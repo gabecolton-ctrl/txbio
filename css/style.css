@@ -757,3 +757,6 @@ main.legal section:not(.page-head) p { color: var(--muted); }
 .signed-in-only { display: none !important; }
 html.signed-in .signed-in-only { display: inline-flex !important; }
 html.signed-in .signed-out-only { display: none !important; }
+main.legal ul { padding-left: 20px; margin: 0 0 18px; }
+main.legal li { color: var(--muted); margin-bottom: 8px; }
+main.legal li strong, main.legal section:not(.page-head) p strong { color: var(--frost); }
