@@ -194,6 +194,43 @@ test('ignores client attempts to set totals or credit', async () => {
   assert.strictEqual(order.discount, 0);
 });
 
+test('at-cost code: listed email pays cost + $3/vial, no BOGO, no affiliate, costs recorded', async () => {
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }, { slug: 'semaglutide-5mg-case', qty: 1 }, { slug: 'cagrilintide', qty: 1 }]), {
+    'atCostCodes/FAMILY': { active: true, emails: ['buyer@example.com'], markupPerVial: 3 },
+    'costs/semaglutide-10mg': { perVialCost: 12.5 },
+    'costs/semaglutide-5mg': { perVialCost: 8 },
+    'bogoProducts/semaglutide': { active: true }
+  });
+  const { order, db } = await run(seed, { promoCode: 'family' });
+  // list: 109*2 + 69*7 + cagrilintide (no cost -> regular price)
+  const cagri = catalog.products.cagrilintide.price;
+  assert.strictEqual(order.subtotal, 218 + 483 + cagri);
+  const atCostTotal = 2 * 15.5 + 10 * 11 + cagri;
+  assert.strictEqual(Math.round(order.discount * 100), Math.round((order.subtotal - atCostTotal) * 100));
+  assert.strictEqual(order.bogoDiscount, 0);
+  assert.deepStrictEqual([order.promoCode, order.affiliateCode, order.atCostCode, order.atCostMarkupPerVial], ['FAMILY', '', 'FAMILY', 3]);
+  assert.deepStrictEqual(order.items.map((i) => i.unitCost), [12.5, 8, undefined]);
+  assert.deepStrictEqual(order.items.map((i) => i.atCostPrice), [31, 110, cagri]);
+  assert.strictEqual(order.tax, P.round2(atCostTotal * catalog.taxRate));
+  assert.ok(!db.store.has('promoCodes/FAMILY'));
+});
+
+test('at-cost code: email not listed is treated as an unknown code', async () => {
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), {
+    'atCostCodes/FAMILY': { active: true, emails: ['mom@example.com'], markupPerVial: 3 }, 'costs/semaglutide-10mg': { perVialCost: 12.5 }
+  });
+  await rejects(run(seed, { promoCode: 'FAMILY' }), 'failed-precondition', 'does not exist');
+  seed['atCostCodes/FAMILY'] = { active: false, emails: ['buyer@example.com'] };
+  await rejects(run(seed, { promoCode: 'FAMILY' }), 'failed-precondition', 'does not exist');
+});
+
+test('functions/at-cost.js matches js/at-cost.js', async () => {
+  const fs = require('fs');
+  const a = fs.readFileSync(path.join(__dirname, '..', 'at-cost.js'), 'utf8').split('\n').slice(1).join('\n');
+  const b = fs.readFileSync(path.join(__dirname, '..', '..', 'js', 'at-cost.js'), 'utf8');
+  assert.strictEqual(a, b, 'Run node tools/build-catalog.js to refresh functions/at-cost.js');
+});
+
 test('every catalog dose and product prices without error', async () => {
   for (const [slug, p] of Object.entries(catalog.products)) {
     const slugs = p.doses ? Object.keys(p.doses) : [slug];

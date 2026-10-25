@@ -1,0 +1,497 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>At cost | TXBioResearch</title>
+<meta name="description" content="Admin family at-cost codes and product costs for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="stylesheet" href="css/style.css?v=20261025c">
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul class="nav-primary">
+        <li><a href="services.html">Catalog</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin nav-admin-menu">
+          <details>
+            <summary>Admin</summary>
+            <ul>
+              <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+              <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
+              <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+              <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+              <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+              <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
+              <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-myaccount nav-admin-menu nav-account-menu">
+          <details>
+            <summary>My account</summary>
+            <ul>
+              <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
+              <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-login"><a href="login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section class="page-head">
+    <h1>At cost</h1>
+    <p class="lead">Family pricing and your product costs. A family code makes every vial cost + a small add-on (default $3). It works only for the emails you list. Costs here also power the P&amp;L report.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <h2>Family codes</h2>
+      <div id="codes-wrap" class="catalog-wrap" style="margin-bottom:18px;">
+        <table class="catalog-table">
+          <thead><tr><th>Code</th><th>Allowed emails</th><th>Added per vial</th><th>Status</th><th></th></tr></thead>
+          <tbody id="code-rows"><tr><td colspan="5">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <form id="code-form" class="card admin-form">
+        <h3 id="code-form-title" style="margin-top:0;">New family code</h3>
+        <label for="code-input">Code</label>
+        <input type="text" id="code-input" required maxlength="30" placeholder="e.g. FAMILY" style="text-transform:uppercase;" autocomplete="off">
+        <label for="code-emails">Allowed emails <span class="field-note">(one per line; must match the email they sign in with)</span></label>
+        <textarea id="code-emails" rows="4" required placeholder="mom@example.com&#10;brother@example.com"></textarea>
+        <label for="code-markup">Added per vial ($)</label>
+        <input type="number" id="code-markup" min="0" step="0.01" value="3" required>
+        <label class="checkbox-row"><input type="checkbox" id="code-active" checked> <span>Active</span></label>
+        <p id="code-msg" class="form-message" style="display:none;"></p>
+        <button type="submit" class="btn">Save code</button>
+        <button type="button" id="code-cancel" class="btn-outline-light" style="display:none; margin-left:10px;">Cancel</button>
+      </form>
+    </section>
+
+    <section>
+      <h2>Product costs</h2>
+      <p class="section-note">Enter what a kit of 10 vials costs you; the cost per vial is that ÷ 10. Supplies sold one at a time (waters, capsules) use the same 10-unit kit. Changes are dated, so the P&amp;L uses the cost in effect when each order was placed.</p>
+
+      <details class="card import-box">
+        <summary>Paste from a spreadsheet</summary>
+        <p class="section-note" style="margin-top:12px;">Copy two columns from your spreadsheet (product with its dose, and kit cost) and paste them below. Example: <code>Semaglutide 5mg&nbsp;&nbsp;120</code>, or three columns: <code>Semaglutide, 5mg, 120</code>.</p>
+        <textarea id="import-text" rows="8" placeholder="Semaglutide 5mg	120&#10;BPC 157 10mg	85"></textarea>
+        <button type="button" id="import-preview" class="btn-outline-light">Preview</button>
+        <div id="import-result" style="margin-top:14px;"></div>
+      </details>
+
+      <div style="display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin:18px 0 14px;">
+        <input type="text" id="cost-search" placeholder="Search products" style="flex:1; min-width:220px; margin-bottom:0;">
+        <label class="checkbox-row" style="margin:0;"><input type="checkbox" id="cost-missing-only"> <span>Only missing a cost</span></label>
+        <span id="cost-summary" class="section-note" style="margin:0;"></span>
+      </div>
+      <div class="catalog-wrap">
+        <table class="catalog-table cost-table">
+          <thead><tr><th>Product</th><th>Website price</th><th>Kit cost (10)</th><th>Cost / vial</th><th>Family price</th><th>Margin at website price</th><th></th></tr></thead>
+          <tbody id="cost-rows"><tr><td colspan="7">Loading…</td></tr></tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
+      </div>
+      <div class="footer-links">
+        <a href="services.html">Catalog</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="login.html" class="signed-out-only">Researcher login</a>
+        <a href="terms.html">Terms &amp; conditions</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="shipping.html">Shipping &amp; returns</a>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
+    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js"></script>
+<script src="js/cart.js"></script>
+<script src="js/at-cost.js"></script>
+<script src="js/product-search.js"></script>
+<script src="js/nav-auth.js"></script>
+<script src="js/auth-guard.js"></script>
+<script src="js/main.js"></script>
+<script src="js/nav-toggle.js"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var db = null;
+  var units = [];        // [{ slug, label, price }] every single-vial item sold
+  var costDocs = {};     // slug -> costs/{slug} data
+  var codes = {};        // CODE -> atCostCodes/{CODE} data
+  var editingCode = null;
+
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function money(n) { return '$' + Number(n).toFixed(2); }
+  function norm(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, ''); }
+  function currentMarkup() {
+    var active = Object.keys(codes).filter(function (c) { return codes[c].active; });
+    return active.length ? Number(codes[active[0]].markupPerVial) : AtCost.DEFAULT_MARKUP;
+  }
+
+  document.addEventListener('userReady', function (e) {
+    if (e.detail.user.email !== ADMIN_EMAIL) {
+      document.getElementById('admin-denied').style.display = 'block';
+      return;
+    }
+    document.getElementById('admin-content').style.display = 'block';
+    db = firebase.firestore();
+    Promise.all([loadUnits(), loadCosts(), loadCodes()]).then(function () {
+      renderCodes();
+      renderCosts();
+    }).catch(function (err) {
+      document.getElementById('cost-rows').innerHTML = '<tr><td colspan="7">Could not load: ' + esc(err.message) + '. If this says “permissions”, publish the updated Firestore rules (firestore.rules) in the Firebase console.</td></tr>';
+    });
+  });
+
+  // Every sellable single vial, from the price list the site is built from.
+  function loadUnits() {
+    return fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }).then(function (cat) {
+      units = [];
+      Object.keys(cat.products).forEach(function (slug) {
+        var p = cat.products[slug];
+        if (p.doses) {
+          Object.keys(p.doses).forEach(function (ds) {
+            units.push({ slug: ds, base: slug, dose: p.doses[ds].label, label: p.name + ' ' + p.doses[ds].label, price: p.doses[ds].price });
+          });
+        } else {
+          units.push({ slug: slug, base: slug, dose: '', label: p.name, price: p.price });
+        }
+      });
+      units.sort(function (a, b) { return a.label.localeCompare(b.label, undefined, { numeric: true }); });
+    });
+  }
+  function loadCosts() {
+    return db.collection('costs').get().then(function (snap) {
+      costDocs = {};
+      snap.forEach(function (d) { costDocs[d.id] = d.data(); });
+    });
+  }
+  function loadCodes() {
+    return db.collection('atCostCodes').get().then(function (snap) {
+      codes = {};
+      snap.forEach(function (d) { codes[d.id] = d.data(); });
+    });
+  }
+
+  // ---------- Codes ----------
+  function renderCodes() {
+    var rows = Object.keys(codes).sort().map(function (c) {
+      var d = codes[c];
+      return '<tr><td><strong>' + esc(c) + '</strong></td><td>' + (d.emails || []).map(esc).join('<br>') + '</td><td>' + money(d.markupPerVial) +
+        '</td><td>' + (d.active ? 'Active' : 'Off') + '</td><td><button type="button" class="btn-outline-light" data-edit-code="' + esc(c) + '">Edit</button> ' +
+        '<button type="button" class="btn-outline-light" data-delete-code="' + esc(c) + '">Delete</button></td></tr>';
+    });
+    document.getElementById('code-rows').innerHTML = rows.join('') || '<tr><td colspan="5">No family codes yet. Create one below.</td></tr>';
+    document.querySelectorAll('[data-edit-code]').forEach(function (b) {
+      b.addEventListener('click', function () { startEdit(b.getAttribute('data-edit-code')); });
+    });
+    document.querySelectorAll('[data-delete-code]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var c = b.getAttribute('data-delete-code');
+        if (!confirm('Delete family code ' + c + '? Anyone using it will pay regular prices.')) return;
+        db.collection('atCostCodes').doc(c).delete().then(function () {
+          delete codes[c];
+          return syncMembers();
+        }).then(function () { renderCodes(); renderCosts(); }).catch(function (err) { alert('Could not delete: ' + err.message); });
+      });
+    });
+  }
+  function startEdit(c) {
+    editingCode = c;
+    var d = codes[c];
+    document.getElementById('code-form-title').textContent = 'Edit ' + c;
+    document.getElementById('code-input').value = c;
+    document.getElementById('code-input').disabled = true;
+    document.getElementById('code-emails').value = (d.emails || []).join('\n');
+    document.getElementById('code-markup').value = d.markupPerVial;
+    document.getElementById('code-active').checked = !!d.active;
+    document.getElementById('code-cancel').style.display = '';
+    document.getElementById('code-form').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+  function resetForm() {
+    editingCode = null;
+    document.getElementById('code-form').reset();
+    document.getElementById('code-markup').value = AtCost.DEFAULT_MARKUP;
+    document.getElementById('code-input').disabled = false;
+    document.getElementById('code-form-title').textContent = 'New family code';
+    document.getElementById('code-cancel').style.display = 'none';
+  }
+  document.getElementById('code-cancel').addEventListener('click', resetForm);
+
+  function codeMsg(text, ok) {
+    var m = document.getElementById('code-msg');
+    m.textContent = text; m.className = 'form-message ' + (ok ? 'is-ok' : 'is-error'); m.style.display = 'block';
+  }
+
+  document.getElementById('code-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var code = (editingCode || document.getElementById('code-input').value).trim().toUpperCase();
+    var emails = document.getElementById('code-emails').value.split(/[\s,;]+/).map(function (x) { return x.trim().toLowerCase(); })
+      .filter(Boolean).filter(function (x, i, a) { return a.indexOf(x) === i; });
+    var bad = emails.filter(function (x) { return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(x); });
+    var markup = Math.round(Number(document.getElementById('code-markup').value) * 100) / 100;
+    if (!/^[A-Z0-9_-]{3,30}$/.test(code)) return codeMsg('Use 3–30 letters, numbers, dashes or underscores for the code.', false);
+    if (!emails.length) return codeMsg('Add at least one email.', false);
+    if (bad.length) return codeMsg('These don’t look like emails: ' + bad.join(', '), false);
+    if (!(markup >= 0)) return codeMsg('Enter the amount added per vial (0 or more).', false);
+    var btn = e.target.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    // A family code can't share a name with a regular promo code.
+    db.collection('promoCodes').doc(code).get().then(function (p) {
+      if (p.exists) throw new Error(code + ' is already a regular promo code. Pick another name.');
+      if (!editingCode && codes[code]) throw new Error(code + ' already exists. Use Edit to change it.');
+      var data = { active: document.getElementById('code-active').checked, emails: emails, markupPerVial: markup, updatedAt: new Date().toISOString() };
+      if (!codes[code]) data.createdAt = data.updatedAt;
+      return db.collection('atCostCodes').doc(code).set(Object.assign({}, codes[code] || {}, data)).then(function () {
+        codes[code] = Object.assign({}, codes[code] || {}, data);
+        return syncMembers();
+      });
+    }).then(function () {
+      btn.disabled = false;
+      codeMsg(code + ' saved. Listed family members can enter it at checkout.', true);
+      resetForm();
+      renderCodes();
+      renderCosts();
+    }).catch(function (err) {
+      btn.disabled = false;
+      codeMsg(err.message, false);
+    });
+  });
+
+  // atCostMembers/{email} lists which active codes each email is on; the
+  // Firestore rules use it to let those emails read costs at checkout.
+  function syncMembers() {
+    var want = {};
+    Object.keys(codes).forEach(function (c) {
+      if (!codes[c].active) return;
+      (codes[c].emails || []).forEach(function (em) { (want[em] = want[em] || []).push(c); });
+    });
+    return db.collection('atCostMembers').get().then(function (snap) {
+      var batch = db.batch();
+      snap.forEach(function (d) { if (!want[d.id]) batch.delete(d.ref); });
+      Object.keys(want).forEach(function (em) { batch.set(db.collection('atCostMembers').doc(em), { codes: want[em], updatedAt: new Date().toISOString() }); });
+      return batch.commit();
+    });
+  }
+
+  // ---------- Costs ----------
+  function renderCosts() {
+    var q = norm(document.getElementById('cost-search').value);
+    var missingOnly = document.getElementById('cost-missing-only').checked;
+    var markup = currentMarkup();
+    var withCost = 0;
+    var rows = [];
+    units.forEach(function (u) {
+      var c = costDocs[u.slug];
+      var has = c && typeof c.perVialCost === 'number';
+      if (has) withCost++;
+      if (q && norm(u.label + ' ' + u.slug).indexOf(q) === -1) return;
+      if (missingOnly && has) return;
+      var per = has ? c.perVialCost : null;
+      var kit = has ? (typeof c.kitCost === 'number' ? c.kitCost : per * AtCost.KIT_SIZE) : '';
+      rows.push('<tr data-slug="' + esc(u.slug) + '">' +
+        '<td>' + esc(u.label) + '</td>' +
+        '<td>' + money(u.price) + '</td>' +
+        '<td><input type="number" class="kit-input" min="0" step="0.01" value="' + (kit === '' ? '' : AtCost.round2(kit)) + '" placeholder="—" aria-label="Kit cost for ' + esc(u.label) + '"></td>' +
+        '<td class="per-cell">' + (has ? money(per) : '—') + '</td>' +
+        '<td class="fam-cell">' + (has ? money(Math.min(u.price, per + markup)) : '—') + '</td>' +
+        '<td class="margin-cell">' + (has ? Math.round((u.price - per) / u.price * 100) + '%' : '—') + '</td>' +
+        '<td><button type="button" class="btn-outline-light save-cost" disabled>Save</button></td></tr>');
+    });
+    document.getElementById('cost-rows').innerHTML = rows.join('') || '<tr><td colspan="7">No products match.</td></tr>';
+    document.getElementById('cost-summary').textContent = withCost + ' of ' + units.length + ' have a cost';
+    document.querySelectorAll('#cost-rows tr[data-slug]').forEach(wireRow);
+  }
+  function wireRow(tr) {
+    var slug = tr.getAttribute('data-slug');
+    var u = units.find(function (x) { return x.slug === slug; });
+    var input = tr.querySelector('.kit-input');
+    var btn = tr.querySelector('.save-cost');
+    input.addEventListener('input', function () {
+      btn.disabled = false;
+      var kit = input.value === '' ? null : Number(input.value);
+      var per = kit == null ? null : AtCost.round2(kit / AtCost.KIT_SIZE);
+      tr.querySelector('.per-cell').textContent = per == null ? '—' : money(per);
+      tr.querySelector('.fam-cell').textContent = per == null ? '—' : money(Math.min(u.price, per + currentMarkup()));
+      tr.querySelector('.margin-cell').textContent = per == null ? '—' : Math.round((u.price - per) / u.price * 100) + '%';
+    });
+    input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });
+    btn.addEventListener('click', function () {
+      var kit = input.value === '' ? null : Number(input.value);
+      btn.disabled = true;
+      btn.textContent = 'Saving…';
+      saveCosts([{ slug: slug, kit: kit }]).then(function () {
+        btn.textContent = 'Saved';
+        setTimeout(function () { btn.textContent = 'Save'; }, 1500);
+        document.getElementById('cost-summary').textContent = units.filter(function (x) { return costDocs[x.slug]; }).length + ' of ' + units.length + ' have a cost';
+      }).catch(function (err) {
+        btn.disabled = false;
+        btn.textContent = 'Save';
+        alert('Could not save: ' + err.message);
+      });
+    });
+  }
+
+  // entries: [{ slug, kit }] (kit null = remove the cost). Each change is
+  // added to the item's dated history for the P&L.
+  function saveCosts(entries) {
+    var now = new Date().toISOString();
+    var batch = db.batch();
+    var next = {};
+    entries.forEach(function (en) {
+      var ref = db.collection('costs').doc(en.slug);
+      if (en.kit == null || isNaN(en.kit)) {
+        if (costDocs[en.slug]) {
+          // Keep history (old orders still need it), drop the current cost.
+          next[en.slug] = Object.assign({}, costDocs[en.slug], { perVialCost: null, kitCost: null, updatedAt: now });
+          batch.set(ref, next[en.slug]);
+        }
+        return;
+      }
+      var per = AtCost.round2(en.kit / AtCost.KIT_SIZE);
+      var old = costDocs[en.slug] || {};
+      var history = (old.history || []).slice();
+      if (old.perVialCost !== per) history.push({ perVialCost: per, from: now });
+      next[en.slug] = { kitCost: AtCost.round2(en.kit), perVialCost: per, updatedAt: now, history: history };
+      batch.set(ref, next[en.slug]);
+    });
+    return batch.commit().then(function () { Object.assign(costDocs, next); });
+  }
+
+  document.getElementById('cost-search').addEventListener('input', renderCosts);
+  document.getElementById('cost-missing-only').addEventListener('change', renderCosts);
+
+  // ---------- Spreadsheet import ----------
+  var pending = [];
+  // Names a product goes by: its site name and slug, plus other names from
+  // js/product-search.js (e.g. "Retatrutide" for R-3), each with the dose.
+  function namesOf(u) {
+    var names = [u.label, u.slug];
+    String((window.PRODUCT_SEARCH || {})[u.base] || '').split(' | ').forEach(function (alias) {
+      alias.split(/[;,]/).forEach(function (a) { if (a.trim()) names.push(a.trim() + ' ' + u.dose); });
+    });
+    return names.map(norm);
+  }
+  function matchUnit(text) {
+    var tries = [text, String(text).replace(/\b(vials?|kit|kits|of|x10|10x|pack|box)\b/gi, ' ')];
+    for (var t = 0; t < tries.length; t++) {
+      var n = norm(tries[t]);
+      if (!n) continue;
+      var exact = units.filter(function (u) { return norm(u.label) === n || norm(u.slug) === n; });
+      if (exact.length === 1) return exact[0];
+      var alias = units.filter(function (u) { return namesOf(u).indexOf(n) !== -1; });
+      if (alias.length === 1) return alias[0];
+    }
+    return null;
+  }
+  document.getElementById('import-preview').addEventListener('click', function () {
+    var lines = document.getElementById('import-text').value.split(/\r?\n/).map(function (l) { return l.trim(); }).filter(Boolean);
+    var matched = [], unmatched = [];
+    lines.forEach(function (line) {
+      // Tabs (pasted from a spreadsheet), else commas (CSV), else "name  cost".
+      var parts = /\t/.test(line) ? line.split('\t') : /,/.test(line) ? line.split(',') : [line];
+      parts = parts.map(function (p) { return p.trim(); }).filter(Boolean);
+      var costIdx = -1;
+      for (var i = parts.length - 1; i > 0; i--) { if (/^\$?\d[\d,]*(\.\d+)?$/.test(parts[i])) { costIdx = i; break; } }
+      if (costIdx === -1) {
+        var m = line.match(/^(.*?)[\s,]+\$?(\d[\d,]*(?:\.\d+)?)\s*$/);
+        if (m) { parts = [m[1], m[2]]; costIdx = 1; }
+      }
+      if (costIdx <= 0) { unmatched.push({ line: line, why: 'no kit cost found' }); return; }
+      var kit = Number(parts[costIdx].replace(/[$,]/g, ''));
+      var name = parts.slice(0, costIdx).join(' ');
+      var u = matchUnit(name);
+      if (!u) { unmatched.push({ line: line, why: 'no product matches “' + name + '”' }); return; }
+      matched.push({ slug: u.slug, label: u.label, kit: kit, price: u.price });
+    });
+    pending = matched;
+    var html = '';
+    if (matched.length) {
+      html += '<table class="catalog-table" style="margin-bottom:12px;"><thead><tr><th>Product</th><th>Kit cost</th><th>Cost / vial</th><th>Website price</th></tr></thead><tbody>' +
+        matched.map(function (m) {
+          var per = AtCost.round2(m.kit / AtCost.KIT_SIZE);
+          var warn = per >= m.price ? ' <span class="cost-warn">above website price; check this</span>' : '';
+          return '<tr><td>' + esc(m.label) + '</td><td>' + money(m.kit) + '</td><td>' + money(per) + warn + '</td><td>' + money(m.price) + '</td></tr>';
+        }).join('') + '</tbody></table>' +
+        '<button type="button" id="import-apply" class="btn">Save ' + matched.length + ' cost' + (matched.length === 1 ? '' : 's') + '</button>';
+    }
+    if (unmatched.length) {
+      html += '<p class="section-note" style="margin-top:14px;">Not matched (fix the name, or enter it in the table below):</p><ul class="import-unmatched">' +
+        unmatched.map(function (u) { return '<li><code>' + esc(u.line) + '</code>: ' + esc(u.why) + '</li>'; }).join('') + '</ul>';
+    }
+    document.getElementById('import-result').innerHTML = html || '<p class="section-note">Nothing to import.</p>';
+    var apply = document.getElementById('import-apply');
+    if (apply) apply.addEventListener('click', function () {
+      apply.disabled = true; apply.textContent = 'Saving…';
+      saveCosts(pending).then(function () {
+        apply.textContent = 'Saved';
+        renderCosts();
+      }).catch(function (err) { apply.disabled = false; apply.textContent = 'Save'; alert('Could not save: ' + err.message); });
+    });
+  });
+</script>
+</body>
+</html>

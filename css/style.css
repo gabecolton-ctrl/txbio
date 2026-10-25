@@ -893,3 +893,25 @@ nav a { white-space: nowrap; }
 /* Signed-in nav before Firebase confirms (avoids a flash of the login button) */
 html.signed-in .nav-login { display: none; }
 html.signed-in .nav-myaccount { display: list-item; }
+
+/* Admin: At cost and P&L */
+.admin-form { max-width: 560px; }
+.admin-form textarea, .import-box textarea { width: 100%; font-family: inherit; }
+.field-note { color: var(--faint); font-weight: 400; font-size: 0.82rem; }
+.section-note { color: var(--muted); font-size: 0.9rem; }
+.import-box { margin-bottom: 8px; }
+.import-box summary { cursor: pointer; font-weight: 600; color: var(--frost); }
+.import-unmatched { color: var(--muted); font-size: 0.88rem; }
+.cost-table .kit-input { width: 110px; margin: 0; padding: 8px 10px; }
+.cost-table .save-cost { padding: 7px 14px; font-size: 0.85rem; }
+.cost-warn { color: var(--alert); font-size: 0.82rem; }
+.pnl-controls { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; margin-bottom: 20px; }
+.pnl-controls label { margin: 0; }
+.pnl-controls select { width: auto; margin: 0; }
+.pnl-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; margin-bottom: 28px; }
+.pnl-tile { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; }
+.pnl-label { color: var(--muted); font-size: 0.82rem; }
+.pnl-value { color: var(--frost); font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+.pnl-sub { display: block; color: var(--faint); font-size: 0.8rem; }
+.pnl-table td, .pnl-table th { white-space: nowrap; font-variant-numeric: tabular-nums; }
+#pnl-body h2 { margin-top: 40px; }

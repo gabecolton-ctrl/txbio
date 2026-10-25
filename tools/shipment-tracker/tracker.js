@@ -28,7 +28,7 @@ async function creditAffiliate({ db, orderRef, log }) {
   return db.runTransaction(async (t) => {
     const snap = await t.get(orderRef);
     const order = snap.data();
-    if (!order || (order.affiliateCreditedAt && !order.affiliateReversedAt) || order.affiliateSkipped) return;
+    if (!order || order.atCostCode || (order.affiliateCreditedAt && !order.affiliateReversedAt) || order.affiliateSkipped) return;
     const code = String(order.affiliateCode || order.promoCode || '').trim().toUpperCase();
     if (!code) return;
     const promoSnap = await t.get(db.collection('promoCodes').doc(code));
