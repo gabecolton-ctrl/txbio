@@ -572,7 +572,10 @@
 
       // Check and decrement stock for each item, tracking any backorders.
       var stockPromises = items.map(function (item) {
-        return Inventory.decrementStock(item.slug, item.qty).then(function (result) {
+        // Case lines draw 10 vials each from the single-vial stock count.
+        var stockSlug = item.caseOf ? (item.unitSlug || item.slug.replace(/-case$/, '')) : item.slug;
+        var units = item.caseOf ? item.qty * item.caseOf : item.qty;
+        return Inventory.decrementStock(stockSlug, units).then(function (result) {
           return {
             item: item,
             fulfilled: result.fulfilled,
@@ -628,7 +631,8 @@
       var backorderText = '';
       if (backorderedItems.length > 0) {
         var lines = backorderedItems.map(function (i) {
-          return i.name + ' (' + i.packSize + '): ' + i.fulfilled + ' available now, ' + i.backordered + ' on backorder';
+          var unitWord = i.caseOf ? ' vials' : '';
+          return i.name + ' (' + i.packSize + '): ' + i.fulfilled + unitWord + ' available now, ' + i.backordered + unitWord + ' on backorder';
         });
         backorderText = '<strong>Partial Backorder Notice:</strong><p>' + lines.join('</p><p>') + '</p><p>We will ship available items first and follow up on backordered quantities separately.</p>';
       }

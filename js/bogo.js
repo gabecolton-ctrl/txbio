@@ -52,6 +52,8 @@ var Bogo = (function () {
     var totalDiscount = 0;
 
     items.forEach(function (item) {
+      // Cases already carry their own bulk discount, so BOGO skips them.
+      if (item.caseOf || /-case$/.test(item.slug)) return;
       if (!isEligible(item.slug, eligibleSlugs)) return;
       var freeUnits = Math.floor(item.qty / 2);
       if (freeUnits <= 0) return;

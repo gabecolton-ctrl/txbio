@@ -157,7 +157,8 @@
       var itemsHtml = (order.items || []).map(function (item) {
         var qtyDisplay = item.qty;
         if (typeof item.backordered === 'number' && item.backordered > 0) {
-          qtyDisplay = item.qty + ' (' + item.fulfilled + ' shipped, ' + item.backordered + ' backordered)';
+          var unitWord = item.caseOf ? ' vials' : '';
+          qtyDisplay = item.qty + ' (' + item.fulfilled + unitWord + ' shipped, ' + item.backordered + unitWord + ' backordered)';
         }
         return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + qtyDisplay + '</td><td data-label="Subtotal">$' + (item.price * item.qty).toFixed(2) + '</td></tr>';
       }).join('');
