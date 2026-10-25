@@ -798,3 +798,57 @@ main.legal li strong, main.legal section:not(.page-head) p strong { color: var(-
 .bogo-filter[aria-pressed="true"] { background: var(--mint); color: var(--ink); border-color: var(--mint); }
 body.bogo-only .product-card:not(.is-bogo) { display: none; }
 body.bogo-only section[id]:not(:has(.product-card.is-bogo)):not(#terms) { display: none; }
+
+/* ---------- Admin menu (one dropdown for the admin pages) ---------- */
+nav a { white-space: nowrap; }
+.nav-admin-menu { position: relative; }
+.nav-admin-menu details { position: relative; }
+.nav-admin-menu summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 500;
+  padding: 8px 12px;
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+}
+.nav-admin-menu summary::-webkit-details-marker { display: none; }
+.nav-admin-menu summary::after {
+  content: '';
+  width: 6px; height: 6px;
+  border-right: 1.5px solid currentColor;
+  border-bottom: 1.5px solid currentColor;
+  transform: rotate(45deg) translateY(-2px);
+  transition: transform 0.15s;
+}
+.nav-admin-menu details[open] summary::after { transform: rotate(-135deg) translateY(-1px); }
+.nav-admin-menu summary:hover, .nav-admin-menu details[open] summary { color: var(--frost); background: var(--raised); }
+.nav-admin-menu ul {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 180px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px;
+  background: var(--ink-deep);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.45);
+  z-index: 120;
+}
+.nav-admin-menu ul { align-items: stretch; }
+.nav-admin-menu ul a { color: var(--muted); font-size: 0.9rem; text-align: left; }
+.nav-admin-menu ul a:hover, .nav-admin-menu ul a.active { color: var(--frost); background: var(--raised); }
+.nav-admin a { color: inherit; }
+@media (max-width: 860px) {
+  .nav-admin-menu summary { padding: 14px 4px; border-bottom: 1px solid var(--line-soft); border-radius: 0; font-size: 1rem; justify-content: space-between; }
+  .nav-admin-menu summary:hover, .nav-admin-menu details[open] summary { background: none; }
+  .nav-admin-menu ul { position: static; box-shadow: none; border: 0; padding: 0 0 0 12px; background: none; min-width: 0; }
+  .nav-admin-menu ul a { font-size: 0.95rem; }
+}
