@@ -135,9 +135,16 @@
             addressHtml = '<p style="font-size:0.9rem; color:var(--text-light); margin-bottom:10px;"><strong>Ship to:</strong> ' + addrLines.join(', ') + '</p>';
           }
         }
+        // Unpaid Venmo / Cash App orders: how to pay.
+        var payHtml = '';
+        if ((order.status || 'pending') === 'pending' && (order.paymentMethod === 'venmo' || order.paymentMethod === 'cashapp') && order.paymentHandle && window.PaymentApps) {
+          payHtml = '<div class="order-pay-box"><p>' + escHtml(PaymentApps.instructions(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber)) + '</p>' +
+            '<a class="btn-outline" target="_blank" rel="noopener" href="' + escHtml(PaymentApps.payLink(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber)) + '">Open ' +
+            (order.paymentMethod === 'venmo' ? 'Venmo' : 'Cash App') + '</a></div>';
+        }
         box.innerHTML =
-          '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + order.paymentMethod : '') + '</p>' +
-          orderStatusHtml(order) +
+          '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) : '') + '</p>' +
+          orderStatusHtml(order) + payHtml +
           addressHtml +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
           breakdownHtml +

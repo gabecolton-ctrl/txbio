@@ -6,7 +6,7 @@
 <title>Order Summary | TXBioResearch</title>
 <meta name="description" content="Review and submit your research order inquiry to TXBioResearch.">
 <link rel="icon" type="image/png" href="images/logo-icon.png">
-<link rel="stylesheet" href="css/style.css?v=20261025c">
+<link rel="stylesheet" href="css/style.css?v=20261025d">
 </head>
 <body>
 <div id="splash-screen">
@@ -51,6 +51,7 @@
               <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
               <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
               <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
+              <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
             </ul>
           </details>
         </li>
@@ -175,10 +176,20 @@
         <input type="radio" name="payment-method" id="pm-btc" value="bitcoin" style="width:auto; margin: 4px 8px 0 0;">
         <label for="pm-btc" style="font-weight:600;">Pay with Bitcoin</label>
       </div>
-      <div class="checkbox-row" style="margin-bottom: 20px;">
+      <div class="checkbox-row" style="margin-bottom: 10px;">
         <input type="radio" name="payment-method" id="pm-bank" value="bank" style="width:auto; margin: 4px 8px 0 0;">
         <label for="pm-bank" style="font-weight:600;">Bank Transfer</label>
       </div>
+      <!-- Shown only when a handle is saved on Admin → Payments (settings/paymentApps). -->
+      <div class="checkbox-row" id="pm-venmo-row" style="margin-bottom: 10px; display:none;">
+        <input type="radio" name="payment-method" id="pm-venmo" value="venmo" style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-venmo" style="font-weight:600;">Venmo</label>
+      </div>
+      <div class="checkbox-row" id="pm-cashapp-row" style="margin-bottom: 10px; display:none;">
+        <input type="radio" name="payment-method" id="pm-cashapp" value="cashapp" style="width:auto; margin: 4px 8px 0 0;">
+        <label for="pm-cashapp" style="font-weight:600;">Cash App</label>
+      </div>
+      <div style="margin-bottom:10px;"></div>
     </section>
 
     <section>
@@ -225,6 +236,21 @@
     <p id="bank-details-fallback" style="display:none;">We'll email your bank transfer details to you shortly.</p>
     <p style="font-size:0.85rem; color:var(--text-light);">Your order inquiry has been recorded. Email us at <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with your transfer confirmation once sent, and we'll confirm and ship promptly.</p>
     <a href="services.html" class="btn" style="margin-top:10px;">Back to Catalog</a>
+  </div>
+
+  <div id="app-instructions" class="order-success" style="display:none;">
+    <h2 id="app-title">Pay with Venmo</h2>
+    <p id="app-order-number" style="font-weight:600; color:var(--mint-dark); margin-bottom:14px;"></p>
+    <p>Send the amount below to complete your order. Once it arrives, we'll process and ship your order.</p>
+    <div id="app-backorder-notice" class="notice" style="display:none; text-align:left;"></div>
+    <table class="spec-table" style="max-width:420px; margin: 0 auto 16px;">
+      <tr><td>Amount</td><td id="app-amount" style="font-weight:700;"></td></tr>
+      <tr><td>Send to</td><td id="app-handle" style="font-weight:700;"></td></tr>
+      <tr><td>Note</td><td><span id="app-note"></span> <span style="color:var(--text-light); font-size:0.85rem;">(only this, please)</span></td></tr>
+    </table>
+    <a id="app-pay-link" href="#" class="btn" target="_blank" rel="noopener" style="margin-bottom:12px;">Open Venmo</a>
+    <p style="font-size:0.85rem; color:var(--text-light);">Your order has been recorded, and these details are also in your confirmation email and under <a href="orders.html">My orders</a>. Questions: <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a>.</p>
+    <a href="services.html" class="btn-outline-light" style="margin-top:10px;">Back to Catalog</a>
   </div>
 
   <div id="order-success" class="order-success" style="display:none;">
@@ -276,6 +302,7 @@
 <script src="js/promos.js"></script>
 <script src="js/bogo.js"></script>
 <script src="js/at-cost.js"></script>
+<script src="js/payment-apps.js"></script>
 <script src="js/credits.js"></script>
 <script src="js/order-emails.js"></script>
 <script src="js/nav-auth.js"></script>
@@ -659,11 +686,24 @@
     checkoutAddrDisplay.style.display = 'block';
   });
 
+  // Venmo / Cash App appear only when a handle is saved (Admin → Payments).
+  var paymentHandles = {};
+  document.addEventListener('userReady', function () {
+    if (!window.PaymentApps) return;
+    PaymentApps.load().then(function (h) {
+      paymentHandles = h;
+      if (h.venmo) document.getElementById('pm-venmo-row').style.display = '';
+      if (h.cashapp) document.getElementById('pm-cashapp-row').style.display = '';
+    }).catch(function (err) { console.error('Could not load Venmo / Cash App details:', err); });
+  });
+
   document.querySelectorAll('input[name="payment-method"]').forEach(function (radio) {
     radio.addEventListener('change', function () {
       var btn = document.getElementById('order-submit-btn');
       if (radio.value === 'bitcoin') btn.textContent = 'Submit & Show Bitcoin Payment Details';
       else if (radio.value === 'bank') btn.textContent = 'Submit & Show Bank Transfer Details';
+      else if (radio.value === 'venmo') btn.textContent = 'Submit & Show Venmo Details';
+      else if (radio.value === 'cashapp') btn.textContent = 'Submit & Show Cash App Details';
       else btn.textContent = 'Submit Order Inquiry';
     });
   });
@@ -734,6 +774,8 @@
       paymentInstructions = 'Please send payment to the Bitcoin address shown on your confirmation screen, then email orders@txbioresearch.com with your transaction ID.';
     } else if (order.paymentMethod === 'bank') {
       paymentInstructions = 'Please complete your bank transfer using the details shown on your confirmation screen, then email orders@txbioresearch.com with your transfer confirmation.';
+    } else if ((order.paymentMethod === 'venmo' || order.paymentMethod === 'cashapp') && order.paymentHandle) {
+      paymentInstructions = PaymentApps.instructions(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber);
     } else {
       paymentInstructions = 'Our team will follow up by email shortly to confirm details and arrange payment.';
     }
@@ -789,6 +831,7 @@
     document.getElementById('btc-order-number').textContent = 'Order #' + orderData.orderNumber;
     document.getElementById('bank-order-number').textContent = 'Order #' + orderData.orderNumber;
     document.getElementById('inquiry-order-number').textContent = 'Order #' + orderData.orderNumber;
+    document.getElementById('app-order-number').textContent = 'Order #' + orderData.orderNumber;
 
     if (paymentMethod === 'bitcoin') {
       var btcAddress = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
@@ -800,6 +843,21 @@
         btcNotice.style.display = 'block';
       }
       document.getElementById('btc-instructions').style.display = 'block';
+    } else if ((paymentMethod === 'venmo' || paymentMethod === 'cashapp') && orderData.paymentHandle) {
+      var appName = paymentMethod === 'venmo' ? 'Venmo' : 'Cash App';
+      document.getElementById('app-title').textContent = 'Pay with ' + appName;
+      document.getElementById('app-amount').textContent = '$' + Number(orderData.total).toFixed(2);
+      document.getElementById('app-handle').textContent = PaymentApps.display(paymentMethod, orderData.paymentHandle);
+      document.getElementById('app-note').textContent = PaymentApps.note(orderData.orderNumber);
+      var link = document.getElementById('app-pay-link');
+      link.href = PaymentApps.payLink(paymentMethod, orderData.paymentHandle, orderData.total, orderData.orderNumber);
+      link.textContent = 'Open ' + appName;
+      if (backorderText) {
+        var appNotice = document.getElementById('app-backorder-notice');
+        appNotice.innerHTML = backorderText;
+        appNotice.style.display = 'block';
+      }
+      document.getElementById('app-instructions').style.display = 'block';
     } else if (paymentMethod === 'bank') {
       if (backorderText) {
         var bankNotice = document.getElementById('bank-backorder-notice');
@@ -912,6 +970,7 @@
           shippingAddress: checkoutAddress,
           notes: notes,
           paymentMethod: paymentMethod,
+          paymentHandle: paymentHandles[paymentMethod] || '',
           hasBackorder: hasBackorder,
           status: 'pending'
         };

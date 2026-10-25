@@ -67,7 +67,13 @@ var OrderEmails = (function () {
     return SITE_URL + '/orders.html' + (order.orderNumber ? '#order-' + order.orderNumber : '');
   }
 
-  function nextSteps(paymentMethod) {
+  function nextSteps(paymentMethod, order) {
+    if ((paymentMethod === 'venmo' || paymentMethod === 'cashapp') && order && order.paymentHandle) {
+      var app = paymentMethod === 'venmo' ? 'Venmo' : 'Cash App';
+      var to = (paymentMethod === 'venmo' ? '@' : '$') + order.paymentHandle;
+      return 'Send $' + Number(order.total || 0).toFixed(2) + ' on ' + app + ' to ' + to + ' with "Order ' + (order.orderNumber || '') +
+        '" as the note (nothing else in the note). We ship once it arrives.';
+    }
     if (paymentMethod === 'bitcoin') {
       return 'Send payment to the Bitcoin address shown on your confirmation screen, then reply to this email with your transaction ID.';
     }
@@ -107,7 +113,7 @@ var OrderEmails = (function () {
         total: money(order.total),
         shipping_address: addressText(order.shippingAddress) || 'Not provided',
         payment_method: order.paymentMethod || '',
-        next_steps: nextSteps(order.paymentMethod) + '\n\nView your order anytime: ' + orderUrl(order),
+        next_steps: nextSteps(order.paymentMethod, order) + '\n\nView your order anytime: ' + orderUrl(order),
         order_url: orderUrl(order)
       });
     }).then(function () { return true; });

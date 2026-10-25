@@ -4,7 +4,8 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const P = require('./pricing');
 const AtCost = require('./at-cost');
 
-const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank'];
+const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank', 'venmo', 'cashapp'];
+const PaymentApps = require('./payment-apps');
 
 function generateOrderNumber() {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
@@ -30,6 +31,14 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     throw new HttpsError('invalid-argument', 'Please add a shipping address before submitting your order.');
   }
   const notes = P.cleanText(data.notes, 2000);
+  // Venmo / Cash App: the handle comes from settings, never from the browser.
+  let paymentHandle = '';
+  if (paymentMethod === 'venmo' || paymentMethod === 'cashapp') {
+    const appsSnap = await db.collection('settings').doc('paymentApps').get();
+    const apps = appsSnap.exists ? appsSnap.data() : {};
+    paymentHandle = paymentMethod === 'venmo' ? PaymentApps.cleanVenmo(apps.venmo) : PaymentApps.cleanCashtag(apps.cashapp);
+    if (!paymentHandle) throw new HttpsError('invalid-argument', 'That payment method isn’t available right now. Please choose another.');
+  }
   const promoCode = P.cleanText(data.promoCode, 40).toUpperCase();
   const useCredit = data.useCredit === true && !!userEmail;
 
@@ -145,6 +154,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       shippingAddress: address,
       notes,
       paymentMethod,
+      paymentHandle,
       hasBackorder: items.some((i) => i.backordered > 0),
       status: 'pending',
       userId: uid,
