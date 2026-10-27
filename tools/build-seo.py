@@ -80,7 +80,8 @@ def product_meta(slug, site_name, cat_entry):
     size = f" ({labels[0]}–{labels[-1]})" if len(labels) > 1 else ''
     title = clip(f"{name}{size} {kind} | {BRAND}", 70)
     first = overview.split('. ')[0].rstrip('.') + '.' if overview else f'{name} for laboratory research.'
-    desc = clip(f"{first} Specs, sequence, CAS and case pricing. For laboratory research use only.", 160)
+    suffix = ' Specs, CAS and case pricing. For laboratory research use only.'
+    desc = clip(first, 160 - len(suffix)) + suffix  # the research-use line always fits
     prices = [d['price'] for d in doses.values()] or [cat_entry['price']]
     aka = comps[0].get('aka', '') if len(comps) == 1 else ''
     return name, title, desc, prices, aka, kind

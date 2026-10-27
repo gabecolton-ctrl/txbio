@@ -68,10 +68,12 @@ var Cart = (function () {
   function waitForUser(ms) {
     return new Promise(function (resolve) {
       var done = false;
-      var unsub = firebase.auth().onAuthStateChanged(function (u) {
-        if (u && !done) { done = true; unsub(); resolve(u); }
+      var unsub = null;
+      var stop = function () { if (typeof unsub === 'function') unsub(); };
+      unsub = firebase.auth().onAuthStateChanged(function (u) {
+        if (u && !done) { done = true; stop(); resolve(u); }
       });
-      setTimeout(function () { if (!done) { done = true; unsub(); resolve(firebase.auth().currentUser); } }, ms);
+      setTimeout(function () { if (!done) { done = true; stop(); resolve(firebase.auth().currentUser); } }, ms);
     });
   }
   function sendToLogin(product, qty) {

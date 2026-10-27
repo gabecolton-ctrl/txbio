@@ -1,0 +1,11 @@
+User-agent: *
+Disallow: /admin-
+Disallow: /cart.html
+Disallow: /checkout.html
+Disallow: /account.html
+Disallow: /orders.html
+Disallow: /functions/
+Disallow: /tools/
+Disallow: /data/
+
+Sitemap: https://txbioresearch.com/sitemap.xml
