@@ -26,6 +26,8 @@ var CasePricing = (function () {
   ];
 
   var mode = 'single';
+  // Family pricing (js/family-pricing.js) swaps in its own prices.
+  var view = null;
   var baseSlug = null;
   var ui = null;
 
@@ -56,16 +58,18 @@ var CasePricing = (function () {
     return null;
   }
 
+  function setView(v) { view = v; render(); }
+
   function render() {
-    var unit = currentUnitPrice();
+    var unit = view ? view.single() : currentUnitPrice();
     if (!ui || unit == null) return;
-    var total = casePrice(unit);
+    var total = view ? view.caseTotal() : casePrice(unit);
     var perVial = total / CASE_SIZE;
     var saved = unit * CASE_SIZE - total;
 
     ui.singlePrice.textContent = money(unit);
     ui.casePrice.textContent = money(total);
-    ui.caseSave.textContent = FREE_VIALS + ' vials free';
+    ui.caseSave.textContent = view ? '10 vials at your price' : FREE_VIALS + ' vials free';
 
     var priceEl = document.querySelector('.product-info .product-price');
     if (priceEl) priceEl.textContent = mode === 'case' ? money(total) : money(unit);
@@ -73,11 +77,17 @@ var CasePricing = (function () {
     ui.note.textContent = mode === 'case'
       ? 'Pay for ' + (CASE_SIZE - FREE_VIALS) + ', get ' + CASE_SIZE + ': ' + money(perVial) + ' per vial. You save ' + money(saved) + ' versus buying single vials.'
       : '';
-    ui.note.style.display = mode === 'case' ? '' : 'none';
+    ui.note.style.display = mode === 'case' && !view ? '' : 'none';
     if (ui.qtyLabel) ui.qtyLabel.textContent = mode === 'case' ? 'Cases' : 'Quantity';
     // Dosage dropdown: show each dose's case price while "Case of 10" is picked.
     if (ui.doseOptions) {
       ui.doseOptions.forEach(function (o) {
+        if (view) {
+          var fam = view.option(o.el.value);
+          o.el.textContent = fam == null ? o.original
+            : o.original.replace(/\$[\d,.]+/, mode === 'case' ? money(fam * CASE_SIZE) + ' per case' : money(fam));
+          return;
+        }
         var unitForDose = window.DOSE_PRICES ? DOSE_PRICES[o.el.value] : null;
         o.el.textContent = (mode === 'case' && unitForDose != null)
           ? o.original.replace(/\$[\d,.]+/, money(casePrice(unitForDose)) + ' per case')
@@ -173,6 +183,7 @@ var CasePricing = (function () {
     isEligible: isEligible,
     isCaseItem: isCaseItem,
     casePrice: casePrice,
-    apply: apply
+    apply: apply,
+    setView: setView
   };
 })();

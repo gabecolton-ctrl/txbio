@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=20261026a">
+<link rel="stylesheet" href="css/style.css?v=20261027a">
 </head>
 <body>
 <div id="splash-screen">
@@ -166,6 +166,8 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="js/firebase-config.js"></script>
 <script src="js/cart.js"></script>
+<script src="js/at-cost.js"></script>
+<script src="js/family-pricing.js"></script>
 <script src="js/nav-auth.js"></script>
 <script src="js/profile-gate.js"></script>
 <script src="js/auth-guard.js"></script>
@@ -194,6 +196,8 @@
       : 'Add bacteriostatic water';
   }
 
+  document.addEventListener('familyPricingReady', function () { renderCart(); });
+
   function renderCart() {
     var loading = document.getElementById('cart-loading');
     var emptyState = document.getElementById('cart-empty-state');
@@ -212,20 +216,23 @@
       cartContent.style.display = 'block';
       rowsEl.innerHTML = '';
       var total = 0;
+      var fam = window.FamilyPricing && FamilyPricing.active();
       items.forEach(function (item) {
-        var subtotal = item.price * item.qty;
+        // Family accounts see their own price (js/family-pricing.js).
+        var subtotal = fam ? FamilyPricing.lineTotal(item) : item.price * item.qty;
+        var each = fam ? Math.round(subtotal / item.qty * 100) / 100 : item.price;
         total += subtotal;
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td data-label="Product">' + item.name + '</td>' +
           '<td data-label="Pack Size">' + item.packSize + '</td>' +
-          '<td data-label="Price">$' + item.price + '</td>' +
+          '<td data-label="Price">' + (fam ? FamilyPricing.money(each) : '$' + item.price) + '</td>' +
           '<td class="cart-qty" data-label="Qty"><input type="number" min="1" value="' + item.qty + '" data-slug="' + item.slug + '"></td>' +
-          '<td data-label="Subtotal">$' + subtotal + '</td>' +
+          '<td data-label="Subtotal">' + (fam ? FamilyPricing.money(subtotal) : '$' + subtotal) + '</td>' +
           '<td class="cart-remove" data-label=""><a href="#" data-remove-slug="' + item.slug + '">Remove</a></td>';
         rowsEl.appendChild(tr);
       });
-      totalEl.textContent = '$' + total;
+      totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + total;
 
       rowsEl.querySelectorAll('input[data-slug]').forEach(function (input) {
         input.addEventListener('change', function () {

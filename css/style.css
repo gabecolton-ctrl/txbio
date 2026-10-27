@@ -944,3 +944,9 @@ body.pg-open { overflow: hidden; }
 .pg-dialog h2 { margin: 0 0 8px; }
 .pg-lead { color: var(--muted); font-size: 0.93rem; margin-bottom: 16px; }
 .pg-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+
+/* Family pricing (js/family-pricing.js) */
+html.family-pending .product-price, html.family-pending .product-card-price, html.family-pending #dose-select,
+html.family-pending .buy-option-price, html.family-pending #cart-rows, html.family-pending #cart-total { visibility: hidden; }
+html.family-pricing .bogo-badge, html.family-pricing .bogo-card-note, html.family-pricing .bogo-filter, html.family-pricing .bogo-product-note { display: none !important; }
+.family-price-note { margin: -6px 0 14px; font-size: 0.82rem; font-weight: 600; color: var(--mint); letter-spacing: 0.02em; }

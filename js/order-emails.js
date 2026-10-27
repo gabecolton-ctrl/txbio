@@ -57,7 +57,9 @@ var OrderEmails = (function () {
 
   function itemsText(items) {
     return (items || []).map(function (item) {
-      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — ' + money(item.price * item.qty);
+      // Family (at-cost) lines show what the family member paid.
+      var line = typeof item.atCostPrice === 'number' ? item.atCostPrice : item.price * item.qty;
+      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — ' + money(line);
     }).join('\n');
   }
 
@@ -85,7 +87,7 @@ var OrderEmails = (function () {
 
   function discountsText(order) {
     var lines = [];
-    if (order.discount > 0) {
+    if (order.discount > 0 && !order.atCostCode) {
       lines.push('Promo' + (order.promoCode ? ' (' + order.promoCode + ')' : '') + ': -' + money(order.discount));
     }
     if (order.bogoDiscount > 0) {
@@ -105,7 +107,7 @@ var OrderEmails = (function () {
         to_email: toEmail,
         order_number: order.orderNumber || '',
         items: itemsText(order.items),
-        subtotal: money(order.subtotal),
+        subtotal: money(order.atCostCode ? order.subtotal - (order.discount || 0) : order.subtotal),
         shipping: money(order.shipping),
         shipping_option: order.shippingOption || '',
         discounts: discountsText(order),
