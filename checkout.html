@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=20261026a">
+<link rel="stylesheet" href="css/style.css?v=20261027a">
 </head>
 <body>
 <div id="splash-screen">
@@ -424,13 +424,23 @@
       creditRow.style.display = 'none';
     }
 
-    document.getElementById('summary-subtotal').textContent = '$' + currentSubtotal.toFixed(2);
+    // At-cost (family) orders show their own prices: each line at cost + the
+    // add-on and the subtotal after it, with no separate discount line.
+    var rowsEl = document.getElementById('summary-rows');
+    if (atCost && atCost.result && rowsEl) {
+      rowsEl.querySelectorAll('tr').forEach(function (tr, i) {
+        var line = atCost.result.lines[i];
+        var cell = tr.querySelector('td[data-label="Subtotal"]');
+        if (line && cell) cell.textContent = '$' + line.atCostPrice.toFixed(2);
+      });
+    }
+    document.getElementById('summary-subtotal').textContent = '$' + (atCost ? currentSubtotal - discountAmount : currentSubtotal).toFixed(2);
     document.getElementById('summary-shipping').textContent = '$' + shipping.toFixed(2);
     document.getElementById('summary-tax').textContent = '$' + tax.toFixed(2);
     document.getElementById('summary-total').textContent = '$' + total.toFixed(2);
 
     var discountRow = document.getElementById('summary-discount-row');
-    if (discountAmount > 0) {
+    if (discountAmount > 0 && !atCost) {
       document.getElementById('summary-discount').textContent = '-$' + discountAmount.toFixed(2);
       discountRow.style.display = 'table-row';
     } else {
@@ -775,7 +785,7 @@
     var addressText = [addr.addressLine1, addr.addressLine2, [addr.city, addr.state].filter(Boolean).join(', ') + ' ' + (addr.zip || '')]
       .filter(Boolean).join(', ');
     var itemsText = order.items.map(function (item) {
-      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — $' + (item.price * item.qty);
+      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — $' + (typeof item.atCostPrice === 'number' ? item.atCostPrice.toFixed(2) : (item.price * item.qty));
     }).join('\n');
 
     var paymentInstructions = '';
@@ -795,9 +805,9 @@
     formData.append('_template', 'box');
     formData.append('Order Number', order.orderNumber || '');
     formData.append('Order Summary', itemsText);
-    formData.append('Subtotal', '$' + order.subtotal.toFixed(2));
+    formData.append('Subtotal', '$' + (order.atCostCode ? order.subtotal - order.discount : order.subtotal).toFixed(2));
     formData.append('Shipping', '$' + order.shipping.toFixed(2));
-    if (order.discount > 0) {
+    if (order.discount > 0 && !order.atCostCode) {
       formData.append('Discount', '-$' + order.discount.toFixed(2) + (order.promoCode ? ' (' + order.promoCode + ')' : ''));
     }
     if (order.bogoDiscount > 0) {

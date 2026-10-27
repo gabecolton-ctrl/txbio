@@ -171,22 +171,24 @@
         box.className = 'order-summary-box';
         if (order.orderNumber) box.id = 'order-' + order.orderNumber;
         box.style.marginBottom = '18px';
+        // Family (at-cost) orders show what they actually paid per line.
+        var fam = !!order.atCostCode;
         var itemsHtml = order.items.map(function (item) {
           var qtyDisplay = item.qty;
           if (typeof item.backordered === 'number' && item.backordered > 0) {
             qtyDisplay = item.qty + ' (' + item.fulfilled + ' shipped, ' + item.backordered + ' backordered)';
           }
-          return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + qtyDisplay + '</td><td data-label="Subtotal">$' + (item.price * item.qty) + '</td></tr>';
+          return '<tr><td data-label="Product">' + item.name + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + qtyDisplay + '</td><td data-label="Subtotal">$' + (fam && typeof item.atCostPrice === 'number' ? item.atCostPrice.toFixed(2) : (item.price * item.qty)) + '</td></tr>';
         }).join('');
         var breakdownHtml = '';
         if (typeof order.shipping !== 'undefined') {
           var discountRowHtml = '';
-          if (order.discount && order.discount > 0) {
+          if (order.discount && order.discount > 0 && !fam) {
             discountRowHtml = '<tr><td>Discount' + (order.promoCode ? ' (' + order.promoCode + ')' : '') + '</td><td>-$' + order.discount + '</td></tr>';
           }
           breakdownHtml =
             '<table class="spec-table" style="margin-bottom:0;">' +
-            '<tr><td>Subtotal</td><td>$' + order.subtotal + '</td></tr>' +
+            '<tr><td>Subtotal</td><td>$' + (fam ? (order.subtotal - (order.discount || 0)).toFixed(2) : order.subtotal) + '</td></tr>' +
             '<tr><td>Shipping' + (order.shippingOption ? ' (' + order.shippingOption + ')' : '') + '</td><td>$' + order.shipping + '</td></tr>' +
             discountRowHtml +
             (order.bogoDiscount > 0 ? '<tr><td>BOGO discount</td><td>-$' + Number(order.bogoDiscount).toFixed(2) + '</td></tr>' : '') +
