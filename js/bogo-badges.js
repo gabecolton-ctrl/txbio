@@ -78,7 +78,13 @@
 
   document.addEventListener('userReady', function () {
     if (!window.Bogo) return;
-    Bogo.getEligibleSlugs().then(function (eligible) {
+    // Family accounts don't get BOGO (they pay at cost), so wait for the
+    // family-pricing check before drawing any badges (js/family-pricing.js).
+    var familyCheck = window.FamilyPricing ? FamilyPricing.ready() : Promise.resolve(null);
+    familyCheck.then(function (family) {
+      if (family) return null;
+      return Bogo.getEligibleSlugs();
+    }).then(function (eligible) {
       if (!eligible || !eligible.length) return;
       decorateCatalog(eligible);
       decorateProductPage(eligible);
