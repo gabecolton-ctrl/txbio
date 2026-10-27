@@ -31,7 +31,7 @@ var FamilyPricing = (function () {
     if (!state) return listPrice;
     var cost = state.costs[unitSlug];
     if (typeof cost !== 'number') return listPrice;
-    return Math.min(listPrice, round2(cost + state.markup));
+    return Math.min(listPrice, round2(cost + AtCost.markupFor(unitSlug, state.markup)));
   }
 
   // What a cart line costs a family member (cases = 10 vials at family price).

@@ -19,6 +19,13 @@ var AtCost = (function () {
 
   function round2(n) { return Math.round(n * 100) / 100; }
 
+  // Waters are sold to family at plain cost (no per-vial add-on).
+  var NO_MARKUP = ['bac-water', 'sterile-water', 'acetic-acid-water'];
+  function markupFor(unitSlug, markup) {
+    var s = String(unitSlug || '');
+    return NO_MARKUP.some(function (base) { return s === base || s.indexOf(base + '-') === 0; }) ? 0 : markup;
+  }
+
   // The single-vial slug a cart line draws from, and how many vials it holds.
   function unitSlugOf(item) {
     if (item.unitSlug) return item.unitSlug;
@@ -45,7 +52,7 @@ var AtCost = (function () {
       var line = { slug: item.slug, unitSlug: slug, vials: vials, listPrice: listPrice };
       if (typeof cost === 'number' && cost >= 0) {
         line.unitCost = cost;
-        line.atCostPrice = Math.min(listPrice, round2(vials * (cost + markup)));
+        line.atCostPrice = Math.min(listPrice, round2(vials * (cost + markupFor(slug, markup))));
       } else {
         line.atCostPrice = listPrice;
         out.missing.push(item.name || slug);
@@ -98,6 +105,7 @@ var AtCost = (function () {
     FAMILY_SHIPPING_VALUE: FAMILY_SHIPPING_VALUE,
     shippingOf: shippingOf,
     round2: round2,
+    markupFor: markupFor,
     unitSlugOf: unitSlugOf,
     vialsOf: vialsOf,
     priceLines: priceLines,
