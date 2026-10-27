@@ -950,3 +950,4 @@ html.family-pending .product-price, html.family-pending .product-card-price, htm
 html.family-pending .buy-option-price, html.family-pending #cart-rows, html.family-pending #cart-total { visibility: hidden; }
 html.family-pricing .bogo-badge, html.family-pricing .bogo-card-note, html.family-pricing .bogo-filter, html.family-pricing .bogo-product-note { display: none !important; }
 .family-price-note { margin: -6px 0 14px; font-size: 0.82rem; font-weight: 600; color: var(--mint); letter-spacing: 0.02em; }
+html.family-pending .bogo-badge, html.family-pending .bogo-card-note, html.family-pending .bogo-filter, html.family-pending .bogo-product-note { display: none !important; }
