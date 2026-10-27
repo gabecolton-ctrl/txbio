@@ -13,14 +13,17 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610271204">
+<link rel="stylesheet" href="css/style.css?v=202610271853">
+<!-- seo:start -->
+<meta name="robots" content="noindex">
+<!-- seo:end -->
 </head>
 <body>
 <div id="splash-screen">
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610271204"></script>
+<script src="js/splash.js?v=202610271853"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -88,6 +91,7 @@
       <button id="tab-signup" type="button">Register</button>
     </div>
 
+    <p id="auth-add-note" class="auth-notice" style="display:none;">Sign in, or create a free account, to add that item to your cart. We&rsquo;ll bring you right back.</p>
     <div id="auth-error" class="auth-error"></div>
 
     <form id="signin-form">
@@ -161,10 +165,10 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610271204"></script>
-<script src="js/main.js?v=202610271204"></script>
-<script src="js/nav-toggle.js?v=202610271204"></script>
-<script src="js/profile-gate.js?v=202610271204"></script>
+<script src="js/firebase-config.js?v=202610271853"></script>
+<script src="js/main.js?v=202610271853"></script>
+<script src="js/nav-toggle.js?v=202610271853"></script>
+<script src="js/profile-gate.js?v=202610271853"></script>
 <script>
   firebase.initializeApp(firebaseConfig);
 
@@ -253,6 +257,7 @@
   });
 
   if (window.location.hash === '#register') { tabSignup.click(); }
+  if (new URLSearchParams(window.location.search).get('add')) { document.getElementById('auth-add-note').style.display = 'block'; }
 
   function getRedirectTarget() {
     var params = new URLSearchParams(window.location.search);

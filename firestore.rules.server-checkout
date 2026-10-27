@@ -63,9 +63,10 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
-    // BOGO eligibility per product — read by checkout, edited by the admin.
+    // BOGO eligibility per product — public (the catalog shows BOGO badges to
+    // signed-out visitors too); only the admin edits it.
     match /bogoProducts/{productSlug} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
 

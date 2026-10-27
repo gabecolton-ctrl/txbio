@@ -62,10 +62,36 @@ var Cart = (function () {
     return getCartRef(user.uid).set({ items: items, updatedAt: new Date().toISOString() });
   }
 
+  // Public pages: a signed-out visitor who taps "Add to cart" is sent to sign
+  // in (or register), then brought back and the item is added for them.
+  var PENDING_KEY = 'txbio_pending_add';
+  function waitForUser(ms) {
+    return new Promise(function (resolve) {
+      var done = false;
+      var unsub = null;
+      var stop = function () { if (typeof unsub === 'function') unsub(); };
+      unsub = firebase.auth().onAuthStateChanged(function (u) {
+        if (u && !done) { done = true; stop(); resolve(u); }
+      });
+      setTimeout(function () { if (!done) { done = true; stop(); resolve(firebase.auth().currentUser); } }, ms);
+    });
+  }
+  function sendToLogin(product, qty) {
+    try { sessionStorage.setItem(PENDING_KEY, JSON.stringify({ product: product, qty: qty, page: location.pathname })); } catch (e) {}
+    var inProducts = location.pathname.indexOf('/products/') !== -1;
+    location.href = (inProducts ? '../' : '') + 'login.html?add=1&redirect=' + encodeURIComponent(location.pathname + location.search);
+    return new Promise(function () {}); // the page is leaving
+  }
+
   function addItem(product, qty) {
     qty = qty || 1;
     var user = getCurrentUser();
-    if (!user) return Promise.reject(new Error('Not signed in yet — please wait a moment and try again.'));
+    if (!user) {
+      return waitForUser(1500).then(function (u) {
+        if (u) { currentUser = u; return addItem(product, qty); }
+        return sendToLogin(product, qty);
+      });
+    }
     var ref = getCartRef(user.uid);
     return ensureDb().runTransaction(function (transaction) {
       return transaction.get(ref).then(function (doc) {
@@ -116,6 +142,28 @@ var Cart = (function () {
 
   function setUser(user) {
     currentUser = user;
+    // Finish an "Add to cart" that started before signing in.
+    var pending = null;
+    try { pending = JSON.parse(sessionStorage.getItem(PENDING_KEY) || 'null'); sessionStorage.removeItem(PENDING_KEY); } catch (e) {}
+    if (user && pending && pending.product) {
+      addItem(pending.product, pending.qty || 1).then(function () {
+        showAddedToast(pending.product.name);
+        return getItemCount();
+      }).then(function (count) {
+        var badge = document.getElementById('floating-cart-badge');
+        if (badge && typeof count === 'number') { badge.textContent = count; badge.style.display = count > 0 ? 'flex' : 'none'; }
+      }).catch(function (err) { console.error('Could not add the saved item:', err); });
+    }
+  }
+
+  function showAddedToast(name) {
+    var t = document.createElement('div');
+    t.className = 'added-toast';
+    t.setAttribute('role', 'status');
+    t.textContent = (name ? name + ' was' : 'Your item was') + ' added to your cart.';
+    document.body.appendChild(t);
+    setTimeout(function () { t.classList.add('is-hiding'); }, 3500);
+    setTimeout(function () { t.remove(); }, 4200);
   }
 
   function getItemCount() {
