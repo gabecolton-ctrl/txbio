@@ -13,14 +13,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610271001">
+<link rel="stylesheet" href="css/style.css?v=202610271026">
 </head>
 <body>
 <div id="splash-screen">
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610271001"></script>
+<script src="js/splash.js?v=202610271026"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -164,15 +164,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610271001"></script>
-<script src="js/cart.js?v=202610271001"></script>
-<script src="js/at-cost.js?v=202610271001"></script>
-<script src="js/family-pricing.js?v=202610271001"></script>
-<script src="js/nav-auth.js?v=202610271001"></script>
-<script src="js/profile-gate.js?v=202610271001"></script>
-<script src="js/auth-guard.js?v=202610271001"></script>
-<script src="js/main.js?v=202610271001"></script>
-<script src="js/nav-toggle.js?v=202610271001"></script>
+<script src="js/firebase-config.js?v=202610271026"></script>
+<script src="js/cart.js?v=202610271026"></script>
+<script src="js/at-cost.js?v=202610271026"></script>
+<script src="js/family-pricing.js?v=202610271026"></script>
+<script src="js/nav-auth.js?v=202610271026"></script>
+<script src="js/profile-gate.js?v=202610271026"></script>
+<script src="js/auth-guard.js?v=202610271026"></script>
+<script src="js/main.js?v=202610271026"></script>
+<script src="js/nav-toggle.js?v=202610271026"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -185,18 +185,27 @@
     return items.some(function (item) { return item.caseOf && cartHasPowderProduct([item]); });
   }
 
+  var bacOfferItems = null;
   function setBacWaterOffer(items) {
+    bacOfferItems = items;
     var asCase = cartHasPowderCase(items);
     bacWaterOffer = asCase ? BAC_WATER_CASE : BAC_WATER_VIAL;
+    // Family accounts see their own price (js/family-pricing.js).
+    var amount = window.FamilyPricing && FamilyPricing.active()
+      ? FamilyPricing.money(FamilyPricing.lineTotal(Object.assign({}, bacWaterOffer, { qty: 1 })))
+      : '$' + bacWaterOffer.price;
     document.getElementById('bac-water-text').textContent = asCase
-      ? 'Your cart includes a case of lyophilized powder, which needs bacteriostatic water for reconstitution. Add a case of 10 bacteriostatic water vials (10ml each) for $200?'
-      : 'Your cart includes lyophilized powder products, which require bacteriostatic water for reconstitution. Would you like to add a 10ml vial for $20?';
+      ? 'Your cart includes a case of lyophilized powder, which needs bacteriostatic water for reconstitution. Add a case of 10 bacteriostatic water vials (10ml each) for ' + amount + '?'
+      : 'Your cart includes lyophilized powder products, which require bacteriostatic water for reconstitution. Would you like to add a 10ml vial for ' + amount + '?';
     document.getElementById('bac-water-add-btn').textContent = asCase
       ? 'Add a case of bacteriostatic water'
       : 'Add bacteriostatic water';
   }
 
-  document.addEventListener('familyPricingReady', function () { renderCart(); });
+  document.addEventListener('familyPricingReady', function () {
+    renderCart();
+    if (bacOfferItems) setBacWaterOffer(bacOfferItems); // re-price the pop-up if it's already showing
+  });
 
   function renderCart() {
     var loading = document.getElementById('cart-loading');
