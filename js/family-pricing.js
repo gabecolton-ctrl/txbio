@@ -82,8 +82,10 @@ var FamilyPricing = (function () {
       document.addEventListener('DOMContentLoaded', function () {
         if (!window.firebase || !window.AtCost) return resolve(null);
         if (!firebase.apps.length && window.firebaseConfig) firebase.initializeApp(firebaseConfig);
+        // Firebase can report "signed out" for a moment while it restores the
+        // session (same as auth-guard.js), so a first empty answer isn't final.
         var done = false;
-        firebase.auth().onAuthStateChanged(function (user) {
+        function start(user) {
           if (done) return;
           done = true;
           if (!user) return resolve(null);
@@ -92,6 +94,13 @@ var FamilyPricing = (function () {
             state = s;
             return loadUnits().catch(function () { units = {}; });
           }).catch(function () { state = null; }).then(function () { resolve(state); });
+        }
+        var waiting = false;
+        firebase.auth().onAuthStateChanged(function (user) {
+          if (user) return start(user);
+          if (waiting) return start(null);
+          waiting = true;
+          setTimeout(function () { start(firebase.auth().currentUser); }, 1500);
         });
       });
     }).then(function (s) {
