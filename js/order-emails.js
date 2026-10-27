@@ -55,12 +55,17 @@ var OrderEmails = (function () {
       .filter(Boolean).join(', ');
   }
 
+  // Buyer emails don't name products: peptide and compound names are strong
+  // spam triggers (Outlook in particular junks them), so the email gives the
+  // count and total and links to My orders for the details.
   function itemsText(items) {
-    return (items || []).map(function (item) {
-      // Family (at-cost) lines show what the family member paid.
-      var line = typeof item.atCostPrice === 'number' ? item.atCostPrice : item.price * item.qty;
-      return item.name + ' (' + item.packSize + ') x' + item.qty + ' — ' + money(line);
-    }).join('\n');
+    var lines = (items || []).length;
+    var units = (items || []).reduce(function (n, item) {
+      return n + (Number(item.qty) || 0) * (item.caseOf ? Number(item.caseOf) : 1);
+    }, 0);
+    if (!lines) return '';
+    return lines + (lines === 1 ? ' item' : ' items') + (units !== lines ? ' (' + units + ' units)' : '') +
+      '. See the full list in your account under My orders.';
   }
 
   // Link to the buyer's order on the website (orders.html scrolls to it).
