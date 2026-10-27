@@ -153,7 +153,7 @@ var ProfileGate = (function () {
   if (typeof document !== 'undefined') {
     document.addEventListener('DOMContentLoaded', function () {
       if (!window.firebase || !firebase.auth || !firebase.firestore) return;
-      if (!firebase.apps.length && window.firebaseConfig) firebase.initializeApp(firebaseConfig);
+      if (!firebase.apps.length && typeof firebaseConfig !== 'undefined') firebase.initializeApp(firebaseConfig); // const in firebase-config.js, not on window
       firebase.auth().onAuthStateChanged(function (user) { setTimeout(function () { check(user); }, 300); });
     });
   }

@@ -81,7 +81,7 @@ var FamilyPricing = (function () {
     readyPromise = new Promise(function (resolve) {
       document.addEventListener('DOMContentLoaded', function () {
         if (!window.firebase || !window.AtCost) return resolve(null);
-        if (!firebase.apps.length && window.firebaseConfig) firebase.initializeApp(firebaseConfig);
+        if (!firebase.apps.length && typeof firebaseConfig !== 'undefined') firebase.initializeApp(firebaseConfig); // const in firebase-config.js, not on window
         // Firebase can report "signed out" for a moment while it restores the
         // session (same as auth-guard.js), so a first empty answer isn't final.
         var done = false;
