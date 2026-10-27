@@ -13,14 +13,14 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610271026">
+<link rel="stylesheet" href="css/style.css?v=202610271044">
 </head>
 <body>
 <div id="splash-screen">
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610271026"></script>
+<script src="js/splash.js?v=202610271044"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -85,7 +85,7 @@
 <main id="gated-content" style="display:none;">
   <section class="page-head">
     <h1>At cost</h1>
-    <p class="lead">Family pricing and your product costs. A family code makes every vial cost + a small add-on (default $3) with one shipping option (default 2nd Day Air, $15). It works only for the emails you list, and it's applied automatically when they check out. Costs here also power the P&amp;L report.</p>
+    <p class="lead">Family pricing and your product costs. A family code makes every vial cost + a small add-on (default $3) with one shipping option (default 2nd Day Air, $15). Waters are at plain cost. It works only for the emails you list, and it's applied automatically when they check out. Costs here also power the P&amp;L report.</p>
   </section>
 
   <div id="admin-denied" class="notice" style="display:none;">
@@ -180,15 +180,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610271026"></script>
-<script src="js/cart.js?v=202610271026"></script>
-<script src="js/at-cost.js?v=202610271026"></script>
-<script src="js/product-search.js?v=202610271026"></script>
-<script src="js/nav-auth.js?v=202610271026"></script>
-<script src="js/profile-gate.js?v=202610271026"></script>
-<script src="js/auth-guard.js?v=202610271026"></script>
-<script src="js/main.js?v=202610271026"></script>
-<script src="js/nav-toggle.js?v=202610271026"></script>
+<script src="js/firebase-config.js?v=202610271044"></script>
+<script src="js/cart.js?v=202610271044"></script>
+<script src="js/at-cost.js?v=202610271044"></script>
+<script src="js/product-search.js?v=202610271044"></script>
+<script src="js/nav-auth.js?v=202610271044"></script>
+<script src="js/profile-gate.js?v=202610271044"></script>
+<script src="js/auth-guard.js?v=202610271044"></script>
+<script src="js/main.js?v=202610271044"></script>
+<script src="js/nav-toggle.js?v=202610271044"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var db = null;
@@ -380,7 +380,7 @@
         '<td>' + money(u.price) + '</td>' +
         '<td><input type="number" class="kit-input" min="0" step="0.01" value="' + (kit === '' ? '' : AtCost.round2(kit)) + '" placeholder="—" aria-label="Kit cost for ' + esc(u.label) + '"></td>' +
         '<td class="per-cell">' + (has ? money(per) : '—') + '</td>' +
-        '<td class="fam-cell">' + (has ? money(Math.min(u.price, per + markup)) : '—') + '</td>' +
+        '<td class="fam-cell">' + (has ? money(Math.min(u.price, per + AtCost.markupFor(u.slug, markup))) : '—') + '</td>' +
         '<td class="margin-cell">' + (has ? Math.round((u.price - per) / u.price * 100) + '%' : '—') + '</td>' +
         '<td><button type="button" class="btn-outline-light save-cost" disabled>Save</button></td></tr>');
     });
@@ -398,7 +398,7 @@
       var kit = input.value === '' ? null : Number(input.value);
       var per = kit == null ? null : AtCost.round2(kit / AtCost.KIT_SIZE);
       tr.querySelector('.per-cell').textContent = per == null ? '—' : money(per);
-      tr.querySelector('.fam-cell').textContent = per == null ? '—' : money(Math.min(u.price, per + currentMarkup()));
+      tr.querySelector('.fam-cell').textContent = per == null ? '—' : money(Math.min(u.price, per + AtCost.markupFor(u.slug, currentMarkup())));
       tr.querySelector('.margin-cell').textContent = per == null ? '—' : Math.round((u.price - per) / u.price * 100) + '%';
     });
     input.addEventListener('keydown', function (e) { if (e.key === 'Enter') { e.preventDefault(); btn.click(); } });

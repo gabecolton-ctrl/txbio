@@ -251,6 +251,15 @@ test('Venmo / Cash App: handle from settings; unavailable when not set', async (
   assert.strictEqual(plain.order.paymentHandle, '');
 });
 
+test('family code: waters at plain cost (no add-on), peptides at cost + $3', async () => {
+  const seed = Object.assign(cart([{ slug: 'bac-water-10ml', qty: 1 }, { slug: 'bac-water-10ml-case', qty: 1 }, { slug: 'semaglutide-5mg', qty: 1 }]), {
+    'atCostCodes/FAMILY': { active: true, emails: ['buyer@example.com'], markupPerVial: 3 },
+    'costs/bac-water-10ml': { perVialCost: 2 }, 'costs/semaglutide-5mg': { perVialCost: 4.4 }
+  });
+  const { order } = await run(seed, { promoCode: 'FAMILY', shippingValue: 'family' });
+  assert.deepStrictEqual(order.items.map((i) => i.atCostPrice), [2, 20, 7.4]);
+});
+
 test('functions/at-cost.js matches js/at-cost.js', async () => {
   const fs = require('fs');
   const a = fs.readFileSync(path.join(__dirname, '..', 'at-cost.js'), 'utf8').split('\n').slice(1).join('\n');
