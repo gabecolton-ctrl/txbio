@@ -74,9 +74,10 @@ service cloud.firestore {
         && request.resource.data.totalDiscounted >= resource.data.get('totalDiscounted', 0);
     }
 
-    // BOGO eligibility per product — read by checkout, edited by the admin.
+    // BOGO eligibility per product — public (the catalog shows BOGO badges to
+    // signed-out visitors too); only the admin edits it.
     match /bogoProducts/{productSlug} {
-      allow read: if signedIn();
+      allow read: if true;
       allow write: if isAdmin();
     }
 

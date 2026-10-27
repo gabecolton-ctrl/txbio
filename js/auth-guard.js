@@ -1,6 +1,10 @@
 // auth-guard.js
-// Include this on any page that requires a signed-in user (e.g. product detail pages, cart).
+// Include this on any page that requires a signed-in user (e.g. cart, checkout).
 // It redirects to login.html if no user is signed in, and wires Cart to the user.
+//
+// Public pages (catalog, product pages) mark <main id="gated-content" data-public>:
+// they show to everyone (and to search engines) without a redirect. Signed-in
+// visitors still get the "userReady" event; signed-out ones get "guestReady".
 //
 // Note: right after a fresh sign-in redirect, Firebase's auth SDK can take a
 // moment to restore the session from storage. We wait briefly for a second
@@ -17,6 +21,11 @@ document.addEventListener('DOMContentLoaded', function () {
   }
   var mainContent = document.getElementById('gated-content');
   var loadingEl = document.getElementById('auth-loading');
+  var isPublic = !!(mainContent && mainContent.hasAttribute('data-public'));
+  if (isPublic) {
+    if (loadingEl) loadingEl.style.display = 'none';
+    mainContent.style.display = '';
+  }
   var resolved = false;
   var firstCheckDone = false;
 
@@ -32,6 +41,10 @@ document.addEventListener('DOMContentLoaded', function () {
 
   function goToLogin() {
     resolved = true;
+    if (isPublic) {
+      document.dispatchEvent(new CustomEvent('guestReady'));
+      return;
+    }
     var returnTo = encodeURIComponent(window.location.pathname + window.location.search);
     var loginPath = window.location.pathname.indexOf('/products/') !== -1 ? '../login.html' : 'login.html';
     window.location.href = loginPath + '?redirect=' + returnTo;
@@ -68,7 +81,7 @@ document.addEventListener('DOMContentLoaded', function () {
   // Absolute fallback: if nothing has resolved after 5 seconds, show a manual
   // retry link instead of hanging forever.
   setTimeout(function () {
-    if (!resolved && loadingEl) {
+    if (!resolved && loadingEl && !isPublic) {
       loadingEl.innerHTML = 'Taking longer than expected. <a href="#" onclick="window.location.reload(); return false;">Tap to retry</a>.';
     }
   }, 5000);

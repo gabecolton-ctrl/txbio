@@ -88,6 +88,7 @@
       <button id="tab-signup" type="button">Register</button>
     </div>
 
+    <p id="auth-add-note" class="auth-notice" style="display:none;">Sign in, or create a free account, to add that item to your cart. We&rsquo;ll bring you right back.</p>
     <div id="auth-error" class="auth-error"></div>
 
     <form id="signin-form">
@@ -253,6 +254,7 @@
   });
 
   if (window.location.hash === '#register') { tabSignup.click(); }
+  if (new URLSearchParams(window.location.search).get('add')) { document.getElementById('auth-add-note').style.display = 'block'; }
 
   function getRedirectTarget() {
     var params = new URLSearchParams(window.location.search);

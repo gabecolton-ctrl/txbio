@@ -76,7 +76,8 @@
     }
   }
 
-  document.addEventListener('userReady', function () {
+  // Signed-in visitors (userReady) and, on public pages, signed-out ones (guestReady).
+  function start() {
     if (!window.Bogo) return;
     // Family accounts don't get BOGO (they pay at cost), so wait for the
     // family-pricing check before drawing any badges (js/family-pricing.js).
@@ -91,5 +92,7 @@
     }).catch(function (err) {
       console.error('Could not load BOGO products:', err);
     });
-  });
+  }
+  document.addEventListener('userReady', start);
+  document.addEventListener('guestReady', start);
 })();
