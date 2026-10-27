@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=20261025d">
+<link rel="stylesheet" href="css/style.css?v=20261026a">
 </head>
 <body>
 <div id="splash-screen">
@@ -113,10 +113,14 @@
       <input type="text" id="signup-name" required autocomplete="name">
       <label for="signup-org">Institution / Lab Name</label>
       <input type="text" id="signup-org" required>
+      <div id="signup-address" class="signup-address">
+        <p class="signup-section-label">Shipping address</p>
+      </div>
       <label for="signup-email">Email</label>
       <input type="email" id="signup-email" required autocomplete="email">
       <label for="signup-password">Password</label>
       <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
+      <p class="field-hint">At least 6 characters.</p>
       <div class="checkbox-row" style="margin-bottom:18px;">
         <input type="checkbox" id="signup-confirm" required>
         <label for="signup-confirm">I certify I am registering on behalf of a laboratory, research institution, or qualified researcher, for research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.</label>
@@ -160,6 +164,7 @@
 <script src="js/firebase-config.js"></script>
 <script src="js/main.js"></script>
 <script src="js/nav-toggle.js"></script>
+<script src="js/profile-gate.js"></script>
 <script>
   firebase.initializeApp(firebaseConfig);
 
@@ -269,6 +274,9 @@
       });
   });
 
+  // Shipping address fields (js/profile-gate.js), required at sign-up.
+  document.getElementById('signup-address').insertAdjacentHTML('beforeend', ProfileGate.fieldsHtml('signup', {}, {}));
+
   formSignup.addEventListener('submit', function (e) {
     e.preventDefault();
     clearError();
@@ -280,6 +288,11 @@
 
     if (!name || !org || !email || !password) {
       showError('Please fill out all fields before creating an account.');
+      return;
+    }
+    var addr = ProfileGate.readFields('signup', {});
+    if (addr.error) {
+      showError(addr.error);
       return;
     }
     if (password.length < 6) {
@@ -301,6 +314,11 @@
           firebase.firestore().collection('users').doc(cred.user.uid).set({
             name: name,
             institution: org,
+            addressLine1: addr.values.addressLine1,
+            addressLine2: addr.values.addressLine2,
+            city: addr.values.city,
+            state: addr.values.state,
+            zip: addr.values.zip,
             email: (cred.user.email || email).toLowerCase(),
             createdAt: now,
             lastSignInAt: now

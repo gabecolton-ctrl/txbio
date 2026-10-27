@@ -931,3 +931,16 @@ html.signed-in .nav-myaccount { display: list-item; }
 .cancel-panel-actions { display: flex; flex-wrap: wrap; gap: 10px; }
 .cancel-panel .cancel-confirm { background: var(--alert); border-color: var(--alert); color: var(--ink); }
 .cancel-error { color: var(--alert); font-size: 0.9rem; margin: 10px 0 0; }
+
+/* Required name + shipping address (js/profile-gate.js) */
+.addr-row { display: grid; grid-template-columns: 1.4fr 1fr 0.8fr; gap: 0 12px; }
+.addr-row select { width: 100%; }
+@media (max-width: 560px) { .addr-row { grid-template-columns: 1fr 1fr; } .addr-city { grid-column: 1 / -1; } }
+.signup-section-label { margin: 6px 0 10px; font-weight: 600; color: var(--frost); }
+.signup-address { border-top: 1px solid var(--line-soft); border-bottom: 1px solid var(--line-soft); padding: 8px 0 4px; margin: 6px 0 16px; }
+body.pg-open { overflow: hidden; }
+.pg-overlay { position: fixed; inset: 0; z-index: 300; background: rgba(5, 10, 9, 0.78); display: flex; align-items: flex-start; justify-content: center; padding: 6vh 16px 16px; overflow-y: auto; }
+.pg-dialog { width: 100%; max-width: 520px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 24px 22px; box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5); }
+.pg-dialog h2 { margin: 0 0 8px; }
+.pg-lead { color: var(--muted); font-size: 0.93rem; margin-bottom: 16px; }
+.pg-actions { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
