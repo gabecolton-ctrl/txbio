@@ -113,7 +113,10 @@ document.addEventListener('DOMContentLoaded', function () {
         if (Staff.cachedRole(user) === 'manager') showManager('manager');
         Staff.role(user).then(showManager);
       }
-      if (floatingCart) {
+      // Not on the cart or checkout itself, where it would cover the Remove links.
+      var onCartPage = /(^|\/)(cart|checkout)\.html$/.test(window.location.pathname);
+      if (floatingCart && onCartPage) floatingCart.style.display = 'none';
+      if (floatingCart && !onCartPage) {
         floatingCart.style.display = 'flex';
         if (window.Cart) {
           Cart.setUser(user);

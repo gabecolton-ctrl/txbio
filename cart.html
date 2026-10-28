@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281434">
+<link rel="stylesheet" href="css/style.css?v=202610281448">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281434"></script>
+<script src="js/splash.js?v=202610281448"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -199,22 +199,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281434"></script>
-<script src="js/analytics.js?v=202610281434"></script>
-<script src="js/referral.js?v=202610281434"></script>
-<script src="js/cart.js?v=202610281434"></script>
-<script src="js/quotes.js?v=202610281434"></script>
-<script src="js/at-cost.js?v=202610281434"></script>
-<script src="js/family-pricing.js?v=202610281434"></script>
-<script src="js/free-shipping.js?v=202610281434"></script>
-<script src="js/loyalty.js?v=202610281434"></script>
-<script src="js/pairings.js?v=202610281434"></script>
-<script src="js/staff.js?v=202610281434"></script>
-<script src="js/nav-auth.js?v=202610281434"></script>
-<script src="js/profile-gate.js?v=202610281434"></script>
-<script src="js/auth-guard.js?v=202610281434"></script>
-<script src="js/main.js?v=202610281434"></script>
-<script src="js/nav-toggle.js?v=202610281434"></script>
+<script src="js/firebase-config.js?v=202610281448"></script>
+<script src="js/analytics.js?v=202610281448"></script>
+<script src="js/referral.js?v=202610281448"></script>
+<script src="js/cart.js?v=202610281448"></script>
+<script src="js/quotes.js?v=202610281448"></script>
+<script src="js/at-cost.js?v=202610281448"></script>
+<script src="js/family-pricing.js?v=202610281448"></script>
+<script src="js/free-shipping.js?v=202610281448"></script>
+<script src="js/loyalty.js?v=202610281448"></script>
+<script src="js/pairings.js?v=202610281448"></script>
+<script src="js/staff.js?v=202610281448"></script>
+<script src="js/nav-auth.js?v=202610281448"></script>
+<script src="js/profile-gate.js?v=202610281448"></script>
+<script src="js/auth-guard.js?v=202610281448"></script>
+<script src="js/main.js?v=202610281448"></script>
+<script src="js/nav-toggle.js?v=202610281448"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -249,6 +249,18 @@
     if (bacOfferItems) setBacWaterOffer(bacOfferItems); // re-price the pop-up if it's already showing
   });
 
+  // A quantity box saves when it loses focus, which happens the moment a
+  // finger lands on Remove. Wait until that tap finishes before redrawing,
+  // so the Remove tap isn't lost.
+  var pointerDown = false, pendingRender = false;
+  document.addEventListener('pointerdown', function () { pointerDown = true; }, true);
+  document.addEventListener('pointerup', function () {
+    pointerDown = false;
+    setTimeout(function () { if (pendingRender) { pendingRender = false; renderCart(); } }, 0);
+  }, true);
+  document.addEventListener('pointercancel', function () { pointerDown = false; }, true);
+  function renderSoon() { if (pointerDown) pendingRender = true; else renderCart(); }
+
   function renderCart() {
     var loading = document.getElementById('cart-loading');
     var emptyState = document.getElementById('cart-empty-state');
@@ -256,6 +268,41 @@
     var rowsEl = document.getElementById('cart-rows');
     var totalEl = document.getElementById('cart-total');
 
+    function cartError(err) {
+      alert('Could not update your cart: ' + ((err && err.message) || err) + ' Please refresh the page and try again.');
+      renderCart();
+    }
+    // Remove: one listener on the table (survives re-renders, e.g. when a
+    // quantity box loses focus as Remove is tapped).
+    if (!rowsEl.hasAttribute('data-remove-wired')) {
+      rowsEl.setAttribute('data-remove-wired', '1');
+      var removeLink = function (e) { return e.target.closest && e.target.closest('a[data-remove-slug]'); };
+      var doRemove = function (link) {
+        if (link.getAttribute('aria-busy') === 'true') return;
+        link.setAttribute('aria-busy', 'true');
+        link.textContent = 'Removing…';
+        Cart.removeItem(link.getAttribute('data-remove-slug')).then(renderCart).catch(cartError);
+      };
+      // Phones can drop the click when a quantity box was focused, so act on
+      // the end of the tap too; the click (or Enter key) is the fallback.
+      var downOn = null, quietUntil = 0;
+      rowsEl.addEventListener('pointerdown', function (e) { downOn = removeLink(e); });
+      rowsEl.addEventListener('pointerup', function (e) {
+        var link = removeLink(e);
+        if (link && link === downOn) {
+          doRemove(link);
+          quietUntil = Date.now() + 700; // the row below slides up; don't let this tap's click remove it too
+        }
+        downOn = null;
+      });
+      rowsEl.addEventListener('click', function (e) {
+        var link = removeLink(e);
+        if (!link) return;
+        e.preventDefault();
+        if (Date.now() < quietUntil) return;
+        doRemove(link);
+      });
+    }
     // Lines from a quote we sent (js/quotes.js): fixed price and quantity.
     function quoteTag(item) {
       if (!item.quoteId) return '';
@@ -314,13 +361,7 @@
       rowsEl.querySelectorAll('input[data-slug]').forEach(function (input) {
         input.addEventListener('change', function () {
           var qty = parseInt(input.value, 10) || 1;
-          Cart.updateQty(input.getAttribute('data-slug'), qty).then(renderCart);
-        });
-      });
-      rowsEl.querySelectorAll('a[data-remove-slug]').forEach(function (link) {
-        link.addEventListener('click', function (e) {
-          e.preventDefault();
-          Cart.removeItem(link.getAttribute('data-remove-slug')).then(renderCart);
+          Cart.updateQty(input.getAttribute('data-slug'), qty).then(renderSoon).catch(cartError);
         });
       });
 
