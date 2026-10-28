@@ -34,7 +34,7 @@
       count = count == null ? items.length : count;
       sections.push('<section class="todo-section" id="todo-' + key + '">' +
         '<div class="todo-head"><h2>' + title + ' <span class="todo-count">' + count + '</span></h2>' +
-        (cta ? '<a href="' + cta[1] + '" class="todo-cta">' + cta[0] + ' &rarr;</a>' : '') + '</div>' +
+        (cta ? '<a href="' + cta[1] + '" class="todo-cta"' + (cta[1].indexOf('admin-slip') === 0 ? ' target="_blank" rel="noopener"' : '') + '>' + cta[0] + ' &rarr;</a>' : '') + '</div>' +
         (note ? '<p class="todo-note">' + note + '</p>' : '') +
         '<ul class="todo-list">' + items.join('') + '</ul></section>');
     }
@@ -54,8 +54,11 @@
       toShip.map(function (o) {
         var a = o.shippingAddress || {};
         var units = (o.items || []).reduce(function (n, i) { return n + (Number(i.qty) || 0) * (Number(i.caseOf) || 1); }, 0);
-        return row([orderLink(o), esc(a.name || o.userEmail || ''), esc([a.city, a.state].filter(Boolean).join(', ')), units + ' unit' + (units === 1 ? '' : 's'), esc(o.shippingOption || ''), '<span class="todo-age">' + age(o.createdAt) + '</span>'], daysSince(o.createdAt) >= 2);
-      }), ['Orders', 'admin-orders.html']);
+        return row([orderLink(o), esc(a.name || o.userEmail || ''), esc([a.city, a.state].filter(Boolean).join(', ')), units + ' unit' + (units === 1 ? '' : 's'), esc(o.shippingOption || ''), '<span class="todo-age">' + age(o.createdAt) + '</span>'], daysSince(o.createdAt) >= 2,
+          '<a href="admin-slip.html?id=' + encodeURIComponent(o.id) + '" target="_blank" rel="noopener" class="btn-outline-light todo-btn">Packing slip</a>');
+      }), toShip.length > 1
+        ? ['Print all ' + toShip.length + ' packing slips', 'admin-slip.html?print=1&id=' + toShip.map(function (o) { return encodeURIComponent(o.id); }).join(',')]
+        : ['Orders', 'admin-orders.html']);
 
     // 3. Label made, not shipped
     var labels = orders.filter(function (o) { return o.status === 'label-created'; }).sort(oldest);
