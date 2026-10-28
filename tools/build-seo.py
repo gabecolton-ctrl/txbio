@@ -31,6 +31,8 @@ PUBLIC_PAGES = {
                    'Research-grade peptides and lab supplies from Dallas, TX. Detailed specs, sequences and CAS numbers, case pricing, and fast US shipping. For laboratory research use only.'),
     'services.html': ('Research Peptide Catalog: GLP-1s, BPC-157, Blends & More | TXBioResearch',
                       'Browse 60+ research peptides and lab supplies: GLP-1 analogs, growth hormone secretagogues, tissue-repair, cognitive, and mitochondrial research compounds. Case pricing available.'),
+    'calculator.html': ('Peptide Reconstitution Calculator (mg, mcg, mL) | TXBioResearch',
+                        'Free peptide reconstitution calculator: enter the vial amount and diluent volume to get concentration in mg/mL and mcg/mL, the volume for a target amount, and aliquots per vial. For laboratory research use only.'),
     'about.html': ('About Texas Advanced BioResearch | TXBioResearch',
                    'Texas Advanced BioResearch supplies research-use peptides and reagents to laboratories and researchers from Dallas, TX.'),
     'contact.html': ('Contact Us | TXBioResearch',
@@ -87,6 +89,18 @@ def product_meta(slug, site_name, cat_entry):
     return name, title, desc, prices, aka, kind
 
 
+def faq_ld(path):
+    # FAQPage data from the page's "Common questions" rows, so Google can show them.
+    src = open(path, encoding='utf-8').read()
+    block = re.search(r'class="rows calc-faq">(.*?)</section>', src, re.S)
+    qa = re.findall(r'<h3>(.*?)</h3><p>(.*?)</p>', block.group(1) if block else '', re.S)
+    plain = lambda t: html.unescape(re.sub(r'<[^>]+>', '', t)).replace('\xa0', ' ')
+    return '<script type="application/ld+json">' + json.dumps({
+        '@context': 'https://schema.org', '@type': 'FAQPage',
+        'mainEntity': [{'@type': 'Question', 'name': plain(q), 'acceptedAnswer': {'@type': 'Answer', 'text': plain(a)}} for q, a in qa]
+    }, ensure_ascii=False) + '</script>'
+
+
 def head_block(page_path, title, desc, extra='', noindex=False, og_type='website', image=OG_IMAGE):
     url = SITE + '/' + page_path.replace('index.html', '')
     parts = [START]
@@ -137,8 +151,10 @@ def main():
                 'email': 'info@txbioresearch.com',
                 'address': {'@type': 'PostalAddress', 'addressLocality': 'Dallas', 'addressRegion': 'TX', 'addressCountry': 'US'}
             }) + '</script>'
+        if page == 'calculator.html':
+            extra = faq_ld(os.path.join(ROOT, page))
         apply(os.path.join(ROOT, page), title, desc, head_block(page, title, desc, extra))
-        urls.append((SITE + '/' + page.replace('index.html', ''), '1.0' if page in ('index.html', 'services.html') else '0.5'))
+        urls.append((SITE + '/' + page.replace('index.html', ''), '1.0' if page in ('index.html', 'services.html') else '0.8' if page == 'calculator.html' else '0.5'))
 
     for path in sorted(glob.glob(os.path.join(ROOT, 'products', '*.html'))):
         slug = os.path.basename(path)[:-5]

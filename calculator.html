@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peptide Reconstitution Calculator (mg, mcg, mL) | TXBioResearch</title>
+<meta name="description" content="Free peptide reconstitution calculator: enter the vial amount and diluent volume to get concentration in mg/mL and mcg/mL, the volume for a target amount, and aliquots per vial. For laboratory research use only.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="TXBio">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0b1210">
+<link rel="stylesheet" href="css/style.css?v=202610271938">
+<!-- seo:start -->
+<link rel="canonical" href="https://txbioresearch.com/calculator.html">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Texas Advanced BioResearch">
+<meta property="og:title" content="Peptide Reconstitution Calculator (mg, mcg, mL) | TXBioResearch">
+<meta property="og:description" content="Free peptide reconstitution calculator: enter the vial amount and diluent volume to get concentration in mg/mL and mcg/mL, the volume for a target amount, and aliquots per vial. For laboratory research use only.">
+<meta property="og:url" content="https://txbioresearch.com/calculator.html">
+<meta property="og:image" content="https://txbioresearch.com/images/icon-512.png">
+<meta name="twitter:card" content="summary">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "FAQPage", "mainEntity": [{"@type": "Question", "name": "How do I convert mg to mcg?", "acceptedAnswer": {"@type": "Answer", "text": "1 mg = 1,000 mcg (micrograms). The calculator converts for you, so you can enter the vial in mg and the target in mcg."}}, {"@type": "Question", "name": "How much diluent should I add?", "acceptedAnswer": {"@type": "Answer", "text": "It depends on your protocol. More diluent gives a lower concentration, which makes each aliquot a larger volume that is easier to measure accurately. Less diluent gives a stronger solution and smaller volumes."}}, {"@type": "Question", "name": "Bacteriostatic water or sterile water?", "acceptedAnswer": {"@type": "Answer", "text": "Bacteriostatic water contains 0.9% benzyl alcohol as a preservative, so a vial can be drawn from more than once. Sterile water has no preservative and is meant for single use. Some peptides, such as IGF-1 LR3, are commonly reconstituted in dilute acetic acid instead; follow the guidance for the compound you are working with."}}, {"@type": "Question", "name": "Can IU be converted to mg?", "acceptedAnswer": {"@type": "Answer", "text": "Not with a single rule. International units measure biological activity, and the conversion differs from compound to compound. Keep IU products in IU for both the vial and the target."}}, {"@type": "Question", "name": "How should reconstituted peptides be stored?", "acceptedAnswer": {"@type": "Answer", "text": "Typically refrigerated at 2–8°C, protected from light, and used within the timeframe your protocol specifies. Avoid repeated freezing and thawing. Unreconstituted powder is usually stored at −20°C."}}]}</script>
+<!-- seo:end -->
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js?v=202610271938"></script>
+<script>
+  // Inline, synchronous check: if the splash already played this session,
+  // remove it immediately before paint to avoid any flash on internal nav.
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul class="nav-primary">
+        <li><a href="services.html">Catalog</a></li>
+        <li><a href="calculator.html" class="active">Calculator</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin nav-admin-menu">
+          <details>
+            <summary>Admin</summary>
+            <ul>
+              <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+              <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
+              <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+              <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+              <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+              <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
+              <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
+              <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
+              <li><a href="admin-traffic.html" id="nav-admin-traffic-link">Traffic</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-myaccount nav-admin-menu nav-account-menu">
+          <details>
+            <summary>My account</summary>
+            <ul>
+              <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
+              <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-login"><a href="login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+
+<main>
+  <section class="page-head">
+    <h1>Peptide Reconstitution Calculator</h1>
+    <p class="lead">Work out the concentration of a reconstituted vial and the volume that holds a target amount. Pick a product or enter your own numbers; results update as you type.</p>
+  </section>
+
+  <section class="calc">
+    <form class="calc-inputs" id="calc-form" autocomplete="off" onsubmit="return false;">
+      <div class="calc-step">
+        <span class="calc-num">1</span>
+        <div class="calc-field">
+          <label for="calc-product">Product <span class="field-note">(optional)</span></label>
+          <select id="calc-product"><option value="">Custom: enter the vial amount below</option></select>
+          <div id="calc-strength-wrap" class="calc-chips" role="group" aria-label="Vial strength" hidden></div>
+        </div>
+      </div>
+      <div class="calc-step">
+        <span class="calc-num">2</span>
+        <div class="calc-field">
+          <label for="calc-amount">Amount of powder in the vial</label>
+          <div class="calc-pair">
+            <input type="number" id="calc-amount" min="0" step="any" inputmode="decimal" value="10">
+            <select id="calc-amount-unit" aria-label="Vial amount unit"><option value="mg">mg</option><option value="mcg">mcg</option><option value="IU">IU</option></select>
+          </div>
+        </div>
+      </div>
+      <div class="calc-step">
+        <span class="calc-num">3</span>
+        <div class="calc-field">
+          <label for="calc-water">Diluent added (bacteriostatic water, etc.)</label>
+          <div class="calc-pair">
+            <input type="number" id="calc-water" min="0" step="any" inputmode="decimal" value="2">
+            <span class="calc-unit">mL</span>
+          </div>
+          <div class="calc-chips" role="group" aria-label="Common diluent volumes">
+            <button type="button" class="calc-chip" data-water="1">1 mL</button>
+            <button type="button" class="calc-chip" data-water="2">2 mL</button>
+            <button type="button" class="calc-chip" data-water="3">3 mL</button>
+            <button type="button" class="calc-chip" data-water="5">5 mL</button>
+            <button type="button" class="calc-chip" data-water="10">10 mL</button>
+          </div>
+        </div>
+      </div>
+      <div class="calc-step">
+        <span class="calc-num">4</span>
+        <div class="calc-field">
+          <label for="calc-target">Target amount per aliquot <span class="field-note">(optional)</span></label>
+          <div class="calc-pair">
+            <input type="number" id="calc-target" min="0" step="any" inputmode="decimal" value="250">
+            <select id="calc-target-unit" aria-label="Target amount unit"><option value="mcg">mcg</option><option value="mg">mg</option><option value="IU">IU</option></select>
+          </div>
+          <div id="calc-basis-wrap" hidden>
+            <label for="calc-basis" class="calc-sublabel">Measure the target as</label>
+            <select id="calc-basis"></select>
+          </div>
+        </div>
+      </div>
+    </form>
+
+    <div class="calc-results" aria-live="polite">
+      <div class="calc-result">
+        <span class="calc-result-label">Concentration</span>
+        <span class="calc-result-value" id="r-conc">—</span>
+        <span class="calc-result-sub" id="r-conc-sub"></span>
+      </div>
+      <div id="r-blend" class="calc-blend" hidden></div>
+      <div class="calc-result">
+        <span class="calc-result-label">Volume for the target amount</span>
+        <span class="calc-result-value" id="r-vol">—</span>
+        <span class="calc-result-sub" id="r-vol-sub"></span>
+      </div>
+      <div class="calc-result">
+        <span class="calc-result-label">Aliquots per vial</span>
+        <span class="calc-result-value" id="r-count">—</span>
+        <div class="calc-vial" id="r-vial" aria-hidden="true"></div>
+      </div>
+      <p class="calc-warn" id="r-warn" hidden></p>
+      <p class="calc-math" id="r-math"></p>
+      <div class="calc-ctas">
+        <a href="products/bac-water.html" class="btn-outline-light">Bacteriostatic water</a>
+        <a href="services.html" class="btn-outline-light" id="r-product-link">Browse the catalog</a>
+        <button type="button" class="btn-outline-light" id="r-copy">Copy link to this calculation</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="notice">
+    <strong>For laboratory research use only</strong>
+    <p>This calculator does arithmetic for preparing laboratory solutions. It is not dosing or administration guidance. All TXBioResearch products are sold for research use only and are not for human or animal use. Check every result against your lab's protocol before use.</p>
+  </section>
+
+  <section class="split">
+    <div><h2>How it works</h2></div>
+    <div>
+      <p><strong>Concentration</strong> is the amount of powder divided by the volume of diluent: a 10&nbsp;mg vial with 2&nbsp;mL added holds 5&nbsp;mg/mL, which is 5,000&nbsp;mcg/mL.</p>
+      <p><strong>Volume for a target amount</strong> is the target divided by the concentration: 250&nbsp;mcg &divide; 5,000&nbsp;mcg/mL = 0.05&nbsp;mL (50&nbsp;&micro;L).</p>
+      <p><strong>Aliquots per vial</strong> is the vial amount divided by the target: 10,000&nbsp;mcg &divide; 250&nbsp;mcg = 40.</p>
+      <p>For blends, each compound's concentration is shown separately, and you can measure the target by the whole blend or by any one compound in it.</p>
+    </div>
+  </section>
+
+  <section class="split">
+    <div><h2>Common questions</h2></div>
+    <div class="rows calc-faq">
+      <div class="row"><h3>How do I convert mg to mcg?</h3><p>1&nbsp;mg = 1,000&nbsp;mcg (micrograms). The calculator converts for you, so you can enter the vial in mg and the target in mcg.</p></div>
+      <div class="row"><h3>How much diluent should I add?</h3><p>It depends on your protocol. More diluent gives a lower concentration, which makes each aliquot a larger volume that is easier to measure accurately. Less diluent gives a stronger solution and smaller volumes.</p></div>
+      <div class="row"><h3>Bacteriostatic water or sterile water?</h3><p>Bacteriostatic water contains 0.9% benzyl alcohol as a preservative, so a vial can be drawn from more than once. Sterile water has no preservative and is meant for single use. Some peptides, such as IGF-1 LR3, are commonly reconstituted in dilute acetic acid instead; follow the guidance for the compound you are working with.</p></div>
+      <div class="row"><h3>Can IU be converted to mg?</h3><p>Not with a single rule. International units measure biological activity, and the conversion differs from compound to compound. Keep IU products in IU for both the vial and the target.</p></div>
+      <div class="row"><h3>How should reconstituted peptides be stored?</h3><p>Typically refrigerated at 2&ndash;8&deg;C, protected from light, and used within the timeframe your protocol specifies. Avoid repeated freezing and thawing. Unreconstituted powder is usually stored at &minus;20&deg;C.</p></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
+      </div>
+      <div class="footer-links">
+        <a href="services.html">Catalog</a>
+        <a href="calculator.html">Reconstitution calculator</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="login.html" class="signed-out-only">Researcher login</a>
+        <a href="terms.html">Terms &amp; conditions</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="shipping.html">Shipping &amp; returns</a>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
+    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js?v=202610271938"></script>
+<script src="js/analytics.js?v=202610271938"></script>
+<script src="js/cart.js?v=202610271938"></script>
+<script src="js/nav-auth.js?v=202610271938"></script>
+<script src="js/profile-gate.js?v=202610271938"></script>
+<script src="js/main.js?v=202610271938"></script>
+<script src="js/calc-data.js?v=202610271938"></script>
+<script>
+(function () {
+  var $ = function (id) { return document.getElementById(id); };
+  var products = window.CALC_PRODUCTS || [];
+  var bySlug = {}; products.forEach(function (p) { bySlug[p.slug] = p; });
+  var current = null; // selected product
+
+  // Product dropdown
+  var sel = $('calc-product');
+  products.forEach(function (p) {
+    var o = document.createElement('option'); o.value = p.slug; o.textContent = p.name; sel.appendChild(o);
+  });
+
+  function fmt(v, maxDec) {
+    if (!isFinite(v)) return '—';
+    var a = Math.abs(v), d;
+    if (maxDec != null) d = maxDec;
+    else if (a >= 100) d = 0; else if (a >= 10) d = 1; else if (a >= 1) d = 2; else if (a >= 0.1) d = 3; else d = 4;
+    return Number(v.toFixed(d)).toLocaleString('en-US', { maximumFractionDigits: d });
+  }
+  function toMcg(v, unit) { return unit === 'mg' ? v * 1000 : v; }
+  function massText(mcg) { return mcg >= 1000 ? fmt(mcg / 1000) + ' mg' : fmt(mcg) + ' mcg'; }
+
+  function setStrengths(p, pick) {
+    var wrap = $('calc-strength-wrap');
+    wrap.innerHTML = '';
+    if (!p || p.strengths.length < 2) { wrap.hidden = true; return; }
+    p.strengths.forEach(function (s, i) {
+      var b = document.createElement('button');
+      b.type = 'button'; b.className = 'calc-chip'; b.textContent = s.label;
+      b.setAttribute('data-i', i);
+      b.addEventListener('click', function () { applyStrength(s); calc(); });
+      wrap.appendChild(b);
+    });
+    wrap.hidden = false;
+  }
+  function applyStrength(s) {
+    $('calc-amount').value = s.amount;
+    $('calc-amount-unit').value = s.unit;
+    if (s.unit === 'IU') $('calc-target-unit').value = 'IU';
+    else if ($('calc-target-unit').value === 'IU') $('calc-target-unit').value = 'mcg';
+  }
+  function setBasis(p) {
+    var wrap = $('calc-basis-wrap'), b = $('calc-basis');
+    b.innerHTML = '';
+    if (!p || !p.blend) { wrap.hidden = true; return; }
+    var total = p.blend.reduce(function (s, c) { return s + c.mg; }, 0);
+    b.appendChild(new Option('Whole blend (' + fmt(total) + ' mg total)', ''));
+    p.blend.forEach(function (c, i) { b.appendChild(new Option(c.name + ' (' + fmt(c.mg) + ' mg of ' + fmt(total) + ')', String(i))); });
+    wrap.hidden = false;
+  }
+  function chooseProduct(slug, strengthLabel) {
+    current = bySlug[slug] || null;
+    sel.value = current ? slug : '';
+    setStrengths(current);
+    setBasis(current);
+    if (current) {
+      var s = current.strengths.filter(function (x) { return x.label === strengthLabel; })[0] || current.strengths[0];
+      applyStrength(s);
+      $('r-product-link').href = 'products/' + current.slug + '.html';
+      $('r-product-link').textContent = 'View ' + current.name;
+    } else {
+      $('r-product-link').href = 'services.html';
+      $('r-product-link').textContent = 'Browse the catalog';
+    }
+  }
+
+  function markChips() {
+    var amt = Number($('calc-amount').value), unit = $('calc-amount-unit').value, w = Number($('calc-water').value);
+    document.querySelectorAll('#calc-strength-wrap .calc-chip').forEach(function (b) {
+      var s = current && current.strengths[Number(b.getAttribute('data-i'))];
+      var on = !!s && s.amount === amt && s.unit === unit;
+      b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', on);
+    });
+    document.querySelectorAll('[data-water]').forEach(function (b) {
+      var on = Number(b.getAttribute('data-water')) === w;
+      b.classList.toggle('is-on', on); b.setAttribute('aria-pressed', on);
+    });
+  }
+
+  function drawVial(count, frac) {
+    var el = $('r-vial');
+    if (!(count > 0) || count > 80) {
+      el.innerHTML = count > 80 ? '<span class="calc-vial-fill" style="width:100%"></span>' : '';
+      el.classList.toggle('is-solid', count > 80);
+      return;
+    }
+    el.classList.remove('is-solid');
+    var html = '', segW = frac * 100;
+    for (var i = 0; i < count; i++) html += '<span class="calc-seg" style="width:calc(' + segW + '% - 2px)"></span>';
+    el.innerHTML = html;
+  }
+
+  function show(id, text, sub) { $(id).textContent = text; if (sub !== undefined) $(id + '-sub').textContent = sub; }
+
+  function calc() {
+    markChips();
+    var amt = Number($('calc-amount').value), aUnit = $('calc-amount-unit').value;
+    var water = Number($('calc-water').value);
+    var target = Number($('calc-target').value), tUnit = $('calc-target-unit').value;
+    var warn = '';
+    var blendEl = $('r-blend');
+    blendEl.hidden = true;
+    $('r-math').textContent = '';
+    if (!(amt > 0) || !(water > 0)) {
+      show('r-conc', '—', 'Enter the vial amount and the diluent volume.');
+      show('r-vol', '—', ''); $('r-count').textContent = '—'; drawVial(0);
+      $('r-warn').hidden = true; save(); return;
+    }
+    var iu = aUnit === 'IU';
+    var total = iu ? amt : toMcg(amt, aUnit);          // mcg (or IU)
+    var conc = total / water;                            // per mL
+    if (iu) show('r-conc', fmt(conc) + ' IU/mL', fmt(conc / 100) + ' IU per 0.01 mL');
+    else show('r-conc', fmt(conc / 1000) + ' mg/mL', fmt(conc) + ' mcg/mL · ' + fmt(conc / 100) + ' mcg per 0.01 mL');
+
+    // Blends: each compound's concentration, and which one the target measures.
+    var ratio = 1, basisName = '';
+    if (current && current.blend && !iu) {
+      var sum = current.blend.reduce(function (s, c) { return s + c.mg; }, 0);
+      var scale = toMcg(amt, aUnit) / (sum * 1000);   // if the amount was edited, scale the parts
+      blendEl.innerHTML = current.blend.map(function (c) {
+        return '<div><span>' + c.name + '</span><span>' + fmt(c.mg * scale / water) + ' mg/mL</span></div>';
+      }).join('');
+      blendEl.hidden = false;
+      var bi = $('calc-basis').value;
+      if (bi !== '') { ratio = current.blend[Number(bi)].mg / sum; basisName = current.blend[Number(bi)].name; }
+    }
+
+    if (!(target > 0)) {
+      show('r-vol', '—', 'Enter a target amount to see the volume.');
+      $('r-count').textContent = '—'; drawVial(0);
+    } else if ((tUnit === 'IU') !== iu) {
+      show('r-vol', '—', ''); $('r-count').textContent = '—'; drawVial(0);
+      warn = 'IU and mg/mcg can\'t be converted without a compound-specific factor. Use IU for both the vial and the target, or mg/mcg for both.';
+    } else {
+      var t = iu ? target : toMcg(target, tUnit);
+      var effConc = conc * ratio, avail = total * ratio;
+      var ml = t / effConc;
+      show('r-vol', fmt(ml) + ' mL', fmt(ml * 1000) + ' µL' + (basisName ? ' (measured by ' + basisName + ')' : ''));
+      var count = Math.floor(avail / t + 1e-9);
+      $('r-count').textContent = count >= 1 ? fmt(count, 0) : '0';
+      drawVial(count, ml / water);
+      if (t > avail) {
+        warn = 'The target is more than the vial holds' + (basisName ? ' of ' + basisName : '') + ' (' + (iu ? fmt(avail) + ' IU' : massText(avail)) + ').';
+        show('r-vol', '—', ''); drawVial(0); $('r-math').textContent = ''; $('r-warn').textContent = warn; $('r-warn').hidden = false; save(); return;
+      }
+      if (ml < 0.02) warn = 'That is a very small volume (' + fmt(ml * 1000) + ' µL). Adding more diluent makes it larger and easier to measure accurately.';
+      var u = iu ? ' IU' : ' mcg';
+      $('r-math').textContent = (iu ? fmt(total) + ' IU' : massText(avail) + (basisName ? ' ' + basisName : '')) +
+        ' ÷ ' + fmt(water) + ' mL = ' + fmt(effConc) + u + '/mL.  ' + fmt(t) + u + ' ÷ ' + fmt(effConc) + u + '/mL = ' + fmt(ml) + ' mL.';
+    }
+    $('r-warn').textContent = warn; $('r-warn').hidden = !warn;
+    save();
+  }
+
+  // Keep the calculation in the address so it can be shared or bookmarked.
+  function save() {
+    var q = new URLSearchParams();
+    if (current) q.set('p', current.slug);
+    q.set('a', $('calc-amount').value); q.set('au', $('calc-amount-unit').value);
+    q.set('w', $('calc-water').value);
+    q.set('t', $('calc-target').value); q.set('tu', $('calc-target-unit').value);
+    if (!$('calc-basis-wrap').hidden && $('calc-basis').value !== '') q.set('b', $('calc-basis').value);
+    try { history.replaceState(null, '', location.pathname + '?' + q.toString()); } catch (e) {}
+  }
+  function load() {
+    var q = new URLSearchParams(location.search);
+    if (q.get('p')) chooseProduct(q.get('p'));
+    var num = function (k) { var v = q.get(k); return v !== null && v !== '' && !isNaN(Number(v)) ? v : null; };
+    var pick = function (id, k, allowed) { var v = q.get(k); if (v && allowed.indexOf(v) !== -1) $(id).value = v; };
+    if (num('a')) $('calc-amount').value = num('a');
+    pick('calc-amount-unit', 'au', ['mg', 'mcg', 'IU']);
+    if (num('w')) $('calc-water').value = num('w');
+    if (num('t')) $('calc-target').value = num('t');
+    pick('calc-target-unit', 'tu', ['mg', 'mcg', 'IU']);
+    if (q.get('b') && !$('calc-basis-wrap').hidden && $('calc-basis').querySelector('option[value="' + Number(q.get('b')) + '"]')) $('calc-basis').value = String(Number(q.get('b')));
+  }
+
+  sel.addEventListener('change', function () { chooseProduct(sel.value); calc(); });
+  ['calc-amount', 'calc-water', 'calc-target'].forEach(function (id) { $(id).addEventListener('input', calc); });
+  ['calc-amount-unit', 'calc-target-unit', 'calc-basis'].forEach(function (id) { $(id).addEventListener('change', calc); });
+  document.querySelectorAll('[data-water]').forEach(function (b) {
+    b.addEventListener('click', function () { $('calc-water').value = b.getAttribute('data-water'); calc(); });
+  });
+  $('r-copy').addEventListener('click', function () {
+    var btn = this, url = location.href;
+    var done = function () { btn.textContent = 'Link copied'; setTimeout(function () { btn.textContent = 'Copy link to this calculation'; }, 1800); };
+    if (navigator.clipboard) navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link:', url); });
+    else prompt('Copy this link:', url);
+  });
+
+  load();
+  calc();
+})();
+</script>
+<script src="js/nav-toggle.js?v=202610271938"></script>
+</body>
+</html>
