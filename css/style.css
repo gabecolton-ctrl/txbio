@@ -672,6 +672,15 @@ footer { background: var(--ink-deep); border-top: 1px solid var(--line-soft); pa
     padding: 8px var(--gutter) 20px;
   }
   nav.nav-open { display: flex; }
+  /* Long menus (e.g. Admin expanded) scroll inside the panel. The header is
+     sticky, so without this the bottom of the menu was unreachable. */
+  nav {
+    max-height: calc(100vh - var(--header-h, 68px));
+    max-height: calc(100dvh - var(--header-h, 68px));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
   nav ul { flex-direction: column; align-items: stretch; gap: 0; }
   nav a { padding: 14px 4px; border-radius: 0; border-bottom: 1px solid var(--line-soft); font-size: 1rem; }
   nav a:hover { background: none; }
