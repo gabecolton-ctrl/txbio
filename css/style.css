@@ -1163,8 +1163,16 @@ details.inc-done summary strong { color: var(--frost); }
 .loyalty-track { height: 8px; background: var(--raised); border-radius: 999px; overflow: hidden; }
 .loyalty-track span { display: block; height: 100%; width: 0; background: #0f9f8d; border-radius: 999px; }
 .loyalty-next { margin: 8px 0 12px; font-size: 0.9rem; color: var(--frost); }
-.loyalty-tiers { list-style: none; padding: 0; margin: 0 0 10px; display: flex; flex-wrap: wrap; gap: 6px 16px; font-size: 0.85rem; color: var(--faint); }
-.loyalty-tiers li.is-on { color: var(--mint); }
+.loyalty-tiers { list-style: none; padding: 0; margin: 4px 0 14px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+.tier-step { position: relative; display: flex; flex-direction: column; gap: 2px; padding: 12px 10px 10px; border: 1px solid var(--line-soft); border-radius: var(--radius-sm); background: var(--ink); text-align: center; }
+.tier-step strong { color: var(--frost); font-size: 0.95rem; }
+.tier-min { color: var(--faint); font-size: 0.8rem; }
+.tier-pct { color: var(--muted); font-size: 0.85rem; font-weight: 600; }
+.tier-step.is-on { border-color: var(--mint); background: var(--mint-wash); padding-top: 20px; }
+.tier-step.is-on .tier-pct { color: var(--mint); }
+.tier-step.tier-silver strong { color: #d5dedc; }
+.tier-step.tier-gold strong { color: #f3d27a; }
+.tier-here { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); white-space: nowrap; background: var(--mint); color: var(--ink); font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; padding: 2px 8px; border-radius: 999px; }
 .loyalty-fine { margin: 0; font-size: 0.8rem; color: var(--faint); }
 
 /* Favorites (js/favorites.js) */
