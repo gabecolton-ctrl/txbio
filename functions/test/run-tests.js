@@ -66,7 +66,7 @@ const ADDRESS = { addressLine1: '1 Lab Way', city: 'Dallas', state: 'TX', zip: '
 const BUYER = { uid: 'u1', email: 'Buyer@Example.com' };
 function run(seed, data, who = BUYER) {
   const db = makeDb(seed);
-  return placeOrder({ db, FieldValue: db.FieldValue, uid: who.uid, email: who.email, data: Object.assign({ shippingValue: '20', paymentMethod: 'inquiry', shippingAddress: ADDRESS }, data), catalog, now: new Date('2026-10-25T12:00:00Z') })
+  return placeOrder({ db, FieldValue: db.FieldValue, uid: who.uid, email: who.email, data: Object.assign({ shippingValue: '20', paymentMethod: 'inquiry', shippingAddress: ADDRESS, attested: true }, data), catalog, now: new Date('2026-10-25T12:00:00Z') })
     .then((order) => ({ order, db }));
 }
 async function rejects(promise, code, msgPart) {
@@ -117,6 +117,16 @@ test('Platinum (2,500+ shipped) ships free on any option, any size', async () =>
   assert.ok(/2nd Day — FREE/.test(r.order.shippingOption), r.order.shippingOption);
   const notYet = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'orders/old1': { userId: 'u1', status: 'delivered', subtotal: 2400, createdAt: '2026-01-01' } });
   assert.strictEqual((await run(notYet, { shippingValue: '40' })).order.shipping, 40);
+});
+
+test('attestation: required, and saved word for word with the Terms version', async () => {
+  await rejects(run(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { attested: false }), 'failed-precondition', '21 or older');
+  const { order } = await run(cart([{ slug: 'semaglutide-10mg', qty: 1 }]));
+  const A = require('../attestation');
+  assert.strictEqual(order.attestation.text, A.ORDER_TEXT);
+  assert.ok(/21 years of age or older/.test(order.attestation.text));
+  assert.strictEqual(order.attestation.termsVersion, A.TERMS_VERSION);
+  assert.strictEqual(order.attestation.agreedAt, '2026-10-25T12:00:00.000Z');
 });
 
 test('matches the browser test order: promo 10% + $25 credit', async () => {

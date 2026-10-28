@@ -1263,3 +1263,4 @@ html.hero-paused .hero-mark .halo { opacity: 0; }
   #entry-gate .entry-mark svg { max-width: 170px; margin: 8px 0 0; }
 }
 @media (prefers-reduced-motion: reduce) { #entry-gate .entry-mark svg.entry-shrinking { transition: none; } }
+.attest-line .attest-text { display: block; margin-top: 6px; font-size: 0.85rem; color: var(--muted); font-style: italic; }
