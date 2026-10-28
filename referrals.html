@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272041">
+<link rel="stylesheet" href="css/style.css?v=202610272047">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272041"></script>
+<script src="js/splash.js?v=202610272047"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -108,6 +108,15 @@
 
       <div class="pnl-summary ref-stats" id="ref-stats"></div>
 
+      <h2>People you've sent</h2>
+      <div class="pnl-summary ref-stats" id="ref-traffic"></div>
+      <div class="ref-chart-wrap">
+        <div class="ref-chart-head"><span>Visits from your link, last 30 days</span><span id="ref-chart-total"></span></div>
+        <div id="ref-chart" class="ref-chart" role="img" aria-label="Visits from your link per day, last 30 days"></div>
+        <div id="ref-tip" class="tr-tip" role="tooltip" style="display:none;"></div>
+      </div>
+      <p class="section-note">Counted from the day referral tracking started. Your own clicks on your link aren't counted when you're signed in.</p>
+
       <h2>How it works</h2>
       <ol class="ref-steps">
         <li>Someone opens your link. Your code is saved in their browser for 30 days and applied at checkout automatically, so they don't have to type it.</li>
@@ -156,17 +165,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272041"></script>
-<script src="js/analytics.js?v=202610272041"></script>
-<script src="js/referral.js?v=202610272041"></script>
-<script src="js/cart.js?v=202610272041"></script>
-<script src="js/credits.js?v=202610272041"></script>
-<script src="js/account.js?v=202610272041"></script>
-<script src="js/nav-auth.js?v=202610272041"></script>
-<script src="js/profile-gate.js?v=202610272041"></script>
-<script src="js/auth-guard.js?v=202610272041"></script>
-<script src="js/main.js?v=202610272041"></script>
-<script src="js/nav-toggle.js?v=202610272041"></script>
-<script src="js/referrals-page.js?v=202610272041"></script>
+<script src="js/firebase-config.js?v=202610272047"></script>
+<script src="js/analytics.js?v=202610272047"></script>
+<script src="js/referral.js?v=202610272047"></script>
+<script src="js/cart.js?v=202610272047"></script>
+<script src="js/credits.js?v=202610272047"></script>
+<script src="js/account.js?v=202610272047"></script>
+<script src="js/nav-auth.js?v=202610272047"></script>
+<script src="js/profile-gate.js?v=202610272047"></script>
+<script src="js/auth-guard.js?v=202610272047"></script>
+<script src="js/main.js?v=202610272047"></script>
+<script src="js/nav-toggle.js?v=202610272047"></script>
+<script src="js/referrals-page.js?v=202610272047"></script>
 </body>
 </html>

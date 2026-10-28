@@ -151,5 +151,28 @@ service cloud.firestore {
       allow update: if trafficShape() && request.resource.data.views == resource.data.views + 1;
       allow delete: if isAdmin();
     }
+
+    // Visits that arrived through a referral link (?code=CODE, js/referral.js).
+    // Anyone may add one visit to an existing promo code's counter; only the
+    // admin and that code's affiliate can read it (affiliate dashboard).
+    function refTrafficShape() {
+      return request.resource.data.keys().hasOnly(['visits', 'visitors', 'days', 'updatedAt'])
+        && request.resource.data.visits is int
+        && request.resource.data.get('visitors', 0) is int
+        && request.resource.data.get('days', {}).size() <= 1000;
+    }
+    match /refTraffic/{code} {
+      allow read: if isAdmin()
+        || (signedIn() && get(/databases/$(database)/documents/promoCodes/$(code)).data.get('affiliateEmail', '') == myEmail());
+      allow create: if exists(/databases/$(database)/documents/promoCodes/$(code))
+        && refTrafficShape()
+        && request.resource.data.visits == 1
+        && request.resource.data.get('visitors', 0) <= 1;
+      allow update: if refTrafficShape()
+        && request.resource.data.visits == resource.data.visits + 1
+        && request.resource.data.get('visitors', 0) >= resource.data.get('visitors', 0)
+        && request.resource.data.get('visitors', 0) <= resource.data.get('visitors', 0) + 1;
+      allow delete: if isAdmin();
+    }
   }
 }
