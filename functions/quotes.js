@@ -7,6 +7,7 @@
 //                  expiresOn: 'YYYY-MM-DD' | '', note, createdAt, createdBy, cancelled? }
 //   Cart lines from a quote carry quoteId (and quoteExpiresOn for display).
 // Quoted lines keep the quoted price: no promo code, BOGO or family pricing on top.
+// Single-vial lines can change quantity at that price; case lines can't.
 var Quotes = (function () {
   function todayCentral(now) {
     try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(now || new Date()); }
@@ -24,7 +25,10 @@ var Quotes = (function () {
     var line = null;
     (quote.lines || []).forEach(function (l) { if (!line && l.slug === item.slug) line = l; });
     var price = line ? Number(line.price) : NaN;
-    var qty = line ? Number(line.qty) : NaN;
+    // Single vials: the customer may change the quantity (same price each).
+    // Cases stay at the quoted quantity.
+    var own = Number(item.qty);
+    var qty = line && !line.caseOf && Number.isInteger(own) && own >= 1 && own <= 500 ? own : (line ? Number(line.qty) : NaN);
     if (!line || !(price >= 0) || !(qty >= 1)) return { ok: false, reason: name + ': this quote is no longer available. Remove it from your cart.' };
     return { ok: true, price: Math.round(price * 100) / 100, qty: qty };
   }

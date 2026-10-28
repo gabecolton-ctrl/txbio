@@ -128,7 +128,7 @@ var Cart = (function () {
       if (qty <= 0) {
         items = items.filter(function (i) { return lineKey(i) !== key; });
       } else {
-        var item = items.find(function (i) { return lineKey(i) === key && !i.quoteId; }); // quoted quantities are fixed
+        var item = items.find(function (i) { return lineKey(i) === key && !(i.quoteId && i.caseOf); }); // quoted cases keep their quantity
         if (item) item.qty = qty;
       }
       return saveCart(items).then(function () { return items; });

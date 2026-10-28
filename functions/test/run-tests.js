@@ -247,16 +247,19 @@ test('once-per-customer code: second use refused; cancelled first use does not c
 });
 
 test('admin quote in cart: quoted price and qty, no promo/BOGO on it, expired or other user refused', async () => {
-  const quote = { uid: 'u1', email: 'buyer@example.com', expiresOn: '2026-10-31', lines: [{ slug: 'klow-blend', price: 35, qty: 4 }] };
+  const quote = { uid: 'u1', email: 'buyer@example.com', expiresOn: '2026-10-31', lines: [{ slug: 'klow-blend', price: 35, qty: 4 }, { slug: 'bpc-157-10mg-case', price: 300, qty: 1, caseOf: 10 }] };
   const seed = Object.assign({ 'carts/u1': { items: [
-    { slug: 'klow-blend', qty: 99, price: 1, quoteId: 'q1' },
+    { slug: 'klow-blend', qty: 6, price: 1, quoteId: 'q1' },
+    { slug: 'bpc-157-10mg-case', qty: 9, price: 1, caseOf: 10, quoteId: 'q1' },
     { slug: 'cagrilintide', qty: 1 }
   ] }, 'quotes/q1': quote, 'promoCodes/TEN': { discountPercent: 10, type: 'always', active: true }, 'bogoProducts/klow-blend': { active: true } });
   const { order } = await run(seed, { promoCode: 'TEN' });
   const q = order.items.find((i) => i.quoteId === 'q1');
-  assert.strictEqual(q.price, 35); assert.strictEqual(q.qty, 4);
+  assert.strictEqual(q.price, 35); assert.strictEqual(q.qty, 6); // single vials: customer's quantity
+  const qc = order.items.find((i) => i.quoteId === 'q1' && i.caseOf);
+  assert.strictEqual(qc.price, 300); assert.strictEqual(qc.qty, 1); // cases: quoted quantity
   const other = order.items.find((i) => !i.quoteId);
-  assert.strictEqual(order.subtotal, 140 + other.price);
+  assert.strictEqual(order.subtotal, 210 + 300 + other.price);
   assert.strictEqual(order.discount, Math.round(other.price * 0.1 * 100) / 100);
   assert.strictEqual(order.bogoDiscount, 0);
   await rejects(run(Object.assign({}, seed, { 'quotes/q1': Object.assign({}, quote, { expiresOn: '2026-10-20' }) }), {}), 'failed-precondition', 'quote ended');
