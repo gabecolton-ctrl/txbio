@@ -110,5 +110,23 @@ service cloud.firestore {
       allow read: if isAdmin() || myEmail() == email;
       allow write: if isAdmin();
     }
+
+    // Visit counts for the admin Traffic page (js/analytics.js): one summary
+    // per day, no personal data. Anyone may add exactly one page view at a
+    // time; only the admin can read them.
+    function trafficShape() {
+      return request.resource.data.keys().hasOnly(['views', 'visitors', 'newVisitors', 'sessions', 'signedInViews', 'pages', 'refs', 'sources', 'landing', 'devices', 'updatedAt'])
+        && request.resource.data.get('pages', {}).size() <= 400
+        && request.resource.data.get('refs', {}).size() <= 300
+        && request.resource.data.get('sources', {}).size() <= 300
+        && request.resource.data.get('landing', {}).size() <= 400
+        && request.resource.data.get('devices', {}).size() <= 4;
+    }
+    match /traffic/{day} {
+      allow read: if isAdmin();
+      allow create: if day.matches('^20[0-9][0-9]-[01][0-9]-[0-3][0-9]$') && trafficShape() && request.resource.data.views == 1;
+      allow update: if trafficShape() && request.resource.data.views == resource.data.views + 1;
+      allow delete: if isAdmin();
+    }
   }
 }
