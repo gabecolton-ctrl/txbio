@@ -3,9 +3,10 @@
 // one). Shared by the admin Orders page, the UPS tracker
 // (tools/shipment-tracker) and the account page.
 //
-//   Member  $0+       no reward yet
-//   Silver  $500+     3% back
-//   Gold    $1,500+   5% back
+//   Member    $0+       no reward yet
+//   Silver    $500+     3% back
+//   Gold      $1,500+   5% back
+//   Platinum  $2,500+   5% back + free 2nd Day shipping on every order (js/free-shipping.js)
 //
 // "Spend" = order subtotal after promo and BOGO discounts (no shipping or
 // tax), the same base as affiliate credit. Family (at-cost) orders don't
@@ -14,7 +15,8 @@ var Loyalty = (function () {
   var TIERS = [
     { name: 'Member', min: 0, pct: 0 },
     { name: 'Silver', min: 500, pct: 0.03 },
-    { name: 'Gold', min: 1500, pct: 0.05 }
+    { name: 'Gold', min: 1500, pct: 0.05 },
+    { name: 'Platinum', min: 2500, pct: 0.05, freeShipping: true }
   ];
   var COUNTED = ['shipped', 'delivered'];
 
@@ -93,7 +95,20 @@ var Loyalty = (function () {
     });
   }
 
-  return { TIERS: TIERS, spendOf: spendOf, lifetime: lifetime, tierFor: tierFor, nextTier: nextTier, rewardCents: rewardCents, credit: credit, reverse: reverse };
+  // The signed-in customer's own tier (browser), remembered 10 min per tab.
+  function myTier(db, uid) {
+    var key = 'txbio_tier_' + uid;
+    try { var c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && Date.now() - c.at < 600000) return Promise.resolve({ tier: tierFor(c.spend), spend: c.spend }); } catch (e) {}
+    return db.collection('orders').where('userId', '==', uid).get().then(function (snap) {
+      var list = [];
+      (snap.docs || []).forEach(function (d) { list.push(Object.assign({ id: d.id }, d.data())); });
+      var spend = lifetime(list);
+      try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), spend: spend })); } catch (e) {}
+      return { tier: tierFor(spend), spend: spend };
+    });
+  }
+
+  return { TIERS: TIERS, myTier: myTier, spendOf: spendOf, lifetime: lifetime, tierFor: tierFor, nextTier: nextTier, rewardCents: rewardCents, credit: credit, reverse: reverse };
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = Loyalty;

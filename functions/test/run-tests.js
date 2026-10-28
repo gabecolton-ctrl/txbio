@@ -107,6 +107,18 @@ test('free standard shipping at $250+ after discounts; not for faster options or
   assert.strictEqual(r.order.shipping, 20);
 });
 
+test('Platinum (2,500+ shipped) ships free on any option, any size', async () => {
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), {
+    'orders/old1': { userId: 'u1', status: 'delivered', subtotal: 1800, discount: 0, createdAt: '2026-01-01' },
+    'orders/old2': { userId: 'u1', status: 'shipped', subtotal: 800, discount: 0, createdAt: '2026-02-01' }
+  });
+  const r = await run(seed, { shippingValue: '40' });
+  assert.strictEqual(r.order.shipping, 0);
+  assert.ok(/2nd Day — FREE/.test(r.order.shippingOption), r.order.shippingOption);
+  const notYet = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'orders/old1': { userId: 'u1', status: 'delivered', subtotal: 2400, createdAt: '2026-01-01' } });
+  assert.strictEqual((await run(notYet, { shippingValue: '40' })).order.shipping, 40);
+});
+
 test('matches the browser test order: promo 10% + $25 credit', async () => {
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }]), {
     'promoCodes/BOOP12': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'aff@example.com', timesUsed: 3, totalDiscounted: 10 },

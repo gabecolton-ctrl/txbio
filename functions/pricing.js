@@ -120,12 +120,12 @@ function isBogoLine(line, eligibleSlugs) {
 // affiliates are credited.
 // fixedDiscount (dollars) replaces the percentage promo, e.g. at-cost pricing.
 // shippingValue + family: free standard shipping at FreeShipping.MIN (js/free-shipping.js).
-function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, taxRate, creditBalanceCents, useCredit }) {
+function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, platinum, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
   const promoBase = lines.reduce((n, l) => n + l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty), 0);
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
-  if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal, !!family);
+  if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal, !!family, !!platinum);
   const tax = round2(discountedSubtotal * taxRate);
   const totalBeforeCredit = discountedSubtotal + shippingPrice + tax;
   const creditUsedCents = useCredit ? Math.max(0, Math.min(creditBalanceCents || 0, Math.round(totalBeforeCredit * 100))) : 0;
