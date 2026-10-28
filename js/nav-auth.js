@@ -34,6 +34,24 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {}
   }
 
+  // "Referrals" in the account menu, only for accounts that are the affiliate
+  // on a promo code (and the admin). Remembered for this browser session.
+  function showReferralsLink(user) {
+    var items = document.querySelectorAll('li.nav-referrals');
+    if (!items.length || !firebase.firestore) return;
+    var show = function () { items.forEach(function (li) { li.style.display = 'list-item'; }); };
+    var email = String(user.email || '').toLowerCase();
+    if (email === ADMIN_EMAIL) return show();
+    var key = 'txbio_affiliate_' + user.uid, cached = null;
+    try { cached = sessionStorage.getItem(key); } catch (e) {}
+    if (cached === '1') return show();
+    if (cached === '0') return;
+    firebase.firestore().collection('promoCodes').where('affiliateEmail', '==', email).limit(1).get().then(function (snap) {
+      try { sessionStorage.setItem(key, snap.empty ? '0' : '1'); } catch (e) {}
+      if (!snap.empty) show();
+    }).catch(function () {});
+  }
+
   document.querySelectorAll('.nav-signout-link').forEach(function (a) {
     a.addEventListener('click', function (e) {
       e.preventDefault();
@@ -53,6 +71,7 @@ document.addEventListener('DOMContentLoaded', function () {
     document.documentElement.classList.toggle('signed-in', !!user);
     try { sessionStorage.setItem('txbio_signed_in', user ? '1' : '0'); } catch (e) {}
     if (user) recordCustomer(user);
+    if (user) showReferralsLink(user);
     if (user) {
       // Signed in: the "My account" menu (My orders, Account details, Sign out)
       // replaces the login button.
