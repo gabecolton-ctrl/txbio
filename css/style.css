@@ -1049,3 +1049,7 @@ html.family-pending .bogo-badge, html.family-pending .bogo-card-note, html.famil
 .ref-neg { color: var(--muted); }
 #ref-body h2 { margin-top: 36px; }
 .ref-preview { font-size: 0.8rem; }
+.ref-chart-wrap { position: relative; background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 14px 10px 6px; margin-bottom: 10px; }
+.ref-chart-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.85rem; padding: 0 6px 8px; }
+.ref-chart-head span:last-child { color: var(--frost); }
+.ref-chart svg { display: block; max-width: 100%; }
