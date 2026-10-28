@@ -16,6 +16,7 @@
   var customer = null;     // a users[] entry, or null
   var quotes = [], orders = [];
   var localPrice = 5;
+  var paymentFees = null; // settings/paymentFees (Admin → Payments)
 
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -43,8 +44,10 @@
       fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
       db.collection('users').get(),
       db.collection('costs').get().catch(function () { return null; }),
-      db.collection('settings').doc('localDelivery').get().catch(function () { return null; })
+      db.collection('settings').doc('localDelivery').get().catch(function () { return null; }),
+      db.collection('settings').doc('paymentFees').get().catch(function () { return null; })
     ]).then(function (r) {
+      paymentFees = r[4] && r[4].exists ? r[4].data() : null;
       localPrice = LocalDelivery.priceOf(r[3] && r[3].exists ? r[3].data() : null);
       catalog = r[0];
       Object.keys(catalog.products).forEach(function (slug) {
@@ -157,7 +160,9 @@
     var order = mode() === 'order';
     var shipping = order ? shippingPrice() : 0;
     var tax = order && $('no-tax').checked ? r2(subtotal * TAX_RATE) : 0;
-    return { used: used, subtotal: subtotal, list: list, cost: r2(cost), costKnown: costKnown, shipping: shipping, tax: tax, total: r2(subtotal + shipping + tax) };
+    // Same processing fee checkout adds for that payment method.
+    var fee = order && window.PaymentApps && PaymentApps.customerFee ? PaymentApps.customerFee(paymentFees, $('no-pay').value, r2(subtotal + shipping + tax)) : 0;
+    return { used: used, subtotal: subtotal, list: list, cost: r2(cost), costKnown: costKnown, shipping: shipping, tax: tax, fee: fee, total: r2(subtotal + shipping + tax + fee) };
   }
   function refresh() {
     Array.prototype.forEach.call($('no-lines').querySelectorAll('tr'), function (tr) {
@@ -176,6 +181,7 @@
     if (mode() === 'order') {
       rows.push(['Shipping', money(t.shipping)]);
       rows.push(['Tax', money(t.tax)]);
+      if (t.fee > 0) rows.push(['Processing fee (' + esc(PaymentApps.LABELS[$('no-pay').value] || '') + ')', money(t.fee)]);
       rows.push(['<strong>Total</strong>', '<strong>' + money(t.total) + '</strong>']);
     } else {
       rows.push(['', '<span class="field-note">They pick shipping and pay tax at checkout, as usual.</span>']);
@@ -198,7 +204,7 @@
     $('no-add').addEventListener('click', function () { addLine(); });
     document.querySelectorAll('input[name="no-mode"]').forEach(function (r) { r.addEventListener('change', showMode); });
     $('no-ship').addEventListener('change', function () { $('no-ship-custom-wrap').style.display = this.value === 'custom' ? '' : 'none'; refresh(); });
-    ['no-ship-custom', 'no-tax'].forEach(function (id) { $(id).addEventListener('input', refresh); $(id).addEventListener('change', refresh); });
+    ['no-ship-custom', 'no-tax', 'no-pay'].forEach(function (id) { $(id).addEventListener('input', refresh); $(id).addEventListener('change', refresh); });
     $('no-form').addEventListener('submit', function (e) { e.preventDefault(); submit(); });
   }
 
@@ -273,7 +279,7 @@
     var order = {
       items: orderItems, subtotal: t.subtotal, shipping: t.shipping, shippingOption: shippingLabel(),
       discount: 0, promoCode: null, bogoDiscount: 0, bogoBreakdown: [], tax: t.tax,
-      totalBeforeCredit: t.total, creditUsed: 0, creditUsedCents: 0, affiliateCode: '', total: t.total,
+      paymentFee: t.fee, totalBeforeCredit: t.total, creditUsed: 0, creditUsedCents: 0, affiliateCode: '', total: t.total,
       shippingAddress: address, notes: $('no-notes').value.trim().slice(0, 2000),
       paymentMethod: $('no-pay').value, paymentHandle: '', hasBackorder: false,
       attestation: null, placedBy: 'admin', placedByEmail: me, channel: $('no-channel').value,
