@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272346">
+<link rel="stylesheet" href="css/style.css?v=202610272356">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272346"></script>
+<script src="js/splash.js?v=202610272356"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -142,6 +142,7 @@
     <div id="free-ship-bar" class="free-ship-bar" hidden>
       <p id="free-ship-text"></p>
       <div class="free-ship-track" aria-hidden="true"><span id="free-ship-fill"></span></div>
+      <a href="services.html" class="btn-outline-light free-ship-more" id="free-ship-more">Add more items</a>
     </div>
     <a href="checkout.html" class="btn">Proceed to Order Summary</a>
   </section>
@@ -179,19 +180,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272346"></script>
-<script src="js/analytics.js?v=202610272346"></script>
-<script src="js/referral.js?v=202610272346"></script>
-<script src="js/cart.js?v=202610272346"></script>
-<script src="js/at-cost.js?v=202610272346"></script>
-<script src="js/family-pricing.js?v=202610272346"></script>
-<script src="js/free-shipping.js?v=202610272346"></script>
-<script src="js/pairings.js?v=202610272346"></script>
-<script src="js/nav-auth.js?v=202610272346"></script>
-<script src="js/profile-gate.js?v=202610272346"></script>
-<script src="js/auth-guard.js?v=202610272346"></script>
-<script src="js/main.js?v=202610272346"></script>
-<script src="js/nav-toggle.js?v=202610272346"></script>
+<script src="js/firebase-config.js?v=202610272356"></script>
+<script src="js/analytics.js?v=202610272356"></script>
+<script src="js/referral.js?v=202610272356"></script>
+<script src="js/cart.js?v=202610272356"></script>
+<script src="js/at-cost.js?v=202610272356"></script>
+<script src="js/family-pricing.js?v=202610272356"></script>
+<script src="js/free-shipping.js?v=202610272356"></script>
+<script src="js/pairings.js?v=202610272356"></script>
+<script src="js/nav-auth.js?v=202610272356"></script>
+<script src="js/profile-gate.js?v=202610272356"></script>
+<script src="js/auth-guard.js?v=202610272356"></script>
+<script src="js/main.js?v=202610272356"></script>
+<script src="js/nav-toggle.js?v=202610272356"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -271,6 +272,7 @@
           : '<strong>You\u2019ve got free shipping!</strong> 3-5 day shipping is free at checkout (orders $250+ after discounts).';
         document.getElementById('free-ship-fill').style.width = Math.min(100, total / FreeShipping.MIN * 100) + '%';
         bar.classList.toggle('is-free', left <= 0);
+        document.getElementById('free-ship-more').textContent = left > 0 ? 'Add more items' : 'Keep shopping';
         bar.hidden = false;
       } else if (bar) { bar.hidden = true; }
 
