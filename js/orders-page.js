@@ -5,8 +5,8 @@
   // when the number's format identifies the carrier, ship date, and any
   // cancellation reason.
   var STATUS_LABELS = {
-    pending: 'Order received',
-    confirmed: 'Confirmed',
+    pending: 'Awaiting payment',
+    confirmed: 'Payment received',
     processing: 'Preparing to ship',
     'label-created': 'Label created',
     shipped: 'Shipped',
@@ -31,6 +31,11 @@
       html += '<span class="order-status-detail">Tracking: ' + (link
         ? '<a href="' + link.url + '" target="_blank" rel="noopener">' + escHtml(order.trackingNumber) + '</a> (' + link.carrier + ')'
         : escHtml(order.trackingNumber)) + '</span>';
+    }
+    if (status === 'pending') {
+      html += '<span class="order-status-detail">We\u2019ll confirm your order and get it ready to ship as soon as your payment arrives.</span>';
+    } else if (status === 'confirmed') {
+      html += '<span class="order-status-detail">Thanks! We\u2019re getting your order ready to ship.</span>';
     }
     if (order.shippedEmailSentAt && status !== 'cancelled') {
       html += '<span class="order-status-detail">Shipped ' + new Date(order.shippedEmailSentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
@@ -217,6 +222,12 @@
           payHtml = '<div class="order-pay-box"><p>' + escHtml(PaymentApps.instructions(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber)) + '</p>' +
             '<a class="btn-outline" target="_blank" rel="noopener" href="' + escHtml(PaymentApps.payLink(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber)) + '">Open ' +
             (order.paymentMethod === 'venmo' ? 'Venmo' : 'Cash App') + '</a></div>';
+        } else if ((order.status || 'pending') === 'pending' && (order.paymentMethod === 'bank' || order.paymentMethod === 'bitcoin')) {
+          var amt = '$' + Number(order.total || 0).toFixed(2);
+          payHtml = '<div class="order-pay-box"><p>' + (order.paymentMethod === 'bank'
+            ? 'Send ' + amt + ' by bank transfer using the details in your order confirmation email, with order #' + escHtml(order.orderNumber || '') + ' in the memo.'
+            : 'Send ' + amt + ' in Bitcoin using the details in your order confirmation email.') +
+            ' Can\u2019t find the email? <a href="contact.html">Contact us</a> and we\u2019ll resend it.</p></div>';
         }
         box.innerHTML =
           '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) : '') + '</p>' +
