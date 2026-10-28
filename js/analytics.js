@@ -35,7 +35,7 @@
   // Where this visit came from: a search engine, a site, a tagged link, or direct.
   function source() {
     var params = new URLSearchParams(location.search);
-    var tag = params.get('utm_source') || params.get('ref') || params.get('src');
+    var tag = params.get('utm_source') || params.get('ref') || params.get('src') || params.get('code');
     var ref = '';
     try { ref = document.referrer ? new URL(document.referrer).hostname : ''; } catch (e) {}
     if (ref && LIVE_HOSTS.indexOf(ref) !== -1) ref = '';
