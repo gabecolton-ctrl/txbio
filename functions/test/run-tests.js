@@ -247,7 +247,7 @@ test('once-per-customer code: second use refused; cancelled first use does not c
 });
 
 test('admin quote in cart: quoted price and qty, no promo/BOGO on it, expired or other user refused', async () => {
-  const quote = { uid: 'u1', email: 'buyer@example.com', expiresOn: '2026-10-31', lines: [{ slug: 'klow-blend', price: 35, qty: 4 }, { slug: 'bpc-157-10mg-case', price: 300, qty: 1, caseOf: 10 }] };
+  const quote = { uid: 'u1', email: 'buyer@example.com', expiresOn: '2026-10-31', noTax: true, lines: [{ slug: 'klow-blend', price: 35, qty: 4 }, { slug: 'bpc-157-10mg-case', price: 300, qty: 1, caseOf: 10 }] };
   const seed = Object.assign({ 'carts/u1': { items: [
     { slug: 'klow-blend', qty: 6, price: 1, quoteId: 'q1' },
     { slug: 'bpc-157-10mg-case', qty: 9, price: 1, caseOf: 10, quoteId: 'q1' },
@@ -288,6 +288,12 @@ test('processing fee: added for the chosen method unless turned off', async () =
   assert.strictEqual(btc.paymentFee, 0);
   const off = (await run(Object.assign({}, base, { 'settings/paymentFees': { chargeCustomer: false, bank: { pct: 3 } } }), { paymentMethod: 'bank' })).order;
   assert.strictEqual(off.total, plain.total);
+});
+
+test('quote with tax on: quoted items are taxed', async () => {
+  const seed = { 'carts/u1': { items: [{ slug: 'klow-blend', qty: 4, quoteId: 'q2' }] }, 'quotes/q2': { uid: 'u1', lines: [{ slug: 'klow-blend', price: 35, qty: 4 }] } };
+  const { order } = await run(seed, {});
+  assert.strictEqual(order.tax, Math.round(140 * 0.0825 * 100) / 100);
 });
 
 test('rejects bad carts and inputs', async () => {

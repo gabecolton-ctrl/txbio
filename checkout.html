@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281428">
+<link rel="stylesheet" href="css/style.css?v=202610281434">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281428"></script>
+<script src="js/splash.js?v=202610281434"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -334,30 +334,30 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281428"></script>
-<script src="js/analytics.js?v=202610281428"></script>
-<script src="js/referral.js?v=202610281428"></script>
-<script src="js/site-config.js?v=202610281428"></script>
-<script src="js/cart.js?v=202610281428"></script>
-<script src="js/quotes.js?v=202610281428"></script>
-<script src="js/account.js?v=202610281428"></script>
-<script src="js/inventory.js?v=202610281428"></script>
-<script src="js/promos.js?v=202610281428"></script>
-<script src="js/bogo.js?v=202610281428"></script>
-<script src="js/at-cost.js?v=202610281428"></script>
-<script src="js/free-shipping.js?v=202610281428"></script>
-<script src="js/local-delivery.js?v=202610281428"></script>
-<script src="js/attestation.js?v=202610281428"></script>
-<script src="js/loyalty.js?v=202610281428"></script>
-<script src="js/payment-apps.js?v=202610281428"></script>
-<script src="js/credits.js?v=202610281428"></script>
-<script src="js/order-emails.js?v=202610281428"></script>
-<script src="js/staff.js?v=202610281428"></script>
-<script src="js/nav-auth.js?v=202610281428"></script>
-<script src="js/profile-gate.js?v=202610281428"></script>
-<script src="js/auth-guard.js?v=202610281428"></script>
-<script src="js/main.js?v=202610281428"></script>
-<script src="js/nav-toggle.js?v=202610281428"></script>
+<script src="js/firebase-config.js?v=202610281434"></script>
+<script src="js/analytics.js?v=202610281434"></script>
+<script src="js/referral.js?v=202610281434"></script>
+<script src="js/site-config.js?v=202610281434"></script>
+<script src="js/cart.js?v=202610281434"></script>
+<script src="js/quotes.js?v=202610281434"></script>
+<script src="js/account.js?v=202610281434"></script>
+<script src="js/inventory.js?v=202610281434"></script>
+<script src="js/promos.js?v=202610281434"></script>
+<script src="js/bogo.js?v=202610281434"></script>
+<script src="js/at-cost.js?v=202610281434"></script>
+<script src="js/free-shipping.js?v=202610281434"></script>
+<script src="js/local-delivery.js?v=202610281434"></script>
+<script src="js/attestation.js?v=202610281434"></script>
+<script src="js/loyalty.js?v=202610281434"></script>
+<script src="js/payment-apps.js?v=202610281434"></script>
+<script src="js/credits.js?v=202610281434"></script>
+<script src="js/order-emails.js?v=202610281434"></script>
+<script src="js/staff.js?v=202610281434"></script>
+<script src="js/nav-auth.js?v=202610281434"></script>
+<script src="js/profile-gate.js?v=202610281434"></script>
+<script src="js/auth-guard.js?v=202610281434"></script>
+<script src="js/main.js?v=202610281434"></script>
+<script src="js/nav-toggle.js?v=202610281434"></script>
 <script>
   // Bank transfer details live in Firestore at settings/bankTransfer
   // (fields: accountNumber, routingNumber, optional bankName and accountName),
@@ -484,10 +484,10 @@
         freeNote.style.display = 'none';
       }
     }
-    // Quoted items (js/quotes.js) aren't taxed.
-    var quotedSubtotal = currentCartItems.reduce(function (n, i) { return n + (i.quoteId ? i.price * i.qty : 0); }, 0);
+    // Quoted items marked "no tax" (js/quotes.js) aren't taxed.
+    var quotedSubtotal = currentCartItems.reduce(function (n, i) { return n + (i.quoteId && i.noTax ? i.price * i.qty : 0); }, 0);
     var tax = Math.round(Math.max(0, discountedSubtotal - quotedSubtotal) * TAX_RATE * 100) / 100;
-    document.getElementById('summary-tax-label').textContent = quotedSubtotal > 0 ? 'Tax (8.25%, not on quoted items)' : 'Tax (8.25%)';
+    document.getElementById('summary-tax-label').textContent = quotedSubtotal > 0 ? 'Tax (8.25%; none on quoted items)' : 'Tax (8.25%)';
     var total = discountedSubtotal + shipping + tax;
 
     // Store credit pays down the total (after tax), up to the balance.
@@ -860,7 +860,7 @@
       items.forEach(function (item) {
         if (!item.quoteId) return;
         var c = Quotes.checkLine(item, byId[item.quoteId], uid);
-        if (c.ok) { item.price = c.price; item.qty = c.qty; } else quoteProblems.push(c.reason);
+        if (c.ok) { item.price = c.price; item.qty = c.qty; item.noTax = !c.taxable; } else quoteProblems.push(c.reason);
       });
       return items;
     });
