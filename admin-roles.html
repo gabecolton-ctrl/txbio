@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281352">
+<link rel="stylesheet" href="css/style.css?v=202610281356">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281352"></script>
+<script src="js/splash.js?v=202610281356"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -144,7 +144,15 @@
 
     <section>
       <h2>Local pickup / drop-off</h2>
-      <p class="section-note">These customers see “Local pickup / drop-off — $5” as a shipping option at checkout. No one else does.</p>
+      <p class="section-note">These customers see “Local pickup / drop-off” as a shipping option at checkout. No one else does.</p>
+      <form id="local-price-form" class="card admin-form role-add" style="margin-bottom:14px;">
+        <label for="local-price">Price ($) <span class="field-note">(0 for free)</span></label>
+        <div class="role-add-row">
+          <input type="number" id="local-price" min="0" max="1000" step="0.01" value="5" required>
+          <button type="submit" class="btn">Save price</button>
+        </div>
+        <p id="local-price-msg" class="form-message" style="display:none;"></p>
+      </form>
       <div class="catalog-wrap" style="margin-bottom:14px;">
         <table class="catalog-table">
           <thead><tr><th>Email</th><th>Added</th><th></th></tr></thead>
@@ -240,16 +248,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281352"></script>
-<script src="js/cart.js?v=202610281352"></script>
-<script src="js/at-cost.js?v=202610281352"></script>
-<script src="js/product-search.js?v=202610281352"></script>
-<script src="js/staff.js?v=202610281352"></script>
-<script src="js/nav-auth.js?v=202610281352"></script>
-<script src="js/profile-gate.js?v=202610281352"></script>
-<script src="js/auth-guard.js?v=202610281352"></script>
-<script src="js/main.js?v=202610281352"></script>
-<script src="js/nav-toggle.js?v=202610281352"></script>
-<script src="js/admin-roles.js?v=202610281352"></script>
+<script src="js/firebase-config.js?v=202610281356"></script>
+<script src="js/cart.js?v=202610281356"></script>
+<script src="js/at-cost.js?v=202610281356"></script>
+<script src="js/product-search.js?v=202610281356"></script>
+<script src="js/staff.js?v=202610281356"></script>
+<script src="js/nav-auth.js?v=202610281356"></script>
+<script src="js/profile-gate.js?v=202610281356"></script>
+<script src="js/auth-guard.js?v=202610281356"></script>
+<script src="js/main.js?v=202610281356"></script>
+<script src="js/nav-toggle.js?v=202610281356"></script>
+<script src="js/local-delivery.js?v=202610281356"></script>
+<script src="js/admin-roles.js?v=202610281356"></script>
 </body>
 </html>

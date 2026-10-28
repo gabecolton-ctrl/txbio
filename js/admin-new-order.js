@@ -15,6 +15,7 @@
   var lines = [];          // [{ slug, qty, price, isCase }]
   var customer = null;     // a users[] entry, or null
   var quotes = [], orders = [];
+  var localPrice = 5;
 
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -41,8 +42,10 @@
     Promise.all([
       fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
       db.collection('users').get(),
-      db.collection('costs').get().catch(function () { return null; })
+      db.collection('costs').get().catch(function () { return null; }),
+      db.collection('settings').doc('localDelivery').get().catch(function () { return null; })
     ]).then(function (r) {
+      localPrice = LocalDelivery.priceOf(r[3] && r[3].exists ? r[3].data() : null);
       catalog = r[0];
       Object.keys(catalog.products).forEach(function (slug) {
         var p = catalog.products[slug];
@@ -66,7 +69,7 @@
       $('no-customers').innerHTML = users.map(function (u) { return '<option value="' + esc(u.email) + '">' + esc(u.name || '') + '</option>'; }).join('');
       $('no-ship').innerHTML = Object.keys(catalog.shipping).map(function (k) {
         return '<option value="' + k + '" data-price="' + catalog.shipping[k].price + '">' + esc(catalog.shipping[k].label) + '</option>';
-      }).join('') + '<option value="local" data-price="5">Local pickup / drop-off — $5</option><option value="free" data-price="0">Free shipping</option><option value="custom">Custom price…</option>';
+      }).join('') + '<option value="local" data-price="' + localPrice + '">' + esc(LocalDelivery.labelFor(localPrice)) + '</option><option value="free" data-price="0">Free shipping</option><option value="custom">Custom price…</option>';
       wire();
       addLine();
       showMode();

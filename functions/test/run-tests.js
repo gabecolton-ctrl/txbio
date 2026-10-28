@@ -269,6 +269,8 @@ test('local pickup / drop-off: $5 for listed customers only', async () => {
   const { order } = await run(Object.assign({ 'localMembers/buyer@example.com': { addedAt: 'x' } }, base), { shippingValue: 'local' });
   assert.strictEqual(order.shipping, 5);
   assert.ok(/pickup/i.test(order.shippingOption));
+  const r2 = await run(Object.assign({ 'localMembers/buyer@example.com': { addedAt: 'x' }, 'settings/localDelivery': { price: 7.5 } }, base), { shippingValue: 'local' });
+  assert.strictEqual(r2.order.shipping, 7.5);
 });
 
 test('rejects bad carts and inputs', async () => {
