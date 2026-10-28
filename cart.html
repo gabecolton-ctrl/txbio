@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272359">
+<link rel="stylesheet" href="css/style.css?v=202610280001">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272359"></script>
+<script src="js/splash.js?v=202610280001"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -180,19 +180,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272359"></script>
-<script src="js/analytics.js?v=202610272359"></script>
-<script src="js/referral.js?v=202610272359"></script>
-<script src="js/cart.js?v=202610272359"></script>
-<script src="js/at-cost.js?v=202610272359"></script>
-<script src="js/family-pricing.js?v=202610272359"></script>
-<script src="js/free-shipping.js?v=202610272359"></script>
-<script src="js/pairings.js?v=202610272359"></script>
-<script src="js/nav-auth.js?v=202610272359"></script>
-<script src="js/profile-gate.js?v=202610272359"></script>
-<script src="js/auth-guard.js?v=202610272359"></script>
-<script src="js/main.js?v=202610272359"></script>
-<script src="js/nav-toggle.js?v=202610272359"></script>
+<script src="js/firebase-config.js?v=202610280001"></script>
+<script src="js/analytics.js?v=202610280001"></script>
+<script src="js/referral.js?v=202610280001"></script>
+<script src="js/cart.js?v=202610280001"></script>
+<script src="js/at-cost.js?v=202610280001"></script>
+<script src="js/family-pricing.js?v=202610280001"></script>
+<script src="js/free-shipping.js?v=202610280001"></script>
+<script src="js/loyalty.js?v=202610280001"></script>
+<script src="js/pairings.js?v=202610280001"></script>
+<script src="js/nav-auth.js?v=202610280001"></script>
+<script src="js/profile-gate.js?v=202610280001"></script>
+<script src="js/auth-guard.js?v=202610280001"></script>
+<script src="js/main.js?v=202610280001"></script>
+<script src="js/nav-toggle.js?v=202610280001"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -265,7 +266,12 @@
       totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + total;
       // Free shipping progress (js/free-shipping.js); family orders have their own shipping.
       var bar = document.getElementById('free-ship-bar');
-      if (window.FreeShipping && !fam) {
+      if (window.FreeShipping && !fam && cartPlatinum) {
+        document.getElementById('free-ship-text').innerHTML = '<strong>Platinum member:</strong> free 2nd Day shipping on every order.';
+        document.getElementById('free-ship-fill').style.width = '100%';
+        document.getElementById('free-ship-more').textContent = 'Keep shopping';
+        bar.classList.add('is-free'); bar.hidden = false;
+      } else if (window.FreeShipping && !fam) {
         var left = FreeShipping.remaining(total);
         document.getElementById('free-ship-text').innerHTML = left > 0
           ? 'You\u2019re <strong>$' + left.toFixed(2) + '</strong> away from free 3-5 day shipping.'
@@ -317,6 +323,13 @@
     });
   });
 
+  var cartPlatinum = false;
+  document.addEventListener('userReady', function (e) {
+    if (!window.Loyalty) return;
+    Loyalty.myTier(firebase.firestore(), e.detail.user.uid).then(function (r) {
+      if (r.tier.freeShipping) { cartPlatinum = true; renderCart(); }
+    }).catch(function () {});
+  });
   document.addEventListener('userReady', renderCart);
   document.addEventListener('cartChanged', renderCart); // "You might also need" adds (js/pairings.js)
 </script>

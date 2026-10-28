@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272359">
+<link rel="stylesheet" href="css/style.css?v=202610280001">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272359"></script>
+<script src="js/splash.js?v=202610280001"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -231,18 +231,18 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272359"></script>
-<script src="js/analytics.js?v=202610272359"></script>
-<script src="js/referral.js?v=202610272359"></script>
-<script src="js/cart.js?v=202610272359"></script>
-<script src="js/account.js?v=202610272359"></script>
-<script src="js/credits.js?v=202610272359"></script>
-<script src="js/loyalty.js?v=202610272359"></script>
-<script src="js/nav-auth.js?v=202610272359"></script>
-<script src="js/profile-gate.js?v=202610272359"></script>
-<script src="js/auth-guard.js?v=202610272359"></script>
-<script src="js/main.js?v=202610272359"></script>
-<script src="js/nav-toggle.js?v=202610272359"></script>
+<script src="js/firebase-config.js?v=202610280001"></script>
+<script src="js/analytics.js?v=202610280001"></script>
+<script src="js/referral.js?v=202610280001"></script>
+<script src="js/cart.js?v=202610280001"></script>
+<script src="js/account.js?v=202610280001"></script>
+<script src="js/credits.js?v=202610280001"></script>
+<script src="js/loyalty.js?v=202610280001"></script>
+<script src="js/nav-auth.js?v=202610280001"></script>
+<script src="js/profile-gate.js?v=202610280001"></script>
+<script src="js/auth-guard.js?v=202610280001"></script>
+<script src="js/main.js?v=202610280001"></script>
+<script src="js/nav-toggle.js?v=202610280001"></script>
 <script>
   var currentProfile = {};
 
@@ -414,12 +414,12 @@
           var tier = Loyalty.tierFor(spend), next = Loyalty.nextTier(spend);
           document.getElementById('loyalty-badge').textContent = tier.name;
           document.getElementById('loyalty-badge').className = 'loyalty-badge tier-' + tier.name.toLowerCase();
-          document.getElementById('loyalty-rate').textContent = tier.pct ? Math.round(tier.pct * 100) + '% back on every order' : 'Start earning at ' + money(Loyalty.TIERS[1].min);
+          document.getElementById('loyalty-rate').textContent = tier.pct ? Math.round(tier.pct * 100) + '% back on every order' + (tier.freeShipping ? ' + free 2nd Day shipping' : '') : 'Start earning at ' + money(Loyalty.TIERS[1].min);
           document.getElementById('loyalty-spend').textContent = money(spend);
           var lo = tier.min, hi = next ? next.min : tier.min;
           document.getElementById('loyalty-fill').style.width = next ? Math.min(100, (spend - lo) / (hi - lo) * 100) + '%' : '100%';
           document.getElementById('loyalty-next').textContent = next
-            ? money(next.min - spend) + ' more to reach ' + next.name + ' (' + Math.round(next.pct * 100) + '% back).'
+            ? money(next.min - spend) + ' more to reach ' + next.name + ' (' + (next.freeShipping ? 'free 2nd Day shipping on every order' : Math.round(next.pct * 100) + '% back') + ').'
             : 'You\u2019re at our top tier. Thank you!';
           document.getElementById('loyalty-tiers').innerHTML = Loyalty.TIERS.map(function (t) {
             var on = t.name === tier.name;
@@ -427,7 +427,8 @@
               (on ? '<span class="tier-here">You\u2019re here</span>' : '') +
               '<strong>' + t.name + '</strong>' +
               '<span class="tier-min">' + money(t.min).replace('.00', '') + '+</span>' +
-              '<span class="tier-pct">' + Math.round(t.pct * 100) + '% back</span></li>';
+              '<span class="tier-pct">' + Math.round(t.pct * 100) + '% back</span>' +
+              (t.freeShipping ? '<span class="tier-perk">+ free 2nd Day shipping</span>' : '') + '</li>';
           }).join('');
           document.getElementById('loyalty-section').style.display = '';
         });

@@ -4,6 +4,7 @@ const { HttpsError } = require('firebase-functions/v2/https');
 const P = require('./pricing');
 const AtCost = require('./at-cost');
 const FreeShipping = require('./free-shipping');
+const Loyalty = require('./loyalty');
 
 const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank', 'venmo', 'cashapp'];
 const PaymentApps = require('./payment-apps');
@@ -86,6 +87,14 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     promo = check;
   }
 
+  // Platinum rewards members ship free (js/loyalty.js, js/free-shipping.js).
+  let platinum = false;
+  if (!atCost) {
+    const mine = await db.collection('orders').where('userId', '==', uid).get();
+    const list = mine.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+    platinum = !!Loyalty.tierFor(Loyalty.lifetime(list)).freeShipping;
+  }
+
   const needs = P.stockNeeds(lines);
   const orderRef = db.collection('orders').doc();
   const creditRef = userEmail ? db.collection('credits').doc(userEmail) : null;
@@ -106,6 +115,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       shippingPrice: shippingOpt.price,
       shippingValue: atCost ? null : String(data.shippingValue),
       family: !!atCost,
+      platinum,
       taxRate: catalog.taxRate,
       creditBalanceCents: credit ? (credit.balanceCents || 0) : 0,
       useCredit: !!credit
