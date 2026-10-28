@@ -149,7 +149,9 @@ function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs,
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal, !!family, !!platinum);
-  const tax = round2(discountedSubtotal * taxRate);
+  // Quoted items (admin quotes, js/quotes.js) aren't taxed.
+  const quotedSubtotal = lines.reduce((n, l) => n + (l.quoteId ? l.price * l.qty : 0), 0);
+  const tax = round2(Math.max(0, discountedSubtotal - quotedSubtotal) * taxRate);
   const totalBeforeCredit = discountedSubtotal + shippingPrice + tax;
   const creditUsedCents = useCredit ? Math.max(0, Math.min(creditBalanceCents || 0, Math.round(totalBeforeCredit * 100))) : 0;
   const total = round2(totalBeforeCredit - creditUsedCents / 100);

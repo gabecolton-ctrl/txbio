@@ -262,6 +262,8 @@ test('admin quote in cart: quoted price and qty, no promo/BOGO on it, expired or
   assert.strictEqual(order.subtotal, 210 + 300 + other.price);
   assert.strictEqual(order.discount, Math.round(other.price * 0.1 * 100) / 100);
   assert.strictEqual(order.bogoDiscount, 0);
+  // Tax only on the non-quoted item, after its discount.
+  assert.strictEqual(order.tax, Math.round((other.price - order.discount) * 0.0825 * 100) / 100);
   await rejects(run(Object.assign({}, seed, { 'quotes/q1': Object.assign({}, quote, { expiresOn: '2026-10-20' }) }), {}), 'failed-precondition', 'quote ended');
   await rejects(run(Object.assign({}, seed, { 'quotes/q1': Object.assign({}, quote, { uid: 'someone-else' }) }), {}), 'failed-precondition', 'no longer available');
 });
