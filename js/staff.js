@@ -6,7 +6,7 @@
 (function (root) {
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   // Admin pages a manager may open.
-  var MANAGER_PAGES = ['admin-todo.html', 'admin-orders.html', 'admin-slip.html', 'admin-customers.html', 'admin-promos.html'];
+  var MANAGER_PAGES = ['admin-todo.html', 'admin-orders.html', 'admin-slip.html', 'admin-customers.html', 'admin-carts.html', 'admin-promos.html'];
   var CACHE = 'txbio_staff_role';
 
   function emailOf(user) { return String((user && user.email) || '').toLowerCase(); }

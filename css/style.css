@@ -1352,3 +1352,14 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .role-type { border: 0; padding: 0; margin: 0 0 14px; }
 .role-type legend { font-weight: 600; margin-bottom: 8px; padding: 0; }
 .role-type .checkbox-row { margin: 6px 0; }
+
+/* Admin → Carts */
+.carts-stats { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 18px; }
+.carts-stat { background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px 16px; min-width: 130px; }
+.carts-stat-v { display: block; font-size: 1.4rem; font-weight: 600; }
+.carts-stat-l { display: block; color: var(--muted); font-size: 0.85rem; }
+.carts-bar { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.carts-bar input { flex: 1; min-width: 200px; margin-bottom: 0; }
+.carts-bar select { margin-bottom: 0; width: auto; }
+.carts-table .cart-sub, .carts-table .cart-pack { color: var(--muted); font-size: 0.85rem; }
+.carts-table tr.cart-idle td:first-child { box-shadow: inset 3px 0 0 rgba(255, 170, 60, 0.7); }
