@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610280530">
+<link rel="stylesheet" href="css/style.css?v=202610280843">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610280530"></script>
+<script src="js/splash.js?v=202610280843"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -165,22 +165,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610280530"></script>
-<script src="js/cart.js?v=202610280530"></script>
-<script src="js/site-config.js?v=202610280530"></script>
-<script src="js/payment-apps.js?v=202610280530"></script>
-<script src="js/account.js?v=202610280530"></script>
-<script src="js/inventory.js?v=202610280530"></script>
-<script src="js/promos.js?v=202610280530"></script>
-<script src="js/credits.js?v=202610280530"></script>
-<script src="js/loyalty.js?v=202610280530"></script>
-<script src="js/lots.js?v=202610280530"></script>
-<script src="js/order-emails.js?v=202610280530"></script>
-<script src="js/nav-auth.js?v=202610280530"></script>
-<script src="js/profile-gate.js?v=202610280530"></script>
-<script src="js/auth-guard.js?v=202610280530"></script>
-<script src="js/main.js?v=202610280530"></script>
-<script src="js/nav-toggle.js?v=202610280530"></script>
+<script src="js/firebase-config.js?v=202610280843"></script>
+<script src="js/cart.js?v=202610280843"></script>
+<script src="js/site-config.js?v=202610280843"></script>
+<script src="js/payment-apps.js?v=202610280843"></script>
+<script src="js/account.js?v=202610280843"></script>
+<script src="js/inventory.js?v=202610280843"></script>
+<script src="js/promos.js?v=202610280843"></script>
+<script src="js/credits.js?v=202610280843"></script>
+<script src="js/loyalty.js?v=202610280843"></script>
+<script src="js/lots.js?v=202610280843"></script>
+<script src="js/order-emails.js?v=202610280843"></script>
+<script src="js/nav-auth.js?v=202610280843"></script>
+<script src="js/profile-gate.js?v=202610280843"></script>
+<script src="js/auth-guard.js?v=202610280843"></script>
+<script src="js/main.js?v=202610280843"></script>
+<script src="js/nav-toggle.js?v=202610280843"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -586,6 +586,9 @@
         '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
         '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
         '<p class="tracking-status" data-loyalty-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? loyaltyText(order) : '') + '</p>' +
+        '<p class="tracking-status attest-line" style="margin:0 0 8px;">' + (order.attestation
+          ? '<span title="' + escapeAttr(order.attestation.text) + '">&#10003; Buyer certified 21+ and research use only</span> &middot; ' + new Date(order.attestation.agreedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' &middot; Terms ' + escapeAttr(order.attestation.termsVersion) + ' &middot; <a href="#" data-attest-for="' + order.id + '">Show wording</a>'
+          : '<span style="color:var(--text-light);">No certification on record (placed before ' + 'Oct 28, 2026).</span>') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
         '<div class="tracking-row">' +
           '<label for="tracking-' + order.id + '">Tracking number</label>' +
@@ -617,6 +620,14 @@
         '</table>';
 
       listEl.appendChild(box);
+      var attestLink = box.querySelector('[data-attest-for]');
+      if (attestLink) attestLink.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        var line = attestLink.closest('.attest-line'), q = line.querySelector('.attest-text');
+        if (q) { q.remove(); attestLink.textContent = 'Show wording'; return; }
+        q = document.createElement('q'); q.className = 'attest-text'; q.textContent = order.attestation.text;
+        line.appendChild(q); attestLink.textContent = 'Hide wording';
+      });
     });
 
     listEl.querySelectorAll('button[data-save-tracking-for]').forEach(function (btn) {

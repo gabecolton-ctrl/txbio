@@ -5,6 +5,7 @@ const P = require('./pricing');
 const AtCost = require('./at-cost');
 const FreeShipping = require('./free-shipping');
 const Loyalty = require('./loyalty');
+const Attestation = require('./attestation');
 
 const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank', 'venmo', 'cashapp'];
 const PaymentApps = require('./payment-apps');
@@ -33,6 +34,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     throw new HttpsError('invalid-argument', 'Please add a shipping address before submitting your order.');
   }
   const notes = P.cleanText(data.notes, 2000);
+  if (data.attested !== true) throw new HttpsError('failed-precondition', 'Please confirm you are 21 or older and that this order is for research use only.');
   // Venmo / Cash App: the handle comes from settings, never from the browser.
   let paymentHandle = '';
   if (paymentMethod === 'venmo' || paymentMethod === 'cashapp') {
@@ -174,7 +176,8 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       userEmail,
       createdAt: nowIso,
       orderNumber,
-      placedBy: 'server'
+      placedBy: 'server',
+      attestation: Attestation.record('order', nowIso)
     };
     if (atCost) {
       orderDoc.atCostCode = atCost.code;

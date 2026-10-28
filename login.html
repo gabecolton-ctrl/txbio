@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610280530">
+<link rel="stylesheet" href="css/style.css?v=202610280843">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610280530"></script>
+<script src="js/splash.js?v=202610280843"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -150,7 +150,7 @@
       <p class="field-hint">At least 6 characters.</p>
       <div class="checkbox-row" style="margin-bottom:18px;">
         <input type="checkbox" id="signup-confirm" required>
-        <label for="signup-confirm">I certify I am registering on behalf of a laboratory, research institution, or qualified researcher, for research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.</label>
+        <label for="signup-confirm">I certify that I am 21 years of age or older and am registering on behalf of a laboratory, research institution, or qualified researcher, for research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.</label>
       </div>
       <button type="submit" class="btn" style="width:100%;">Create Account</button>
     </form>
@@ -189,12 +189,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610280530"></script>
-<script src="js/analytics.js?v=202610280530"></script>
-<script src="js/referral.js?v=202610280530"></script>
-<script src="js/main.js?v=202610280530"></script>
-<script src="js/nav-toggle.js?v=202610280530"></script>
-<script src="js/profile-gate.js?v=202610280530"></script>
+<script src="js/firebase-config.js?v=202610280843"></script>
+<script src="js/analytics.js?v=202610280843"></script>
+<script src="js/referral.js?v=202610280843"></script>
+<script src="js/main.js?v=202610280843"></script>
+<script src="js/nav-toggle.js?v=202610280843"></script>
+<script src="js/attestation.js?v=202610280843"></script>
+<script src="js/profile-gate.js?v=202610280843"></script>
 <script>
   firebase.initializeApp(firebaseConfig);
 
@@ -331,7 +332,7 @@
       return;
     }
     if (!confirmChecked) {
-      showError('You must certify your research use and agree to the Terms & Conditions to register.');
+      showError('You must certify that you are 21 or older and buying for research use, and agree to the Terms & Conditions, to register.');
       return;
     }
 
@@ -352,7 +353,8 @@
             zip: addr.values.zip,
             email: (cred.user.email || email).toLowerCase(),
             createdAt: now,
-            lastSignInAt: now
+            lastSignInAt: now,
+            signupAttestation: window.Attestation ? Attestation.record('signup', now) : null
           }, { merge: true }).catch(function (err) { console.error('Could not save customer record:', err); })
         ]);
       })
