@@ -49,9 +49,13 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   // Price the cart as saved in the database, not as the browser describes it.
   const cartSnap = await db.collection('carts').doc(uid).get();
   const cartItems = cartSnap.exists ? (cartSnap.data().items || []) : [];
+  const quoteIds = [...new Set(cartItems.filter((i) => i && i.quoteId).map((i) => String(i.quoteId)))];
+  const quoteSnaps = await Promise.all(quoteIds.map((id) => db.collection('quotes').doc(id).get()));
+  const quotes = {};
+  quoteSnaps.forEach((s, i) => { if (s.exists) quotes[quoteIds[i]] = s.data(); });
   let lines;
   try {
-    lines = P.priceCart(catalog, cartItems);
+    lines = P.priceCart(catalog, cartItems, quotes, uid, now || new Date());
   } catch (e) {
     if (e instanceof P.PricingError) throw new HttpsError('failed-precondition', e.message);
     throw e;
@@ -161,6 +165,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       }
       const item = { slug: l.slug, name: l.name, packSize: l.packSize, price: l.price, qty: l.qty, fulfilled, backordered: units - fulfilled };
       if (l.caseOf) { item.caseOf = l.caseOf; item.unitSlug = l.unitSlug; }
+      if (l.quoteId) item.quoteId = l.quoteId;
       if (atCost) {
         const ac = atCost.result.lines[i];
         if (typeof ac.unitCost === 'number') item.unitCost = ac.unitCost;

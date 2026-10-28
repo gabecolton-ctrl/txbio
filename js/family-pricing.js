@@ -37,7 +37,7 @@ var FamilyPricing = (function () {
 
   // What a cart line costs a family member (cases = 10 vials at family price).
   function lineTotal(item) {
-    if (!state) return round2(item.price * item.qty);
+    if (!state || item.quoteId) return round2(item.price * item.qty); // quotes keep their price
     if (state.percent) return round2(item.price * item.qty * (1 - state.percent / 100));
     return AtCost.priceLines([item], state.costs, state.markup).atCostTotal;
   }

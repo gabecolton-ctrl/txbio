@@ -135,6 +135,7 @@ var Account = (function () {
 
   return {
     setUser: setUser,
+    generateOrderNumber: generateOrderNumber,
     getProfile: getProfile,
     saveProfile: function (profile) { return withTimeout(saveProfile(profile), 10000, 'Saving your info is taking too long. Please check your connection and try again.'); },
     createOrder: function (order, options) { return withTimeout(createOrder(order, options), 10000, 'Submitting your order is taking too long. Please check your connection and try again.'); },

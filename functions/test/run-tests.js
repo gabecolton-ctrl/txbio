@@ -246,6 +246,23 @@ test('once-per-customer code: second use refused; cancelled first use does not c
   await run(Object.assign({ 'orders/prev': { userId: 'u1', promoCode: 'SPOOKY31', status: 'cancelled' } }, base), { promoCode: 'SPOOKY31' });
 });
 
+test('admin quote in cart: quoted price and qty, no promo/BOGO on it, expired or other user refused', async () => {
+  const quote = { uid: 'u1', email: 'buyer@example.com', expiresOn: '2026-10-31', lines: [{ slug: 'klow-blend', price: 35, qty: 4 }] };
+  const seed = Object.assign({ 'carts/u1': { items: [
+    { slug: 'klow-blend', qty: 99, price: 1, quoteId: 'q1' },
+    { slug: 'cagrilintide', qty: 1 }
+  ] }, 'quotes/q1': quote, 'promoCodes/TEN': { discountPercent: 10, type: 'always', active: true }, 'bogoProducts/klow-blend': { active: true } });
+  const { order } = await run(seed, { promoCode: 'TEN' });
+  const q = order.items.find((i) => i.quoteId === 'q1');
+  assert.strictEqual(q.price, 35); assert.strictEqual(q.qty, 4);
+  const other = order.items.find((i) => !i.quoteId);
+  assert.strictEqual(order.subtotal, 140 + other.price);
+  assert.strictEqual(order.discount, Math.round(other.price * 0.1 * 100) / 100);
+  assert.strictEqual(order.bogoDiscount, 0);
+  await rejects(run(Object.assign({}, seed, { 'quotes/q1': Object.assign({}, quote, { expiresOn: '2026-10-20' }) }), {}), 'failed-precondition', 'quote ended');
+  await rejects(run(Object.assign({}, seed, { 'quotes/q1': Object.assign({}, quote, { uid: 'someone-else' }) }), {}), 'failed-precondition', 'no longer available');
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');

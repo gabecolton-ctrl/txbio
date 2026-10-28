@@ -30,6 +30,7 @@ service cloud.firestore {
     match /carts/{userId} {
       allow read, write: if signedIn() && request.auth.uid == userId;
       allow read: if isStaff(); // Admin → Carts
+      allow write: if isAdmin(); // Admin → New order: send a quote to their cart
     }
 
     // Each user's profile info (name, org, address) — only they can write it;
@@ -43,7 +44,7 @@ service cloud.firestore {
     // own orders. Buyers can only cancel a pending order; everything else
     // (status, tracking, cancellations, affiliate credit bookkeeping) is admin-only.
     match /orders/{orderId} {
-      allow create: if signedIn() && request.auth.uid == request.resource.data.userId;
+      allow create: if (signedIn() && request.auth.uid == request.resource.data.userId) || isAdmin(); // admin: orders entered on Admin → New order
       allow read: if signedIn() && (request.auth.uid == resource.data.userId || isStaff());
       allow update: if isStaff() || (
         // A buyer may cancel their own order while it's still pending
@@ -179,6 +180,13 @@ service cloud.firestore {
     // UPS tracker uses the service account, which bypasses these rules.
     match /incoming/{id} {
       allow read, write: if isAdmin();
+    }
+
+    // Custom-priced quotes sent to a customer's cart (Admin → New order,
+    // js/quotes.js). Only the admin writes them; the customer reads their own.
+    match /quotes/{id} {
+      allow read: if isAdmin() || (signedIn() && resource.data.uid == request.auth.uid);
+      allow write: if isAdmin();
     }
 
     // Roles (Admin → Roles). Only the admin assigns them.

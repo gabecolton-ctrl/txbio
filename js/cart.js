@@ -96,7 +96,7 @@ var Cart = (function () {
     return ensureDb().runTransaction(function (transaction) {
       return transaction.get(ref).then(function (doc) {
         var items = (doc.exists && doc.data().items) ? doc.data().items : [];
-        var existing = items.find(function (i) { return i.slug === product.slug; });
+        var existing = items.find(function (i) { return i.slug === product.slug && !i.quoteId; }); // quoted lines stay separate
         if (existing) {
           existing.qty += qty;
         } else {
@@ -120,12 +120,15 @@ var Cart = (function () {
     });
   }
 
-  function updateQty(slug, qty) {
+  // A line's key: its slug, or slug#quoteId for a line from an admin quote.
+  function lineKey(i) { return i.quoteId ? i.slug + '#' + i.quoteId : i.slug; }
+
+  function updateQty(key, qty) {
     return getCart().then(function (items) {
       if (qty <= 0) {
-        items = items.filter(function (i) { return i.slug !== slug; });
+        items = items.filter(function (i) { return lineKey(i) !== key; });
       } else {
-        var item = items.find(function (i) { return i.slug === slug; });
+        var item = items.find(function (i) { return lineKey(i) === key && !i.quoteId; }); // quoted quantities are fixed
         if (item) item.qty = qty;
       }
       return saveCart(items).then(function () { return items; });
@@ -199,6 +202,7 @@ var Cart = (function () {
     updateQty: updateQty,
     removeItem: removeItem,
     clearCart: clearCart,
+    lineKey: lineKey,
     getItemCount: getItemCount
   };
 })();

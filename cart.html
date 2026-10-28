@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281246">
+<link rel="stylesheet" href="css/style.css?v=202610281345">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281246"></script>
+<script src="js/splash.js?v=202610281345"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -74,6 +74,7 @@
               <li><a href="admin-dashboard.html" id="nav-admin-dashboard-link">Dashboard</a></li>
               <li><a href="admin-todo.html" id="nav-admin-todo-link">To-do</a></li>
               <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+              <li><a href="admin-new-order.html" id="nav-admin-neworder-link">New order</a></li>
               <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
               <li><a href="admin-carts.html" id="nav-admin-carts-link">Carts</a></li>
               <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
@@ -198,21 +199,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281246"></script>
-<script src="js/analytics.js?v=202610281246"></script>
-<script src="js/referral.js?v=202610281246"></script>
-<script src="js/cart.js?v=202610281246"></script>
-<script src="js/at-cost.js?v=202610281246"></script>
-<script src="js/family-pricing.js?v=202610281246"></script>
-<script src="js/free-shipping.js?v=202610281246"></script>
-<script src="js/loyalty.js?v=202610281246"></script>
-<script src="js/pairings.js?v=202610281246"></script>
-<script src="js/staff.js?v=202610281246"></script>
-<script src="js/nav-auth.js?v=202610281246"></script>
-<script src="js/profile-gate.js?v=202610281246"></script>
-<script src="js/auth-guard.js?v=202610281246"></script>
-<script src="js/main.js?v=202610281246"></script>
-<script src="js/nav-toggle.js?v=202610281246"></script>
+<script src="js/firebase-config.js?v=202610281345"></script>
+<script src="js/analytics.js?v=202610281345"></script>
+<script src="js/referral.js?v=202610281345"></script>
+<script src="js/cart.js?v=202610281345"></script>
+<script src="js/quotes.js?v=202610281345"></script>
+<script src="js/at-cost.js?v=202610281345"></script>
+<script src="js/family-pricing.js?v=202610281345"></script>
+<script src="js/free-shipping.js?v=202610281345"></script>
+<script src="js/loyalty.js?v=202610281345"></script>
+<script src="js/pairings.js?v=202610281345"></script>
+<script src="js/staff.js?v=202610281345"></script>
+<script src="js/nav-auth.js?v=202610281345"></script>
+<script src="js/profile-gate.js?v=202610281345"></script>
+<script src="js/auth-guard.js?v=202610281345"></script>
+<script src="js/main.js?v=202610281345"></script>
+<script src="js/nav-toggle.js?v=202610281345"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -254,6 +256,12 @@
     var rowsEl = document.getElementById('cart-rows');
     var totalEl = document.getElementById('cart-total');
 
+    // Lines from a quote we sent (js/quotes.js): fixed price and quantity.
+    function quoteTag(item) {
+      if (!item.quoteId) return '';
+      var ended = window.Quotes && item.quoteExpiresOn && Quotes.isExpired({ expiresOn: item.quoteExpiresOn });
+      return ' <span class="quote-tag' + (ended ? ' is-ended' : '') + '">' + (ended ? 'Quote ended' : 'Quote' + (item.quoteExpiresOn ? ' · through ' + item.quoteExpiresOn : '')) + '</span>';
+    }
     Cart.getCart().then(function (items) {
       loading.style.display = 'none';
       document.dispatchEvent(new CustomEvent('cartRendered', { detail: items }));
@@ -275,15 +283,16 @@
         total += subtotal;
         var tr = document.createElement('tr');
         tr.innerHTML =
-          '<td data-label="Product">' + item.name + '</td>' +
+          '<td data-label="Product">' + item.name + quoteTag(item) + '</td>' +
           '<td data-label="Pack Size">' + item.packSize + '</td>' +
           '<td data-label="Price">' + (fam ? FamilyPricing.money(each) : '$' + item.price) + '</td>' +
-          '<td class="cart-qty" data-label="Qty"><input type="number" min="1" value="' + item.qty + '" data-slug="' + item.slug + '"></td>' +
-          '<td data-label="Subtotal">' + (fam ? FamilyPricing.money(subtotal) : '$' + subtotal) + '</td>' +
-          '<td class="cart-remove" data-label=""><a href="#" data-remove-slug="' + item.slug + '">Remove</a></td>';
+          '<td class="cart-qty" data-label="Qty">' + (item.quoteId ? '<span class="quote-qty">' + item.qty + '</span>'
+            : '<input type="number" min="1" value="' + item.qty + '" data-slug="' + Cart.lineKey(item) + '">') + '</td>' +
+          '<td data-label="Subtotal">' + (fam ? FamilyPricing.money(subtotal) : '$' + (Math.round(subtotal * 100) / 100)) + '</td>' +
+          '<td class="cart-remove" data-label=""><a href="#" data-remove-slug="' + Cart.lineKey(item) + '">Remove</a></td>';
         rowsEl.appendChild(tr);
       });
-      totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + total;
+      totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + (Math.round(total * 100) / 100);
       // Free shipping progress (js/free-shipping.js); family orders have their own shipping.
       var bar = document.getElementById('free-ship-bar');
       if (window.FreeShipping && !famShip && cartPlatinum) {

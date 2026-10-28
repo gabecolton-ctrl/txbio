@@ -3,6 +3,7 @@
 // match to the cent.
 
 const FreeShipping = require('./free-shipping');
+const Quotes = require('./quotes');
 
 const MAX_QTY_PER_LINE = 500;
 
@@ -61,10 +62,23 @@ function resolveLine(catalog, slug) {
 }
 
 // Cart items → priced lines. Merges duplicate slugs and validates quantities.
-function priceCart(catalog, cartItems) {
+// Lines from an admin quote (item.quoteId, js/quotes.js) are priced from the
+// quote document (quotes: { id: doc }), not the catalog, and kept separate.
+function priceCart(catalog, cartItems, quotes, uid, now) {
   if (!Array.isArray(cartItems) || !cartItems.length) throw new PricingError('Your cart is empty.');
   const bySlug = new Map();
+  const quoted = [];
   for (const item of cartItems) {
+    if (item && item.quoteId) {
+      const check = Quotes.checkLine(item, (quotes || {})[item.quoteId], uid, now);
+      if (!check.ok) throw new PricingError(check.reason);
+      const line = resolveLine(catalog, item.slug);
+      line.price = check.price;
+      line.qty = check.qty;
+      line.quoteId = item.quoteId;
+      if (!quoted.some((l) => l.slug === line.slug && l.quoteId === line.quoteId)) quoted.push(line);
+      continue;
+    }
     const qty = Number(item && item.qty);
     if (!Number.isInteger(qty) || qty < 1 || qty > MAX_QTY_PER_LINE) {
       throw new PricingError('Each item needs a quantity between 1 and ' + MAX_QTY_PER_LINE + '.');
@@ -78,7 +92,7 @@ function priceCart(catalog, cartItems) {
     line.qty = Math.min(qty, MAX_QTY_PER_LINE);
     lines.push(line);
   }
-  return lines;
+  return lines.concat(quoted);
 }
 
 // Same rule as js/bogo.js: every full pair of an eligible single-vial line
@@ -119,7 +133,7 @@ function checkPromo(promo, code, isFirstOrder, now, roles, usedCodes) {
 
 // A single-vial line of a product with BOGO on (cases never get BOGO).
 function isBogoLine(line, eligibleSlugs) {
-  if (line.caseOf) return false;
+  if (line.caseOf || line.quoteId) return false;
   return (eligibleSlugs || []).some((base) => line.slug === base || line.slug.indexOf(base + '-') === 0);
 }
 
@@ -131,7 +145,7 @@ function isBogoLine(line, eligibleSlugs) {
 // shippingValue + family: free standard shipping at FreeShipping.MIN (js/free-shipping.js).
 function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, platinum, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
-  const promoBase = lines.reduce((n, l) => n + l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty), 0);
+  const promoBase = lines.reduce((n, l) => n + (l.quoteId ? 0 : l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty)), 0);
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal, !!family, !!platinum);

@@ -4,7 +4,7 @@
 // with no handle saved isn't offered at checkout.
 
 var PaymentApps = (function () {
-  var LABELS = { inquiry: 'Other (we follow up)', bitcoin: 'Bitcoin', bank: 'Bank transfer', venmo: 'Venmo', cashapp: 'Cash App' };
+  var LABELS = { inquiry: 'Other (we follow up)', bitcoin: 'Bitcoin', bank: 'Bank transfer', venmo: 'Venmo', cashapp: 'Cash App', cash: 'Cash' };
 
   // "@Name", "venmo.com/Name" → "Name";  "$Tag", "cash.app/$Tag" → "Tag"
   function cleanVenmo(v) {
