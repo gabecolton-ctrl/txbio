@@ -184,7 +184,7 @@
       if (t.fee > 0) rows.push(['Processing fee (' + esc(PaymentApps.LABELS[$('no-pay').value] || '') + ')', money(t.fee)]);
       rows.push(['<strong>Total</strong>', '<strong>' + money(t.total) + '</strong>']);
     } else {
-      rows.push(['', '<span class="field-note">They pick shipping and pay tax at checkout, as usual.</span>']);
+      rows.push(['', '<span class="field-note">They pick shipping at checkout. ' + ($('no-tax').checked ? 'Tax is added on these items.' : 'No tax on these items.') + '</span>']);
     }
     if (t.used.length) rows.push(['Your profit on items', t.costKnown ? money(t.subtotal - t.cost) + ' <span class="field-note">(cost ' + money(t.cost) + ')</span>' : '<span class="field-note">Some items have no cost on file (At cost page).</span>']);
     $('no-summary').innerHTML = rows.map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + r[1] + '</td></tr>'; }).join('');
@@ -239,7 +239,7 @@
     var expiresOn = '';
     if (days) { var d = new Date(); d.setDate(d.getDate() + days); expiresOn = Quotes.todayCentral(d); }
     var ref = db.collection('quotes').doc();
-    var quote = { uid: customer.uid, email: customer.email, name: customer.name || '', lines: items, expiresOn: expiresOn,
+    var quote = { uid: customer.uid, email: customer.email, name: customer.name || '', lines: items, expiresOn: expiresOn, noTax: !$('no-tax').checked,
       note: $('no-quote-note').value.trim().slice(0, 500), createdAt: new Date().toISOString(), createdBy: me };
     var cartRef = db.collection('carts').doc(customer.uid);
     return ref.set(quote).then(function () {

@@ -7,6 +7,7 @@
 //   Cart lines from a quote carry quoteId (and quoteExpiresOn for display).
 // Quoted lines keep the quoted price: no promo code, BOGO or family pricing on top.
 // Single-vial lines can change quantity at that price; case lines can't.
+// quote.noTax: no sales tax on its lines (a checkbox on Admin → New order).
 var Quotes = (function () {
   function todayCentral(now) {
     try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(now || new Date()); }
@@ -29,7 +30,7 @@ var Quotes = (function () {
     var own = Number(item.qty);
     var qty = line && !line.caseOf && Number.isInteger(own) && own >= 1 && own <= 500 ? own : (line ? Number(line.qty) : NaN);
     if (!line || !(price >= 0) || !(qty >= 1)) return { ok: false, reason: name + ': this quote is no longer available. Remove it from your cart.' };
-    return { ok: true, price: Math.round(price * 100) / 100, qty: qty };
+    return { ok: true, price: Math.round(price * 100) / 100, qty: qty, taxable: !quote.noTax };
   }
 
   return { todayCentral: todayCentral, isExpired: isExpired, lineKey: lineKey, checkLine: checkLine };

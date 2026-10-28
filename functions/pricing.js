@@ -76,6 +76,7 @@ function priceCart(catalog, cartItems, quotes, uid, now) {
       line.price = check.price;
       line.qty = check.qty;
       line.quoteId = item.quoteId;
+      if (!check.taxable) line.noTax = true;
       if (!quoted.some((l) => l.slug === line.slug && l.quoteId === line.quoteId)) quoted.push(line);
       continue;
     }
@@ -149,8 +150,8 @@ function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs,
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal, !!family, !!platinum);
-  // Quoted items (admin quotes, js/quotes.js) aren't taxed.
-  const quotedSubtotal = lines.reduce((n, l) => n + (l.quoteId ? l.price * l.qty : 0), 0);
+  // Quoted items marked "no tax" (admin quotes, js/quotes.js) aren't taxed.
+  const quotedSubtotal = lines.reduce((n, l) => n + (l.noTax ? l.price * l.qty : 0), 0);
   const tax = round2(Math.max(0, discountedSubtotal - quotedSubtotal) * taxRate);
   const totalBeforeCredit = discountedSubtotal + shippingPrice + tax;
   const creditUsedCents = useCredit ? Math.max(0, Math.min(creditBalanceCents || 0, Math.round(totalBeforeCredit * 100))) : 0;
