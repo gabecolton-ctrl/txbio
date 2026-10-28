@@ -67,12 +67,41 @@ var Pairings = (function () {
     return fetch(base + 'functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
       .then(function (c) { catalog = c.products; return catalog; });
   }
-  function loadStock() {
+  // Stock counts for just the sizes we might suggest (a few reads, not the
+  // whole inventory), remembered for 10 minutes in this browser tab.
+  var CACHE_KEY = 'txbio_pair_stock', CACHE_MS = 10 * 60 * 1000;
+  function loadStock(productSlugs) {
     var u = window.firebase && firebase.auth && firebase.apps.length && firebase.auth().currentUser;
-    if (!u) return Promise.resolve();
-    return firebase.firestore().collection('inventory').get().then(function (snap) {
-      snap.forEach(function (d) { if (typeof d.data().qty === 'number') stock[d.id] = d.data().qty; });
-    }).catch(function () {});
+    if (!u || !catalog) return Promise.resolve();
+    var cache = {};
+    try { cache = JSON.parse(sessionStorage.getItem(CACHE_KEY) || '{}'); } catch (e) {}
+    var need = [];
+    productSlugs.forEach(function (ps) {
+      var p = catalog[ps]; if (!p) return;
+      (p.doses ? Object.keys(p.doses) : [ps]).forEach(function (k) {
+        var c = cache[k];
+        if (c && Date.now() - c.at < CACHE_MS) { if (typeof c.q === 'number') stock[k] = c.q; }
+        else if (need.indexOf(k) === -1) need.push(k);
+      });
+    });
+    if (!need.length) return Promise.resolve();
+    var db = firebase.firestore();
+    return Promise.all(need.map(function (k) {
+      return db.collection('inventory').doc(k).get().then(function (d) {
+        var q = d.exists && typeof d.data().qty === 'number' ? d.data().qty : null;
+        if (q !== null) stock[k] = q;
+        cache[k] = { q: q, at: Date.now() };
+      }).catch(function () {});
+    })).then(function () { try { sessionStorage.setItem(CACHE_KEY, JSON.stringify(cache)); } catch (e) {} });
+  }
+  // Products that could be suggested for these slugs (diluent + pairs).
+  function candidates(slugs) {
+    var out = [];
+    slugs.forEach(function (s) {
+      if (isPowder(s)) out.push(WATER[s] || DEFAULT_WATER);
+      (PAIRS[s] || []).forEach(function (r) { out.push(r); });
+    });
+    return out.filter(function (x, i) { return out.indexOf(x) === i; });
   }
 
   // A cart-ready line for a product: the preferred or smallest in-stock size.
@@ -159,7 +188,7 @@ var Pairings = (function () {
     var started = false;
     function start() {
       if (started) return; started = true;
-      Promise.all([loadCatalog(), loadStock()]).then(draw).catch(function () {});
+      loadCatalog().then(function () { return loadStock(candidates([THIS_PRODUCT.slug])); }).then(draw).catch(function () {});
     }
     document.addEventListener('userReady', start);
     document.addEventListener('guestReady', start);
@@ -177,7 +206,7 @@ var Pairings = (function () {
     document.addEventListener('cartRendered', function (e) {
       var items = (e.detail || []);
       if (!items.length) { el.hidden = true; return; }
-      Promise.all([loadCatalog(), loadStock()]).then(function () {
+      loadCatalog().then(function () {
         var inCart = {};
         items.forEach(function (i) {
           var unit = String(i.unitSlug || i.slug).replace(/-case$/, '');
@@ -187,7 +216,7 @@ var Pairings = (function () {
           });
         });
         var slugs = Object.keys(inCart);
-        render(el, 'You might also need', suggest(slugs, [], 3));
+        return loadStock(candidates(slugs)).then(function () { render(el, 'You might also need', suggest(slugs, [], 3)); });
       });
     });
   }
