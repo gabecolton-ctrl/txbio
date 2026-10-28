@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Traffic | TXBioResearch</title>
+<meta name="description" content="Admin traffic overview for TXBioResearch.">
+<link rel="icon" type="image/png" href="images/logo-icon.png">
+<link rel="apple-touch-icon" href="/images/apple-touch-icon.png">
+<link rel="manifest" href="/manifest.webmanifest">
+<meta name="apple-mobile-web-app-title" content="TXBio">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="theme-color" content="#0b1210">
+<link rel="stylesheet" href="css/style.css?v=202610271909">
+<!-- seo:start -->
+<meta name="robots" content="noindex">
+<!-- seo:end -->
+</head>
+<body>
+<div id="splash-screen">
+  <img src="images/logo-icon.png" alt="TXBioResearch">
+  <div class="splash-wordmark">Texas Advanced BioResearch</div>
+</div>
+<script src="js/splash.js?v=202610271909"></script>
+<script>
+  if (sessionStorage.getItem('txbio_splash_shown')) {
+    document.write('<style>#splash-screen{display:none!important}</style>');
+  }
+</script>
+
+<div class="roa-banner">For laboratory research use only. Not for human or animal consumption.</div>
+
+<header>
+  <div class="header-inner">
+    <a href="index.html" class="logo-link" aria-label="Texas Advanced BioResearch home">
+      <img src="images/logo-icon.png" alt="" class="logo-icon">
+      <div class="logo-text">Texas Advanced BioResearch</div>
+    </a>
+    <button id="nav-toggle-btn" class="nav-toggle" aria-label="Open menu">
+      <span></span><span></span><span></span>
+    </button>
+    <nav>
+      <ul class="nav-primary">
+        <li><a href="services.html">Catalog</a></li>
+        <li><a href="about.html">About</a></li>
+        <li><a href="contact.html">Contact</a></li>
+      </ul>
+      <ul class="nav-account">
+        <li class="nav-admin nav-admin-menu">
+          <details>
+            <summary>Admin</summary>
+            <ul>
+              <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
+              <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
+              <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+              <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+              <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+              <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
+              <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
+              <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
+              <li><a href="admin-traffic.html" id="nav-admin-traffic-link">Traffic</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-myaccount nav-admin-menu nav-account-menu">
+          <details>
+            <summary>My account</summary>
+            <ul>
+              <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
+              <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
+            </ul>
+          </details>
+        </li>
+        <li class="nav-login"><a href="login.html" id="nav-account-link">Researcher login</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<a href="cart.html" id="floating-cart-btn" class="floating-cart" aria-label="View cart">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h8.6a1.5 1.5 0 0 0 1.5-1.1L21 8H6.2"/><circle cx="9.5" cy="20" r="1.3"/><circle cx="17.5" cy="20" r="1.3"/></svg>
+  <span id="floating-cart-badge" class="floating-cart-badge">0</span>
+</a>
+
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
+  <section class="page-head">
+    <h1>Traffic</h1>
+    <p class="lead">Visits to the site, counted privately by the site itself: no cookies, no outside trackers, and your own visits aren't counted. Counting started when this page went live.</p>
+  </section>
+
+  <div id="admin-denied" class="notice" style="display:none;">
+    <strong>Access Restricted:</strong>
+    <p>This page is only available to the site administrator.</p>
+  </div>
+
+  <div id="admin-content" style="display:none;">
+    <section>
+      <div class="pnl-controls" role="group" aria-label="Time range">
+        <span class="range-label">Show</span>
+        <div class="range-buttons">
+          <button type="button" class="range-btn" data-days="1">Today</button>
+          <button type="button" class="range-btn is-on" data-days="7">7 days</button>
+          <button type="button" class="range-btn" data-days="30">30 days</button>
+          <button type="button" class="range-btn" data-days="90">90 days</button>
+        </div>
+      </div>
+      <div id="tr-loading" class="cart-empty">Loading traffic…</div>
+      <div id="tr-body" style="display:none;">
+        <div class="pnl-summary" id="tr-summary"></div>
+
+        <h2>Visitors per day</h2>
+        <div class="tr-chart-wrap">
+          <div id="tr-chart" class="tr-chart" role="img" aria-label="Visitors per day"></div>
+          <div id="tr-tip" class="tr-tip" role="tooltip" style="display:none;"></div>
+        </div>
+        <details class="tr-table-toggle"><summary>Show as a table</summary>
+          <div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-daily"></table></div>
+        </details>
+
+        <div class="tr-grid">
+          <div><h2>Where visitors come from</h2><div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-refs"></table></div></div>
+          <div><h2>Top pages</h2><div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-pages"></table></div></div>
+          <div><h2>Top products viewed</h2><div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-products"></table></div></div>
+          <div><h2>First page of each visit</h2><div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-landing"></table></div></div>
+          <div><h2>Tagged links</h2><p class="section-note">Visits from links you share with <code>?ref=name</code> on the end, e.g. <code>txbioresearch.com/?ref=instagram</code>.</p><div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-sources"></table></div></div>
+          <div><h2>Phone vs computer</h2><div class="catalog-wrap"><table class="catalog-table pnl-table" id="tr-devices"></table></div></div>
+        </div>
+        <p class="section-note" style="margin-top:18px;"><strong>Visitors</strong> counts each browser once per day, so one person visiting on 3 days counts 3 times across a week. <strong>Visits</strong> are browsing sessions; a visitor can have several. <strong>Orders</strong> exclude cancelled ones. Days are in Central time.</p>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer>
+  <div class="footer-inner">
+    <div class="footer-top">
+      <div>
+        <div class="footer-brand">
+          <img src="images/logo-icon.png" alt="">
+          <span>Texas Advanced BioResearch</span>
+        </div>
+        <p class="footer-brand-note">Research peptides and reagents, shipped from Dallas, TX.</p>
+      </div>
+      <div class="footer-links">
+        <a href="services.html">Catalog</a>
+        <a href="about.html">About</a>
+        <a href="contact.html">Contact</a>
+        <a href="login.html" class="signed-out-only">Researcher login</a>
+        <a href="terms.html">Terms &amp; conditions</a>
+        <a href="privacy.html">Privacy policy</a>
+        <a href="shipping.html">Shipping &amp; returns</a>
+      </div>
+    </div>
+    <div class="footer-disclaimer">
+      <strong>Research use only</strong>
+      <p>Products on this site are sold as research chemicals for laboratory research use only. They are not intended for human or animal consumption, use, or application of any kind, and are not approved by the FDA as a drug, food, cosmetic, or dietary supplement. Handling should be performed only by qualified, trained personnel in a controlled laboratory setting. TXBioResearch makes no claims about the safety or efficacy of these compounds outside laboratory research. Purchasers are responsible for determining the legality of buying and using these products in their jurisdiction and for proper handling, storage, and disposal under all applicable laws.</p>
+    </div>
+    <div class="footer-bottom">&copy; 2026 TXBioResearch &middot; Dallas, TX</div>
+  </div>
+</footer>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js?v=202610271909"></script>
+<script src="js/cart.js?v=202610271909"></script>
+<script src="js/products.js?v=202610271909"></script>
+<script src="js/nav-auth.js?v=202610271909"></script>
+<script src="js/profile-gate.js?v=202610271909"></script>
+<script src="js/auth-guard.js?v=202610271909"></script>
+<script src="js/main.js?v=202610271909"></script>
+<script src="js/nav-toggle.js?v=202610271909"></script>
+<script>
+  var ADMIN_EMAIL = 'gabecolton@gmail.com';
+  var days = {}, orders = [], productNames = {}, range = 7;
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  function n(v) { return Number(v || 0).toLocaleString('en-US'); }
+  function money(v) { return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+  function chicagoDay(d) { try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(d); } catch (e) { return d.toISOString().slice(0, 10); } }
+  function lastDays(k) {
+    var out = [], now = new Date();
+    for (var i = k - 1; i >= 0; i--) out.push(chicagoDay(new Date(now.getTime() - i * 864e5)));
+    return out;
+  }
+  function label(day, short) {
+    var d = new Date(day + 'T12:00:00');
+    return d.toLocaleDateString(undefined, short ? { month: 'numeric', day: 'numeric' } : { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  var REF_NAMES = { direct: 'Direct or bookmark', google: 'Google', bing: 'Bing', instagram: 'Instagram', facebook: 'Facebook', x_twitter: 'X / Twitter', reddit: 'Reddit' };
+  function pageName(k) {
+    if (k === 'home') return 'Home';
+    var parts = k.split('~');
+    if (parts[0] === 'products' && parts[1]) return productNames[parts[1]] || parts[1];
+    var m = { services: 'Catalog', about: 'About', contact: 'Contact', shipping: 'Shipping & returns', terms: 'Terms', privacy: 'Privacy', cart: 'Cart', checkout: 'Checkout', login: 'Sign in / register', account: 'Account details', orders: 'My orders' };
+    return m[k] || k.replace(/~/g, '/');
+  }
+
+  document.addEventListener('userReady', function (e) {
+    if (e.detail.user.email !== ADMIN_EMAIL) { document.getElementById('admin-denied').style.display = 'block'; return; }
+    document.getElementById('admin-content').style.display = 'block';
+    var db = firebase.firestore();
+    if (window.PRODUCTS) PRODUCTS.forEach(function (p) { productNames[p.slug.replace(/[^a-z0-9-]+/g, '_')] = p.name; });
+    Promise.all([db.collection('traffic').get(), db.collection('orders').get()]).then(function (res) {
+      res[0].forEach(function (d) { days[d.id] = d.data(); });
+      res[1].forEach(function (d) { var o = d.data(); if ((o.status || 'pending') !== 'cancelled') orders.push(o); });
+      document.getElementById('tr-loading').style.display = 'none';
+      document.getElementById('tr-body').style.display = '';
+      render();
+    }).catch(function (err) {
+      document.getElementById('tr-loading').textContent = 'Could not load: ' + err.message + (/permission/i.test(err.message) ? '. Publish the updated Firestore rules (firestore.rules) first.' : '');
+    });
+  });
+
+  document.querySelectorAll('.range-btn').forEach(function (b) {
+    b.addEventListener('click', function () {
+      document.querySelectorAll('.range-btn').forEach(function (x) { x.classList.toggle('is-on', x === b); x.setAttribute('aria-pressed', x === b ? 'true' : 'false'); });
+      range = Number(b.getAttribute('data-days'));
+      render();
+    });
+  });
+
+  function sumMaps(list, field) {
+    var out = {};
+    list.forEach(function (d) { var m = d[field] || {}; Object.keys(m).forEach(function (k) { out[k] = (out[k] || 0) + (m[k] || 0); }); });
+    return out;
+  }
+  function table(id, head, rows, empty) {
+    document.getElementById(id).innerHTML = '<thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+      (rows.length ? rows.join('') : '<tr><td colspan="' + head.length + '">' + (empty || 'Nothing yet.') + '</td></tr>') + '</tbody>';
+  }
+  function ranked(map, nameFn, total, limit) {
+    return Object.keys(map).sort(function (a, b) { return map[b] - map[a]; }).slice(0, limit || 12).map(function (k) {
+      var share = total ? Math.round(map[k] / total * 100) : 0;
+      return '<tr><td>' + esc(nameFn(k)) + '</td><td>' + n(map[k]) + '</td><td><span class="tr-bar" style="width:' + Math.max(2, share) + '%"></span> ' + share + '%</td></tr>';
+    });
+  }
+
+  function render() {
+    var dayList = lastDays(range);
+    var list = dayList.map(function (d) { return days[d] || {}; });
+    var ordersByDay = {};
+    orders.forEach(function (o) {
+      var d = o.createdAt ? chicagoDay(new Date(o.createdAt)) : '';
+      if (!ordersByDay[d]) ordersByDay[d] = { count: 0, total: 0 };
+      ordersByDay[d].count++; ordersByDay[d].total += Number(o.total) || 0;
+    });
+    var t = { views: 0, visitors: 0, newVisitors: 0, sessions: 0, signedIn: 0, orders: 0, sales: 0 };
+    list.forEach(function (d, i) {
+      t.views += d.views || 0; t.visitors += d.visitors || 0; t.newVisitors += d.newVisitors || 0;
+      t.sessions += d.sessions || 0; t.signedIn += d.signedInViews || 0;
+      var od = ordersByDay[dayList[i]]; if (od) { t.orders += od.count; t.sales += od.total; }
+    });
+    var conv = t.visitors ? (t.orders / t.visitors * 100) : 0;
+    document.getElementById('tr-summary').innerHTML = [
+      ['Visitors', n(t.visitors) + (t.newVisitors ? '<span class="pnl-sub">' + n(t.newVisitors) + ' first-time</span>' : '')],
+      ['Visits', n(t.sessions)],
+      ['Page views', n(t.views) + (t.sessions ? '<span class="pnl-sub">' + (t.views / t.sessions).toFixed(1) + ' per visit</span>' : '')],
+      ['Signed in', t.views ? Math.round(t.signedIn / t.views * 100) + '%<span class="pnl-sub">of page views</span>' : '—'],
+      ['Orders', n(t.orders) + '<span class="pnl-sub">' + money(t.sales) + '</span>'],
+      ['Order rate', t.visitors ? conv.toFixed(1) + '%<span class="pnl-sub">orders ÷ visitors</span>' : '—']
+    ].map(function (r) { return '<div class="pnl-tile"><span class="pnl-label">' + r[0] + '</span><span class="pnl-value">' + r[1] + '</span></div>'; }).join('');
+
+    drawChart(dayList, list, ordersByDay);
+    table('tr-daily', ['Day', 'Visitors', 'Visits', 'Page views', 'Orders'], dayList.slice().reverse().map(function (d) {
+      var x = days[d] || {}, od = ordersByDay[d] || { count: 0 };
+      return '<tr><td>' + esc(label(d)) + '</td><td>' + n(x.visitors) + '</td><td>' + n(x.sessions) + '</td><td>' + n(x.views) + '</td><td>' + n(od.count) + '</td></tr>';
+    }));
+
+    var refs = sumMaps(list, 'refs'), pages = sumMaps(list, 'pages'), landing = sumMaps(list, 'landing'), sources = sumMaps(list, 'sources'), devices = sumMaps(list, 'devices');
+    var products = {}; Object.keys(pages).forEach(function (k) { if (k.indexOf('products~') === 0) products[k] = pages[k]; });
+    var total = function (m) { return Object.keys(m).reduce(function (s, k) { return s + m[k]; }, 0); };
+    table('tr-refs', ['Source', 'Visits', 'Share'], ranked(refs, function (k) { return REF_NAMES[k] || k.replace(/_/g, '.'); }, total(refs)));
+    table('tr-pages', ['Page', 'Views', 'Share'], ranked(pages, pageName, total(pages)));
+    table('tr-products', ['Product', 'Views', 'Share'], ranked(products, pageName, total(products)));
+    table('tr-landing', ['Page', 'Visits', 'Share'], ranked(landing, pageName, total(landing)));
+    table('tr-sources', ['Link tag', 'Visits', 'Share'], ranked(sources, function (k) { return k; }, total(sources)), 'No tagged links yet.');
+    table('tr-devices', ['Device', 'Visits', 'Share'], ranked(devices, function (k) { return k === 'mobile' ? 'Phone / small screen' : 'Computer / tablet'; }, total(devices)));
+  }
+
+  // Single-series column chart: thin rounded columns, hairline grid, hover tooltip.
+  function drawChart(dayList, list, ordersByDay) {
+    var el = document.getElementById('tr-chart');
+    var W = Math.max(280, el.clientWidth || 800), H = 220, padL = 36, padB = 26, padT = 10;
+    var vals = list.map(function (d) { return d.visitors || 0; });
+    var max = Math.max(4, Math.max.apply(null, vals));
+    var step = Math.pow(10, Math.floor(Math.log10(max))); var top = Math.ceil(max / step) * step; if (top / step > 5 && step > 1) top = Math.ceil(max / (step / 2)) * (step / 2);
+    var plotW = W - padL - 8, plotH = H - padB - padT, band = plotW / dayList.length;
+    var bw = Math.max(2, Math.min(24, band - 2));
+    var svg = '<svg width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '">';
+    for (var g = 0; g <= 4; g++) {
+      var gy = padT + plotH - plotH * g / 4;
+      svg += '<line x1="' + padL + '" x2="' + (W - 8) + '" y1="' + gy + '" y2="' + gy + '" class="tr-grid-line"/>' +
+        '<text x="' + (padL - 6) + '" y="' + (gy + 4) + '" class="tr-axis" text-anchor="end">' + Math.round(top * g / 4) + '</text>';
+    }
+    var every = Math.ceil(dayList.length / 10);
+    dayList.forEach(function (d, i) {
+      var v = vals[i], h = top ? plotH * v / top : 0, x = padL + band * i + (band - bw) / 2, y = padT + plotH - h, r = Math.min(4, bw / 2, h);
+      if (h > 0) svg += '<path class="tr-col" d="M' + x + ',' + (padT + plotH) + 'V' + (y + r) + 'Q' + x + ',' + y + ' ' + (x + r) + ',' + y + 'H' + (x + bw - r) + 'Q' + (x + bw) + ',' + y + ' ' + (x + bw) + ',' + (y + r) + 'V' + (padT + plotH) + 'Z"/>';
+      svg += '<rect class="tr-hit" data-i="' + i + '" x="' + (padL + band * i) + '" y="' + padT + '" width="' + band + '" height="' + plotH + '"/>';
+      if (i % every === 0 || i === dayList.length - 1) svg += '<text x="' + (padL + band * i + band / 2) + '" y="' + (H - 8) + '" class="tr-axis" text-anchor="middle">' + esc(dayList.length === 1 ? 'Today' : label(d, true)) + '</text>';
+    });
+    svg += '</svg>';
+    el.innerHTML = svg;
+    var tip = document.getElementById('tr-tip');
+    el.querySelectorAll('.tr-hit').forEach(function (r) {
+      function show() {
+        var i = Number(r.getAttribute('data-i')), d = dayList[i], x = list[i], od = ordersByDay[d] || { count: 0 };
+        tip.innerHTML = '<strong>' + esc(label(d)) + '</strong><br>' + n(x.visitors) + ' visitor' + (x.visitors === 1 ? '' : 's') + ' · ' + n(x.views) + ' page views<br>' + n(od.count) + ' order' + (od.count === 1 ? '' : 's');
+        tip.style.display = 'block';
+        var bx = Number(r.getAttribute('x')) + Number(r.getAttribute('width')) / 2;
+        tip.style.left = Math.min(Math.max(bx - 80, 0), W - 170) + 'px';
+        r.classList.add('is-hover');
+      }
+      function hide() { tip.style.display = 'none'; r.classList.remove('is-hover'); }
+      r.addEventListener('mouseenter', show); r.addEventListener('mouseleave', hide);
+      r.addEventListener('touchstart', show, { passive: true });
+    });
+  }
+  window.addEventListener('resize', function () { if (document.getElementById('tr-body').style.display !== 'none') render(); });
+</script>
+</body>
+</html>
