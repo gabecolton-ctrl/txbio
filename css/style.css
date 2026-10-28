@@ -1216,3 +1216,39 @@ details.inc-done summary strong { color: var(--frost); }
 .inc-items .inc-rlot { width: 120px; }
 #dash-body h2 { margin-top: 36px; font-size: 1.25rem; }
 .free-ship-more { display: inline-block; margin-top: 12px; padding: 8px 16px; font-size: 0.88rem; }
+
+/* Entry confirmation (js/splash.js) */
+html { scrollbar-gutter: stable; }
+html.entry-open, html.entry-open body { overflow: hidden; }
+#entry-gate { position: fixed; inset: 0; z-index: 10000; background: var(--ink-deep); display: flex; align-items: center; justify-content: center; padding: 24px 16px; overflow-y: auto; transition: background-color 0.6s ease; }
+#entry-gate .entry-inner { width: 100%; max-width: 860px; display: grid; grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); gap: 40px; align-items: center; transition: opacity 0.45s ease; }
+#entry-gate .entry-mark svg { width: 100%; max-width: 340px; height: auto; display: block; margin: 0 auto; overflow: visible; }
+.entry-mark .bond { stroke: var(--mint); stroke-width: 1.4; opacity: 0.55; fill: none; stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw 1.6s ease-out 0.3s forwards; }
+.entry-mark .node { fill: var(--mint); opacity: 0; animation: appear 0.6s ease-out forwards; }
+.entry-mark .ring { fill: none; stroke: var(--mint); stroke-width: 2.2; opacity: 0; animation: appear 0.6s ease-out forwards; }
+/* In flight the star is shown fully drawn (moving it would restart the draw-in). */
+.entry-flying .bond { stroke: var(--mint); stroke-width: 1.4; opacity: 0.55; fill: none; stroke-dasharray: 100; stroke-dashoffset: 0; animation: none; }
+.entry-flying .node { fill: var(--mint); opacity: 1; animation: none; }
+.entry-flying .ring { fill: none; stroke: var(--mint); stroke-width: 2.2; opacity: 1; animation: none; }
+.entry-mark .halo, .entry-flying .halo { fill: var(--mint); opacity: 0.07; }
+.entry-copy h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.6rem, 4vw, 2.3rem); margin: 0 0 12px; color: var(--frost); }
+.entry-lead { color: var(--muted); margin: 0 0 14px; }
+.entry-list { margin: 0 0 22px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
+.entry-list li { position: relative; padding-left: 28px; color: var(--frost); line-height: 1.5; }
+.entry-list li::before { content: ''; position: absolute; left: 4px; top: 0.45em; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--mint); }
+.entry-actions { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+.entry-actions .btn { padding: 13px 24px; font-size: 1rem; }
+.entry-leave { color: var(--muted); }
+.entry-fine { margin: 18px 0 0; font-size: 0.82rem; color: var(--faint); }
+#entry-gate.is-leaving { background-color: transparent; pointer-events: none; }
+#entry-gate.is-leaving .entry-inner { opacity: 0; }
+.entry-flying { transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.4s ease; pointer-events: none; }
+.entry-flying.entry-landed { opacity: 0; }
+.entry-target-hidden { opacity: 0 !important; }
+.hero-mark svg, header .logo-icon { transition: opacity 0.4s ease; }
+@media (max-width: 720px) {
+  #entry-gate { align-items: flex-start; }
+  #entry-gate .entry-inner { grid-template-columns: 1fr; gap: 18px; text-align: left; }
+  #entry-gate .entry-mark svg { max-width: 170px; margin: 8px 0 0; }
+}
+@media (prefers-reduced-motion: reduce) { .entry-flying { transition: none; } }
