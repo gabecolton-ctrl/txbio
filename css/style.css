@@ -1297,9 +1297,12 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .bat svg path, .bat svg ellipse { fill: #24160d; stroke: rgba(255, 160, 60, 0.75); stroke-width: 1; }
 .bat .wing { transform-origin: 32px 15px; animation: bat-flap 0.32s ease-in-out infinite alternate; }
 @keyframes bat-flap { from { transform: scaleY(1); } to { transform: scaleY(0.35); } }
-.bat-1 { animation: bat-fly-1 11s linear 2.8s infinite; }
-.bat-2 { width: 32px; height: 16px; animation: bat-fly-2 14s linear 6s infinite; }
-.bat-3 { width: 24px; height: 12px; animation: bat-fly-3 17s linear 9.5s infinite; }
+/* Negative delays: bats are already mid-flight when they fade in. */
+.bat-1 { animation: bat-fly-1 11s linear -4s infinite; }
+.bat-2 { width: 32px; height: 16px; animation: bat-fly-2 14s linear 1.2s infinite; }
+.bat-3 { width: 24px; height: 12px; animation: bat-fly-3 17s linear -7s infinite; }
+.bat > svg { animation: bat-in 0.9s ease-out both; }
+@keyframes bat-in { from { opacity: 0; } to { opacity: 1; } }
 @keyframes bat-fly-1 {
   0% { left: -12%; top: 18%; opacity: 0; transform: rotate(-8deg); } 6% { opacity: 0.9; }
   30% { left: 30%; top: 4%; transform: rotate(6deg); } 55% { left: 62%; top: 22%; transform: rotate(-6deg); }
