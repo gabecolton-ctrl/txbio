@@ -5,7 +5,8 @@
 // Admin > Promo codes (set the affiliate email there).
 
 var Referral = (function () {
-  var KEY = 'txbio_ref_code';
+  var KEY = 'txbio_ref_code';     // the code checkout should apply (a discount)
+  var AFF_KEY = 'txbio_ref_aff';   // who referred this shopper (kept even if another code is used)
   var DAYS = 30;
 
   function clean(v) {
@@ -21,6 +22,15 @@ var Referral = (function () {
     return '';
   }
   function clear() { try { localStorage.removeItem(KEY); } catch (e) {} }
+  // The referral link this shopper arrived through (last one, 30 days).
+  function affiliate() {
+    try {
+      var r = JSON.parse(localStorage.getItem(AFF_KEY) || 'null');
+      if (r && r.code && Date.now() - r.at < DAYS * 864e5) return r.code;
+      localStorage.removeItem(AFF_KEY);
+    } catch (e) {}
+    return '';
+  }
 
   function toast(code) {
     var t = document.createElement('div');
@@ -87,7 +97,10 @@ var Referral = (function () {
         seenBefore = seenList.indexOf(code) !== -1;
         if (!seenBefore) { seenList.push(code); localStorage.setItem('txbio_ref_seen', JSON.stringify(seenList.slice(-20))); }
       } catch (e) {}
-      try { localStorage.setItem(KEY, JSON.stringify({ code: code, at: Date.now() })); } catch (e) {}
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ code: code, at: Date.now() }));
+        localStorage.setItem(AFF_KEY, JSON.stringify({ code: code, at: Date.now() }));
+      } catch (e) {}
       document.addEventListener('DOMContentLoaded', function () {
         if (isNew) toast(code);
         countVisit(code, !seenBefore);
@@ -95,5 +108,5 @@ var Referral = (function () {
     }
   }
 
-  return { get: get, clear: clear, clean: clean };
+  return { get: get, clear: clear, clean: clean, affiliate: affiliate };
 })();

@@ -136,6 +136,22 @@ test('promo end date: works through its last day (Dallas time), refused after', 
   await rejects(run(seed('2026-10-24'), { promoCode: 'spooky31' }), 'failed-precondition', 'expired');
 });
 
+test('referral link keeps the affiliate even when a sale code is used', async () => {
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }]), {
+    'promoCodes/FRANNY': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'franny@example.com', timesUsed: 3 },
+    'promoCodes/SPOOKY31': { discountPercent: 31, type: 'always', active: true }
+  });
+  const { order, db } = await run(seed, { promoCode: 'SPOOKY31', referralCode: 'franny' });
+  assert.strictEqual(order.promoCode, 'SPOOKY31');
+  assert.strictEqual(order.affiliateCode, 'FRANNY');
+  assert.strictEqual(db.store.get('promoCodes/FRANNY').timesUsed, 4);
+  // A referral code that isn't an affiliate's is ignored; self-referral too.
+  const r2 = await run(Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'promoCodes/SPOOKY31': { discountPercent: 31, type: 'always', active: true } }), { promoCode: 'SPOOKY31', referralCode: 'SPOOKY31' });
+  assert.strictEqual(r2.order.affiliateCode, 'SPOOKY31');
+  const self = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'promoCodes/ME': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'buyer@example.com' } });
+  assert.strictEqual((await run(self, { referralCode: 'ME' })).order.affiliateCode, '');
+});
+
 test('matches the browser test order: promo 10% + $25 credit', async () => {
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }]), {
     'promoCodes/BOOP12': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'aff@example.com', timesUsed: 3, totalDiscounted: 10 },

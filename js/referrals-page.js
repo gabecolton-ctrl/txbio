@@ -121,7 +121,7 @@
     renderTraffic(traffic || []);
     var fmt = window.Credits ? Credits.formatCents : function (c) { return '$' + (c / 100).toFixed(2); };
     $('ref-stats').innerHTML = [
-      ['Orders placed with your code', placed, ''],
+      ['Orders from your link or code', placed, ''],
       ['Orders shipped', shipped, 'these earned you credit'],
       ['Credit earned', fmt(Math.max(0, earnedCents)), 'all time'],
       ['Credit balance', fmt(account ? account.balanceCents : 0), 'ready to use at checkout']
