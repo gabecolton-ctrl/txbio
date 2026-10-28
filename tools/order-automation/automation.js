@@ -11,7 +11,7 @@
 
 const crypto = require('crypto');
 const cfg = require('./config');
-const { parsePayment, verify } = require('./parse');
+const { parsePayment, verify, verifySignature } = require('./parse');
 const Msg = require('./messages');
 
 const PAY_METHODS = ['venmo', 'cashapp', 'bank', 'bitcoin'];
@@ -25,7 +25,7 @@ async function findOrder(db, orderNumber) {
 }
 
 // ---------- 1. payments ----------
-async function handlePayment({ db, mailer, mail, log, dryRun }) {
+async function handlePayment({ db, mailer, mail, log, dryRun, sigCheck = verifySignature }) {
   const p = parsePayment(mail);
   if (!p) return 'not-payment';
   const key = keyFor(p);
@@ -39,8 +39,12 @@ async function handlePayment({ db, mailer, mail, log, dryRun }) {
     return status === 'confirmed' ? 'payment-confirmed' : 'payment-' + status;
   };
 
-  const trust = verify(p.app, p.fromAddress, mail.headerLines);
-  if (!trust.ok) return save('untrusted', trust.why);
+  let trust = verify(p.app, p.fromAddress, mail.headerLines);
+  if (!trust.ok) {
+    const sig = await sigCheck(p.app, mail.__raw, mail.headerLines).catch((e) => ({ ok: false, why: 'signature check failed: ' + e.message }));
+    if (!sig.ok) return save('untrusted', trust.why + '; ' + sig.why);
+    trust = sig;
+  }
   if (!p.orderNumber) return save('unmatched', 'no order number in the payment note');
   const doc = await findOrder(db, p.orderNumber);
   if (!doc) return save('unmatched', 'no order ' + p.orderNumber);
@@ -138,7 +142,7 @@ async function handleUnpaid({ db, mailer, doc, log, dryRun }) {
   return 'unpaid-waiting';
 }
 
-async function run({ db, mailbox, mailer, log = console.log, dryRun = false }) {
+async function run({ db, mailbox, mailer, log = console.log, dryRun = false, sigCheck }) {
   const tally = {};
   const count = (k) => { tally[k] = (tally[k] || 0) + 1; };
   if (dryRun) log('DRY RUN: nothing will be changed or sent.');
@@ -148,7 +152,7 @@ async function run({ db, mailbox, mailer, log = console.log, dryRun = false }) {
     const mails = await mailbox.recent(since);
     log('Payment emails to look at: ' + mails.length);
     for (const mail of mails) {
-      try { count(await handlePayment({ db, mailer, mail, log, dryRun })); }
+      try { count(await handlePayment({ db, mailer, mail, log, dryRun, sigCheck })); }
       catch (err) { count('error'); log('Payment email error: ' + err.message); }
     }
   } else {

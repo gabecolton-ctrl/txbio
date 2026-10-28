@@ -21,7 +21,9 @@ function imapMailbox({ host, port = 993, user, pass, folder = 'INBOX' }) {
           }
           if (uids.size) {
             for await (const msg of client.fetch([...uids].join(','), { source: true }, { uid: true })) {
-              out.push(await simpleParser(msg.source));
+              const parsed = await simpleParser(msg.source);
+              parsed.__raw = msg.source; // for the DKIM signature check
+              out.push(parsed);
             }
           }
         } finally { lock.release(); }

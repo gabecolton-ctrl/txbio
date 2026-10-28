@@ -7,6 +7,7 @@
 // pass DKIM for venmo.com. Emails that fail this are never used to confirm.
 
 const { PAYMENT_SENDERS } = require('./config');
+const { dkimVerify } = require('mailauth/lib/dkim/verify');
 
 const ORDER_RE = /\bTXB-[A-Z0-9]{4,12}\b/i;
 
@@ -36,6 +37,21 @@ function verify(app, fromAddress, headerLines) {
   const dkims = [...ar.matchAll(/dkim=(\w+)[^;]*?header\.(?:d|i)=@?([a-z0-9.-]+)/g)];
   if (dkims.some((d) => d[1] === 'pass' && onDomain(d[2], domains))) return { ok: true };
   return { ok: false, why: 'DKIM/DMARC did not pass for ' + domains[0] };
+}
+
+// Fallback when the mail server doesn't label incoming mail: check the
+// DKIM signature ourselves (DNS lookup of the sender's public key). Must be
+// a passing signature by the payment app's domain, aligned with From, and
+// covering the whole body (signatures with an l= length limit are refused,
+// since text could be appended after the signed part).
+async function verifySignature(app, raw, headerLines, opts = {}) {
+  const domains = PAYMENT_SENDERS[app] || [];
+  if (!raw) return { ok: false, why: 'no raw message to check' };
+  const sigs = (headerLines || []).filter((h) => String(h.key).toLowerCase() === 'dkim-signature').map((h) => String(h.line));
+  if (sigs.some((l) => /(^|[;\s])l\s*=\s*\d/i.test(l.replace(/^dkim-signature:/i, '')))) return { ok: false, why: 'DKIM signature only covers part of the message' };
+  const res = await dkimVerify(Buffer.isBuffer(raw) ? raw : Buffer.from(raw), opts.resolver ? { resolver: opts.resolver } : undefined);
+  const good = (res.results || []).some((r) => r.status && r.status.result === 'pass' && onDomain(String(r.signingDomain || '').toLowerCase(), domains) && r.status.aligned);
+  return good ? { ok: true, via: 'signature' } : { ok: false, why: 'no valid ' + domains[0] + ' DKIM signature' };
 }
 
 function money(s) {
@@ -81,4 +97,4 @@ function parsePayment(mail) {
   };
 }
 
-module.exports = { parsePayment, verify, authResults, ORDER_RE };
+module.exports = { parsePayment, verify, verifySignature, authResults, ORDER_RE };

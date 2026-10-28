@@ -3,7 +3,7 @@
 const assert = require('assert');
 const { simpleParser } = require('mailparser');
 const { run } = require('./automation');
-const { verify, parsePayment } = require('./parse');
+const { verify, parsePayment, verifySignature } = require('./parse');
 
 function fakeDb(seed) {
   const data = JSON.parse(JSON.stringify(seed));
@@ -61,7 +61,8 @@ async function scenario(seed, mails, opts = {}) {
   const sent = [];
   const mailer = { send: async (to, m) => { if (opts.mailFails) throw new Error('SMTP down'); sent.push({ to, subject: m.subject, text: m.text }); } };
   const logs = [];
-  const tally = await run({ db, mailbox: mails ? { recent: async () => mails } : null, mailer, log: (m) => logs.push(m), dryRun: !!opts.dryRun });
+  const sigCheck = opts.sigCheck || (async () => ({ ok: false, why: 'no signature (test)' }));
+  const tally = await run({ db, mailbox: mails ? { recent: async () => mails } : null, mailer, log: (m) => logs.push(m), dryRun: !!opts.dryRun, sigCheck });
   return { db, sent, tally, logs };
 }
 
@@ -99,7 +100,7 @@ test('matching Venmo payment confirms the order and emails the customer once', a
   assert.strictEqual(sent.length, 1);
   assert.ok(/Payment received for order TXB-ABC123/.test(sent[0].subject));
   // Next run sees the same email: nothing happens.
-  const again = await run({ db, mailbox: { recent: async () => [m] }, mailer: { send: async () => sent.push(1) }, log: () => {} });
+  const again = await run({ db, mailbox: { recent: async () => [m] }, mailer: { send: async () => sent.push(1) }, log: () => {}, sigCheck: async () => ({ ok: false, why: 'x' }) });
   assert.strictEqual(again.seen, 1);
   assert.strictEqual(sent.length, 1);
 });
@@ -187,6 +188,44 @@ test('email failure: order still confirmed; reminder retried next run', async ()
   assert.strictEqual(r.db.data['orders/o1'].status, 'confirmed');
   const r2 = await scenario({ 'orders/o1': ORDER({ createdAt: ago(3) }) }, null, { mailFails: true });
   assert.ok(!r2.db.data['orders/o1'].paymentReminderSentAt);
+});
+
+// Real DKIM: sign a message with a test key for "venmo.com" and serve that
+// key from a fake DNS resolver, then tamper with it.
+const { dkimSign } = require('mailauth/lib/dkim/sign');
+const cryptoMod = require('crypto');
+async function signedVenmo({ tamper, lTag, domain = 'venmo.com' } = {}) {
+  const { privateKey, publicKey } = cryptoMod.generateKeyPairSync('rsa', { modulusLength: 2048 });
+  const pem = privateKey.export({ type: 'pkcs1', format: 'pem' });
+  const pub = publicKey.export({ type: 'spki', format: 'der' }).toString('base64');
+  const msg = raw({ from: 'Venmo <venmo@venmo.com>', subject: 'Jo Smith paid you $94.69', body: 'Jo Smith paid you $94.69\n\nOrder TXB-ABC123', id: 'sig' + Math.random() });
+  const signed = await dkimSign(msg, { signatureData: [{ signingDomain: domain, selector: 's1', privateKey: pem, algorithm: 'rsa-sha256', canonicalization: 'relaxed/relaxed', maxBodyLength: lTag ? 20 : undefined }] });
+  let full = signed.signatures + msg;
+  if (tamper) full = full.replace('$94.69', '$9.69');
+  const resolver = async (name, type) => { if (type === 'TXT' && name === 's1._domainkey.' + domain) return [['v=DKIM1; k=rsa; p=' + pub]]; const e = new Error('nx'); e.code = 'ENOTFOUND'; throw e; };
+  const parsed = await simpleParser(full);
+  parsed.__raw = Buffer.from(full);
+  return { parsed, resolver };
+}
+
+test('signature fallback: genuine venmo.com signature trusted; tampered, wrong domain, partial (l=) refused', async () => {
+  let r = await signedVenmo();
+  assert.ok((await verifySignature('venmo', r.parsed.__raw, r.parsed.headerLines, { resolver: r.resolver })).ok);
+  r = await signedVenmo({ tamper: true });
+  assert.ok(!(await verifySignature('venmo', r.parsed.__raw, r.parsed.headerLines, { resolver: r.resolver })).ok);
+  r = await signedVenmo({ domain: 'venmo-payments.co' });
+  assert.ok(!(await verifySignature('venmo', r.parsed.__raw, r.parsed.headerLines, { resolver: r.resolver })).ok);
+  r = await signedVenmo({ lTag: true });
+  const partial = await verifySignature('venmo', r.parsed.__raw, r.parsed.headerLines, { resolver: r.resolver });
+  assert.ok(!partial.ok && /part of the message/.test(partial.why));
+});
+
+test('no Authentication-Results header but a valid signature: order confirmed', async () => {
+  const r = await signedVenmo();
+  const { db } = await scenario({ 'orders/o1': ORDER() }, [r.parsed], {
+    sigCheck: (app, rawMsg, hl) => verifySignature(app, rawMsg, hl, { resolver: r.resolver })
+  });
+  assert.strictEqual(db.data['orders/o1'].status, 'confirmed');
 });
 
 (async () => {

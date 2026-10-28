@@ -2,11 +2,17 @@
   "name": "txbio-order-automation",
   "private": true,
   "description": "Confirms Venmo/Cash App payments from payment emails, reminds and cancels unpaid orders",
-  "engines": { "node": ">=20" },
-  "scripts": { "start": "node index.js", "test": "node test.js" },
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node index.js",
+    "test": "node test.js"
+  },
   "dependencies": {
     "firebase-admin": "^12.7.0",
     "imapflow": "^1.0.164",
+    "mailauth": "^4.13.3",
     "mailparser": "^3.7.1",
     "nodemailer": "^6.9.16"
   }
