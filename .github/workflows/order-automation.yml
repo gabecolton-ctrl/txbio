@@ -1,0 +1,52 @@
+# Every ~15 minutes: confirms Venmo / Cash App payments from the payment
+# emails, reminds unpaid orders, and cancels ones that stay unpaid.
+# Setup: tools/order-automation/README.md. Does nothing until its secrets exist.
+name: Order automation
+
+on:
+  schedule:
+    - cron: '3,18,33,48 * * * *'
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Dry run: only log what would happen'
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+  actions: write             # lets the keep-alive step re-enable this workflow
+
+concurrency:
+  group: order-automation
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tools/order-automation/package-lock.json
+      - run: npm ci --omit=dev
+        working-directory: tools/order-automation
+      - run: node test.js
+        working-directory: tools/order-automation
+      - run: node index.js
+        working-directory: tools/order-automation
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          ORDERS_SMTP_PASSWORD: ${{ secrets.ORDERS_SMTP_PASSWORD }}
+          PAYMENT_IMAP_HOST: ${{ secrets.PAYMENT_IMAP_HOST }}
+          PAYMENT_IMAP_USER: ${{ secrets.PAYMENT_IMAP_USER }}
+          PAYMENT_IMAP_PASSWORD: ${{ secrets.PAYMENT_IMAP_PASSWORD }}
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.dry_run) && '1' || '' }}
+      - name: Keep this schedule active
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/order-automation.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}

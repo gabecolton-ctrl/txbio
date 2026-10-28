@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272143">
+<link rel="stylesheet" href="css/style.css?v=202610272157">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272143"></script>
+<script src="js/splash.js?v=202610272157"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -147,20 +147,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272143"></script>
-<script src="js/cart.js?v=202610272143"></script>
-<script src="js/site-config.js?v=202610272143"></script>
-<script src="js/payment-apps.js?v=202610272143"></script>
-<script src="js/account.js?v=202610272143"></script>
-<script src="js/inventory.js?v=202610272143"></script>
-<script src="js/promos.js?v=202610272143"></script>
-<script src="js/credits.js?v=202610272143"></script>
-<script src="js/order-emails.js?v=202610272143"></script>
-<script src="js/nav-auth.js?v=202610272143"></script>
-<script src="js/profile-gate.js?v=202610272143"></script>
-<script src="js/auth-guard.js?v=202610272143"></script>
-<script src="js/main.js?v=202610272143"></script>
-<script src="js/nav-toggle.js?v=202610272143"></script>
+<script src="js/firebase-config.js?v=202610272157"></script>
+<script src="js/cart.js?v=202610272157"></script>
+<script src="js/site-config.js?v=202610272157"></script>
+<script src="js/payment-apps.js?v=202610272157"></script>
+<script src="js/account.js?v=202610272157"></script>
+<script src="js/inventory.js?v=202610272157"></script>
+<script src="js/promos.js?v=202610272157"></script>
+<script src="js/credits.js?v=202610272157"></script>
+<script src="js/order-emails.js?v=202610272157"></script>
+<script src="js/nav-auth.js?v=202610272157"></script>
+<script src="js/profile-gate.js?v=202610272157"></script>
+<script src="js/auth-guard.js?v=202610272157"></script>
+<script src="js/main.js?v=202610272157"></script>
+<script src="js/nav-toggle.js?v=202610272157"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -287,7 +287,11 @@
     if (order.cancelledBy === 'customer' && order.cancelledAt) {
       parts.push('Cancelled by the customer ' + new Date(order.cancelledAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + (order.cancelReason ? ' (' + order.cancelReason.replace(/^Customer: /, '') + ')' : '') + '.');
     }
+    if (order.cancelledBy === 'system' && order.cancelledAt) {
+      parts.push('Cancelled automatically ' + new Date(order.cancelledAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ' (not paid in time).');
+    }
     if (order.restockedAt) parts.push('Stock returned.');
+    if (order.creditRefundedAt && order.cancelledBy === 'system') parts.push('Store credit returned.');
     if (order.cancellationEmailSentAt) {
       parts.push('Cancellation email sent ' + new Date(order.cancellationEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + '.');
     }
@@ -521,7 +525,9 @@
             '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
           '</div>' +
         '</div>' +
-        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
+        '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') +
+          (order.paymentConfirmedBy ? '<br><span style="color:var(--mint);">Paid: confirmed ' + (/^auto/.test(order.paymentConfirmedBy) ? 'automatically from the ' + (order.paymentMethod === 'cashapp' ? 'Cash App' : 'Venmo') + ' payment email' : escapeAttr(order.paymentConfirmedBy)) + (order.paymentPayer ? ' (paid by ' + escapeAttr(order.paymentPayer) + ')' : '') + (order.paymentConfirmedAt ? ', ' + new Date(order.paymentConfirmedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : '') + '.</span>' : '') +
+          (order.paymentReminderSentAt && (order.status || 'pending') === 'pending' ? '<br><span style="color:var(--text-light);">Payment reminder emailed ' + new Date(order.paymentReminderSentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '.</span>' : '') + '</p>' +
         '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
         '<div class="tracking-row">' +

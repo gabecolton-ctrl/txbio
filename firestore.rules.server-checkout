@@ -129,6 +129,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Payment emails seen by the order automation (tools/order-automation).
+    // Admin only; the job uses the service account, which bypasses rules.
+    match /paymentEmails/{id} {
+      allow read, update, delete: if isAdmin();
+    }
+
     // Supplier shipments on their way (Admin → Incoming). Admin only; the
     // UPS tracker uses the service account, which bypasses these rules.
     match /incoming/{id} {
