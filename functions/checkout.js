@@ -80,11 +80,13 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
 
   let promo = null;
   if (promoCode && !atCost) {
-    const [promoSnap, priorOrders] = await Promise.all([
+    const [promoSnap, priorOrders, roleSnap] = await Promise.all([
       db.collection('promoCodes').doc(promoCode).get(),
-      db.collection('orders').where('userId', '==', uid).limit(1).get()
+      db.collection('orders').where('userId', '==', uid).limit(1).get(),
+      userEmail ? db.collection('roleMembers').doc(userEmail).get() : Promise.resolve(null)
     ]);
-    const check = P.checkPromo(promoSnap.exists ? promoSnap.data() : null, promoCode, priorOrders.empty, now || new Date());
+    const roles = roleSnap && roleSnap.exists ? (roleSnap.data().roles || []) : [];
+    const check = P.checkPromo(promoSnap.exists ? promoSnap.data() : null, promoCode, priorOrders.empty, now || new Date(), roles);
     if (!check.valid) throw new HttpsError('failed-precondition', check.reason);
     promo = check;
   }

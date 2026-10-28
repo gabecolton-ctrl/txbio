@@ -104,8 +104,10 @@
     });
     function check(user) {
       if (!user) { location.href = 'login.html?redirect=' + encodeURIComponent(location.pathname + location.search); return; }
-      if (user.email !== ADMIN_EMAIL) return msg('Packing slips are only available to the site administrator.');
-      load();
+      Staff.role(user).then(function (r) {
+        if (!Staff.canOpen(r, 'admin-slip.html')) return msg('Packing slips are only available to the site staff.');
+        load();
+      });
     }
   });
 })();

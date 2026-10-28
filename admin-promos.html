@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281015">
+<link rel="stylesheet" href="css/style.css?v=202610281027">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281015"></script>
+<script src="js/splash.js?v=202610281027"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -81,6 +81,7 @@
               <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
               <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
               <li><a href="admin-traffic.html" id="nav-admin-traffic-link">Traffic</a></li>
+              <li><a href="admin-roles.html" id="nav-admin-roles-link">Roles</a></li>
             </ul>
           </details>
         </li>
@@ -203,28 +204,34 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281015"></script>
-<script src="js/cart.js?v=202610281015"></script>
-<script src="js/promos.js?v=202610281015"></script>
-<script src="js/nav-auth.js?v=202610281015"></script>
-<script src="js/profile-gate.js?v=202610281015"></script>
-<script src="js/auth-guard.js?v=202610281015"></script>
-<script src="js/main.js?v=202610281015"></script>
-<script src="js/nav-toggle.js?v=202610281015"></script>
+<script src="js/firebase-config.js?v=202610281027"></script>
+<script src="js/cart.js?v=202610281027"></script>
+<script src="js/promos.js?v=202610281027"></script>
+<script src="js/staff.js?v=202610281027"></script>
+<script src="js/nav-auth.js?v=202610281027"></script>
+<script src="js/profile-gate.js?v=202610281027"></script>
+<script src="js/auth-guard.js?v=202610281027"></script>
+<script src="js/main.js?v=202610281027"></script>
+<script src="js/nav-toggle.js?v=202610281027"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var editingCode = null;
+  var staffRole = null;
+  var roleCodes = {}; // codes behind a customer role (set on Admin → Roles)
 
   document.addEventListener('userReady', function (e) {
-    var user = e.detail.user;
-    if (user.email !== ADMIN_EMAIL) {
-      document.getElementById('admin-denied').style.display = 'block';
-      return;
-    }
-    document.getElementById('admin-content').style.display = 'block';
-    loadPromoTable();
+    Staff.role(e.detail.user).then(function (r) {
+      if (!Staff.canOpen(r, 'admin-promos.html')) {
+        document.getElementById('admin-denied').style.display = 'block';
+        return;
+      }
+      staffRole = r;
+      document.getElementById('admin-content').style.display = 'block';
+      loadPromoTable();
+    });
   });
 
+  function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function typeLabel(type) {
     if (type === 'first-order') return 'First Order Only';
     if (type === 'repeat-order') return 'Repeat Orders Only';
@@ -259,6 +266,8 @@
         else prompt('Copy this link:', url);
       }
 
+      roleCodes = {};
+      codes.forEach(function (c) { if (c.roleOnly) roleCodes[c.code] = 1; });
       codes.sort(function (a, b) { return a.code < b.code ? -1 : 1; });
 
       codes.forEach(function (promo) {
@@ -267,13 +276,17 @@
           '<td>' + promo.code + '</td>' +
           '<td class="ref-link-cell"><code class="ref-link">' + refLink(promo.code) + '</code><button type="button" class="ref-copy" data-copy="' + refLink(promo.code) + '">Copy</button></td>' +
           '<td>' + promo.discountPercent + '%</td>' +
-          '<td>' + typeLabel(promo.type) + '</td>' +
+          '<td>' + (promo.roleOnly ? esc(promo.label || 'Role') + ' only' : typeLabel(promo.type)) + '</td>' +
           '<td>' + (!promo.active ? 'Inactive' : Promos.isExpired(promo) ? 'Ended ' + promo.endsOn : 'Active' + (promo.endsOn ? '<br><span style="color:var(--text-light);font-size:0.82rem;">through ' + promo.endsOn + '</span>' : '')) + '</td>' +
           '<td>' + (promo.affiliateEmail ? promo.affiliateEmail + '<br><a href="referrals.html?as=' + encodeURIComponent(promo.affiliateEmail) + '" class="ref-preview">View their dashboard</a>' : '&mdash;') + '</td>' +
           '<td>' + (promo.timesUsed || 0) + '</td>' +
           '<td>$' + (promo.totalDiscounted || 0).toFixed(2) + '</td>' +
-          '<td><a href="#" data-edit-code="' + promo.code + '" style="margin-right:12px;">Edit</a><a href="#" data-delete-code="' + promo.code + '" style="color:var(--danger);">Delete</a></td>';
+          (promo.roleOnly
+            // Codes behind a customer role are set on Admin → Roles.
+            ? '<td>' + (staffRole === 'admin' ? '<a href="admin-roles.html">Edit on Roles</a>' : '<span style="color:var(--text-light);">Set on Roles</span>') + '</td>'
+            : '<td><a href="#" data-edit-code="' + promo.code + '" style="margin-right:12px;">Edit</a><a href="#" data-delete-code="' + promo.code + '" style="color:var(--danger);">Delete</a></td>');
         rowsEl.appendChild(tr);
+        if (promo.roleOnly) { tr.querySelector('.ref-copy').addEventListener('click', function () { copyText(this); }); return; }
 
         tr.querySelector('.ref-copy').addEventListener('click', function () { copyText(this); });
 
@@ -314,6 +327,10 @@
 
     if (affiliateEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(affiliateEmail)) {
       alert('Please enter a valid affiliate email, or leave it blank.');
+      return;
+    }
+    if (roleCodes[code]) {
+      alert(code + ' is the code behind a customer role. Change it on Admin → Roles.');
       return;
     }
     if (!code || isNaN(discount) || discount < 1 || discount > 100) {

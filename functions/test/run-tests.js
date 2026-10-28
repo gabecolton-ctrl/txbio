@@ -230,6 +230,14 @@ test('promo rules: unknown, inactive, first-order only', async () => {
   await rejects(run(Object.assign({}, base, { 'promoCodes/FIRST': { discountPercent: 10, type: 'first-order', active: true }, 'orders/prev': { userId: 'u1' } }), { promoCode: 'FIRST' }), 'failed-precondition', 'first order');
 });
 
+test('role-only code (Employee pricing): members only', async () => {
+  const base = Object.assign(cart([{ slug: 'cagrilintide', qty: 1 }]), { 'promoCodes/EMPLOYEE': { discountPercent: 20, type: 'always', active: true, roleOnly: 'employee' } });
+  await rejects(run(base, { promoCode: 'EMPLOYEE' }), 'failed-precondition', 'does not exist');
+  const { order } = await run(Object.assign({ 'roleMembers/buyer@example.com': { roles: ['employee'] } }, base), { promoCode: 'EMPLOYEE' });
+  assert.strictEqual(order.promoCode, 'EMPLOYEE');
+  assert.ok(order.discount > 0);
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');
