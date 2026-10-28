@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281412">
+<link rel="stylesheet" href="css/style.css?v=202610281417">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281412"></script>
+<script src="js/splash.js?v=202610281417"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -192,6 +192,7 @@
           <tr id="summary-discount-row" style="display:none;"><td id="summary-discount-label">Discount</td><td id="summary-discount">-$0</td></tr>
           <tr id="summary-bogo-row" style="display:none;"><td>BOGO Discount</td><td id="summary-bogo">-$0</td></tr>
           <tr><td>Tax (8.25%)</td><td id="summary-tax">$0</td></tr>
+          <tr id="summary-fee-row" style="display:none;"><td id="summary-fee-label">Processing fee</td><td id="summary-fee">$0</td></tr>
           <tr id="summary-credit-row" style="display:none;"><td>Store credit</td><td id="summary-credit">-$0</td></tr>
           <tr><td style="font-weight:700; color:var(--bg-darker);">Total</td><td id="summary-total" style="font-weight:700; font-size:1.2rem;">$0</td></tr>
         </table>
@@ -333,30 +334,30 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281412"></script>
-<script src="js/analytics.js?v=202610281412"></script>
-<script src="js/referral.js?v=202610281412"></script>
-<script src="js/site-config.js?v=202610281412"></script>
-<script src="js/cart.js?v=202610281412"></script>
-<script src="js/quotes.js?v=202610281412"></script>
-<script src="js/account.js?v=202610281412"></script>
-<script src="js/inventory.js?v=202610281412"></script>
-<script src="js/promos.js?v=202610281412"></script>
-<script src="js/bogo.js?v=202610281412"></script>
-<script src="js/at-cost.js?v=202610281412"></script>
-<script src="js/free-shipping.js?v=202610281412"></script>
-<script src="js/local-delivery.js?v=202610281412"></script>
-<script src="js/attestation.js?v=202610281412"></script>
-<script src="js/loyalty.js?v=202610281412"></script>
-<script src="js/payment-apps.js?v=202610281412"></script>
-<script src="js/credits.js?v=202610281412"></script>
-<script src="js/order-emails.js?v=202610281412"></script>
-<script src="js/staff.js?v=202610281412"></script>
-<script src="js/nav-auth.js?v=202610281412"></script>
-<script src="js/profile-gate.js?v=202610281412"></script>
-<script src="js/auth-guard.js?v=202610281412"></script>
-<script src="js/main.js?v=202610281412"></script>
-<script src="js/nav-toggle.js?v=202610281412"></script>
+<script src="js/firebase-config.js?v=202610281417"></script>
+<script src="js/analytics.js?v=202610281417"></script>
+<script src="js/referral.js?v=202610281417"></script>
+<script src="js/site-config.js?v=202610281417"></script>
+<script src="js/cart.js?v=202610281417"></script>
+<script src="js/quotes.js?v=202610281417"></script>
+<script src="js/account.js?v=202610281417"></script>
+<script src="js/inventory.js?v=202610281417"></script>
+<script src="js/promos.js?v=202610281417"></script>
+<script src="js/bogo.js?v=202610281417"></script>
+<script src="js/at-cost.js?v=202610281417"></script>
+<script src="js/free-shipping.js?v=202610281417"></script>
+<script src="js/local-delivery.js?v=202610281417"></script>
+<script src="js/attestation.js?v=202610281417"></script>
+<script src="js/loyalty.js?v=202610281417"></script>
+<script src="js/payment-apps.js?v=202610281417"></script>
+<script src="js/credits.js?v=202610281417"></script>
+<script src="js/order-emails.js?v=202610281417"></script>
+<script src="js/staff.js?v=202610281417"></script>
+<script src="js/nav-auth.js?v=202610281417"></script>
+<script src="js/profile-gate.js?v=202610281417"></script>
+<script src="js/auth-guard.js?v=202610281417"></script>
+<script src="js/main.js?v=202610281417"></script>
+<script src="js/nav-toggle.js?v=202610281417"></script>
 <script>
   // Bank transfer details live in Firestore at settings/bankTransfer
   // (fields: accountNumber, routingNumber, optional bankName and accountName),
@@ -494,6 +495,20 @@
     }
     var totalBeforeCredit = total;
     total = Math.round((total - creditUsedCents / 100) * 100) / 100;
+    // Processing fee for the chosen payment method (Admin → Payments), on what's left to pay.
+    var pmEl = document.querySelector('input[name="payment-method"]:checked');
+    var pm = pmEl ? pmEl.value : 'inquiry';
+    var paymentFee = window.PaymentApps && PaymentApps.customerFee ? PaymentApps.customerFee(paymentFees, pm, total) : 0;
+    total = Math.round((total + paymentFee) * 100) / 100;
+    var feeRow = document.getElementById('summary-fee-row');
+    if (paymentFee > 0) {
+      var f = paymentFees[pm] || {};
+      document.getElementById('summary-fee-label').textContent = 'Processing fee (' + (PaymentApps.LABELS[pm] || pm) + (Number(f.pct) ? ' ' + Number(f.pct) + '%' : '') + (Number(f.flat) ? (Number(f.pct) ? ' + ' : ' ') + '$' + Number(f.flat).toFixed(2) : '') + ')';
+      document.getElementById('summary-fee').textContent = '$' + paymentFee.toFixed(2);
+      feeRow.style.display = 'table-row';
+    } else {
+      feeRow.style.display = 'none';
+    }
     var creditRow = document.getElementById('summary-credit-row');
     if (creditUsedCents > 0) {
       document.getElementById('summary-credit').textContent = '-$' + (creditUsedCents / 100).toFixed(2);
@@ -552,9 +567,30 @@
       totalBeforeCredit: totalBeforeCredit,
       creditUsed: creditUsedCents / 100,
       creditUsedCents: creditUsedCents,
+      paymentFee: paymentFee,
       total: total
     };
   }
+
+  // Processing fees per method (settings/paymentFees); labels show them.
+  var paymentFees = null;
+  document.addEventListener('userReady', function () {
+    firebase.firestore().collection('settings').doc('paymentFees').get().then(function (d) {
+      paymentFees = d.exists ? d.data() : null;
+      if (!window.PaymentApps || !PaymentApps.chargesCustomer(paymentFees)) return;
+      document.querySelectorAll('input[name="payment-method"]').forEach(function (r) {
+        var f = paymentFees[r.value];
+        var pct = f ? Number(f.pct) || 0 : 0, flat = f ? Number(f.flat) || 0 : 0;
+        var label = document.querySelector('label[for="' + r.id + '"]');
+        if (!label || !(pct || flat) || label.querySelector('.pm-fee')) return;
+        var s = document.createElement('span');
+        s.className = 'pm-fee';
+        s.textContent = ' (+' + (pct ? pct + '%' : '') + (pct && flat ? ' + ' : '') + (flat ? '$' + flat.toFixed(2) : '') + ' processing fee)';
+        label.appendChild(s);
+      });
+      computeAndDisplayTotals();
+    }).catch(function () {});
+  });
 
   function applyBogoDiscount(items) {
     return Bogo.getEligibleSlugs().then(function (eligibleSlugs) {
@@ -901,6 +937,7 @@
 
   document.querySelectorAll('input[name="payment-method"]').forEach(function (radio) {
     radio.addEventListener('change', function () {
+      if (typeof computeAndDisplayTotals === 'function' && currentCartItems) computeAndDisplayTotals();
       var btn = document.getElementById('order-submit-btn');
       if (radio.value === 'bitcoin') btn.textContent = 'Submit & Show Bitcoin Payment Details';
       else if (radio.value === 'bank') btn.textContent = 'Submit & Show Bank Transfer Details';
@@ -935,6 +972,7 @@
       formData.append('BOGO Discount', '-$' + order.bogoDiscount.toFixed(2) + ' (' + bogoLines + ')');
     }
     formData.append('Tax', '$' + order.tax.toFixed(2));
+    if (order.paymentFee > 0) formData.append('Processing fee', '$' + order.paymentFee.toFixed(2));
     if (order.creditUsed > 0) formData.append('Store Credit Used', '-$' + order.creditUsed.toFixed(2));
     if (order.affiliateCode) formData.append('Affiliate Code', order.affiliateCode);
     formData.append('Total', '$' + order.total.toFixed(2));
@@ -999,6 +1037,7 @@
       formData.append('BOGO Discount', '-$' + order.bogoDiscount.toFixed(2) + ' (' + bogoLines2 + ')');
     }
     formData.append('Tax', '$' + order.tax.toFixed(2));
+    if (order.paymentFee > 0) formData.append('Processing fee', '$' + order.paymentFee.toFixed(2));
     formData.append('Total', '$' + order.total.toFixed(2));
     formData.append('Shipping Address', addressText || '(not provided)');
     formData.append('Next Steps', paymentInstructions);
@@ -1189,6 +1228,7 @@
           totalBeforeCredit: totals.totalBeforeCredit,
           creditUsed: totals.creditUsed,
           creditUsedCents: totals.creditUsedCents,
+          paymentFee: totals.paymentFee || 0,
           affiliateCode: affiliateCode,
           total: totals.total,
           shippingAddress: checkoutAddress,

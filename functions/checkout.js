@@ -130,6 +130,10 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     }
   }
 
+  // Processing fee for the payment method, added to what the buyer pays (Admin → Payments).
+  const feeSnap = await db.collection('settings').doc('paymentFees').get();
+  const feeSettings = feeSnap.exists ? feeSnap.data() : null;
+
   const needs = P.stockNeeds(lines);
   const orderRef = db.collection('orders').doc();
   const creditRef = userEmail ? db.collection('credits').doc(userEmail) : null;
@@ -155,6 +159,8 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       creditBalanceCents: credit ? (credit.balanceCents || 0) : 0,
       useCredit: !!credit
     });
+    totals.paymentFee = PaymentApps.customerFee(feeSettings, paymentMethod, totals.total);
+    totals.total = P.round2(totals.total + totals.paymentFee);
 
     // Stock: tracked records go down (never below zero); the rest backorders.
     const available = new Map();
@@ -198,6 +204,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       totalBeforeCredit: totals.totalBeforeCredit,
       creditUsed: totals.creditUsed,
       creditUsedCents: totals.creditUsedCents,
+      paymentFee: totals.paymentFee,
       affiliateCode,
       total: totals.total,
       shippingAddress: address,
