@@ -55,15 +55,10 @@
     document.documentElement.classList.add('entry-open');
 
     var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    // The star it will land on, hidden until it arrives.
-    function target() {
-      var hero = document.querySelector('.hero-mark svg');
-      if (hero && hero.getBoundingClientRect().width > 0) return hero;
-      var logo = document.querySelector('header .logo-icon');
-      return logo && logo.getBoundingClientRect().width > 0 ? logo : null;
-    }
+    // The home page star waits (paused at the very start of its draw-in)
+    // until the visitor confirms, then plays as the welcome star shrinks away.
+    document.documentElement.classList.add('hero-paused');
     document.addEventListener('DOMContentLoaded', function () {
-      var t = target(); if (t) t.classList.add('entry-target-hidden');
       var btn = document.getElementById('entry-yes');
       if (btn) btn.focus();
     });
@@ -71,44 +66,40 @@
     function finish() {
       document.documentElement.classList.remove('entry-open');
       gate.remove();
-      document.querySelectorAll('.entry-target-hidden').forEach(function (el) { el.classList.remove('entry-target-hidden'); });
     }
 
     gate.addEventListener('click', function (e) {
       if (!e.target.closest || !e.target.closest('#entry-yes')) return;
       try { localStorage.setItem(ENTRY_KEY, String(Date.now())); } catch (err) {}
       var star = gate.querySelector('.entry-mark svg');
-      var t = target();
-      gate.classList.add('is-leaving'); // fades the backdrop and text
-      if (!t || !star || reduce) {
-        if (t) t.classList.remove('entry-target-hidden');
-        setTimeout(finish, reduce ? 250 : 600);
+      var hero = document.querySelector('.hero-mark svg');
+      if (hero && hero.getBoundingClientRect().width === 0) hero = null;
+      gate.classList.add('is-leaving'); // text and backdrop fade
+      if (reduce || !star) {
+        document.documentElement.classList.remove('hero-paused');
+        setTimeout(finish, 300);
         return;
       }
-      // Glide: pin the star where it is, then move/scale it onto the target.
+      if (hero && hero.getBoundingClientRect().bottom > window.innerHeight) window.scrollTo(0, 0);
+      // Shrink the star into the centre of where the home page star sits
+      // (or in place on other pages), fading as it goes.
       var from = star.getBoundingClientRect();
-      if (t.scrollIntoView && t.getBoundingClientRect().bottom > window.innerHeight) window.scrollTo(0, 0);
-      var to = t.getBoundingClientRect();
-      var isLogo = t.tagName === 'IMG';
-      // The logo icon's star fills ~80% of its tile; the hero svg matches 1:1.
-      var tw = isLogo ? to.width * 0.86 : to.width, th = isLogo ? to.height * 0.8 : to.height;
-      var tx = to.left + (to.width - tw) / 2, ty = to.top + (to.height - th) / 2;
-      star.style.position = 'fixed';
-      star.style.left = from.left + 'px'; star.style.top = from.top + 'px';
-      star.style.width = from.width + 'px'; star.style.height = from.height + 'px';
-      star.style.margin = '0'; star.style.zIndex = '10001';
-      document.body.appendChild(star);
-      star.classList.add('entry-flying');
+      var dx = 0, dy = 0;
+      if (hero) {
+        var to = hero.getBoundingClientRect();
+        dx = (to.left + to.width / 2) - (from.left + from.width / 2);
+        dy = (to.top + to.height * 0.52) - (from.top + from.height * 0.52);
+      }
+      star.classList.add('entry-shrinking');
       requestAnimationFrame(function () {
         requestAnimationFrame(function () {
-          star.style.transform = 'translate(' + (tx - from.left) + 'px,' + (ty - from.top) + 'px) scale(' + (tw / from.width) + ',' + (th / from.height) + ')';
+          star.style.transform = 'translate(' + dx + 'px,' + dy + 'px) rotate(-30deg) scale(0.04)';
+          star.style.opacity = '0';
         });
       });
-      setTimeout(function () {
-        t.classList.remove('entry-target-hidden'); // crossfade: target in, flying star out
-        star.classList.add('entry-landed');
-        setTimeout(function () { star.remove(); finish(); }, 450);
-      }, 950);
+      // As it vanishes, the home page star starts drawing itself in.
+      setTimeout(function () { document.documentElement.classList.remove('hero-paused'); }, 280);
+      setTimeout(finish, 900);
     });
     return;
   }

@@ -1226,11 +1226,7 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 .entry-mark .bond { stroke: var(--mint); stroke-width: 1.4; opacity: 0.55; fill: none; stroke-dasharray: 100; stroke-dashoffset: 100; animation: draw 1.6s ease-out 0.3s forwards; }
 .entry-mark .node { fill: var(--mint); opacity: 0; animation: appear 0.6s ease-out forwards; }
 .entry-mark .ring { fill: none; stroke: var(--mint); stroke-width: 2.2; opacity: 0; animation: appear 0.6s ease-out forwards; }
-/* In flight the star is shown fully drawn (moving it would restart the draw-in). */
-.entry-flying .bond { stroke: var(--mint); stroke-width: 1.4; opacity: 0.55; fill: none; stroke-dasharray: 100; stroke-dashoffset: 0; animation: none; }
-.entry-flying .node { fill: var(--mint); opacity: 1; animation: none; }
-.entry-flying .ring { fill: none; stroke: var(--mint); stroke-width: 2.2; opacity: 1; animation: none; }
-.entry-mark .halo, .entry-flying .halo { fill: var(--mint); opacity: 0.07; }
+.entry-mark .halo { fill: var(--mint); opacity: 0.07; }
 .entry-copy h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.6rem, 4vw, 2.3rem); margin: 0 0 12px; color: var(--frost); }
 .entry-lead { color: var(--muted); margin: 0 0 14px; }
 .entry-list { margin: 0 0 22px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
@@ -1240,15 +1236,18 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 .entry-actions .btn { padding: 13px 24px; font-size: 1rem; }
 .entry-leave { color: var(--muted); }
 .entry-fine { margin: 18px 0 0; font-size: 0.82rem; color: var(--faint); }
-#entry-gate.is-leaving { background-color: transparent; pointer-events: none; }
-#entry-gate.is-leaving .entry-inner { opacity: 0; }
-.entry-flying { transform-origin: 0 0; transition: transform 0.9s cubic-bezier(0.65, 0, 0.35, 1), opacity 0.4s ease; pointer-events: none; }
-.entry-flying.entry-landed { opacity: 0; }
-.entry-target-hidden { opacity: 0 !important; }
-.hero-mark svg, header .logo-icon { transition: opacity 0.4s ease; }
+#entry-gate.is-leaving { background-color: transparent; pointer-events: none; transition: background-color 0.75s ease 0.1s; }
+#entry-gate .entry-copy { transition: opacity 0.3s ease, transform 0.3s ease; }
+#entry-gate.is-leaving .entry-copy { opacity: 0; transform: translateY(6px); }
+/* Confirm: the star shrinks away into where the home page star sits. */
+#entry-gate .entry-mark svg.entry-shrinking { position: relative; z-index: 2; transform-origin: 50% 52%; transition: transform 0.8s cubic-bezier(0.55, 0, 0.2, 1), opacity 0.55s ease 0.25s; }
+/* The home page star waits at the start of its draw-in until then. */
+html.hero-paused .hero-mark .bond, html.hero-paused .hero-mark .node, html.hero-paused .hero-mark .ring { animation-play-state: paused; }
+html.hero-paused .hero-mark .halo { opacity: 0; }
+.hero-mark .halo { transition: opacity 0.8s ease 0.4s; }
 @media (max-width: 720px) {
   #entry-gate { align-items: flex-start; }
   #entry-gate .entry-inner { grid-template-columns: 1fr; gap: 18px; text-align: left; }
   #entry-gate .entry-mark svg { max-width: 170px; margin: 8px 0 0; }
 }
-@media (prefers-reduced-motion: reduce) { .entry-flying { transition: none; } }
+@media (prefers-reduced-motion: reduce) { #entry-gate .entry-mark svg.entry-shrinking { transition: none; } }
