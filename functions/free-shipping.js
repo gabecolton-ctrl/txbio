@@ -5,8 +5,8 @@
 // own shipping option and don't qualify.
 var FreeShipping = (function () {
   var MIN = 250;          // order subtotal after discounts, before tax
-  var OPTION = '20';      // the shipping option that becomes free: "3-5 Business Days"
-  var PLATINUM_OPTION = '40'; // Platinum rewards members (js/loyalty.js): every option free, 2nd Day suggested
+  var OPTION = '15';      // the shipping option that becomes free: "2nd Day — $15" (the only option)
+  var PLATINUM_OPTION = '15'; // Platinum rewards members (js/loyalty.js): free 2nd Day
 
   function round2(n) { return Math.round(n * 100) / 100; }
   function qualifies(amount) { return Number(amount) >= MIN; }
