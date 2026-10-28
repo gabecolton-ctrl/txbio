@@ -97,6 +97,21 @@ document.addEventListener('DOMContentLoaded', function () {
       }
       if (user.email === ADMIN_EMAIL) {
         document.querySelectorAll('li.nav-admin').forEach(function (li) { li.style.display = 'list-item'; });
+      } else if (window.Staff) {
+        // Managers get the Admin menu with only the pages they may use.
+        var showManager = function (r) {
+          if (r !== 'manager') return;
+          document.querySelectorAll('li.nav-admin').forEach(function (li) {
+            li.style.display = 'list-item';
+            li.querySelectorAll('ul a').forEach(function (a) {
+              var page = (a.getAttribute('href') || '').split('/').pop().split('?')[0];
+              var item = a.closest('li');
+              if (item) item.style.display = Staff.canOpen('manager', page) ? 'list-item' : 'none';
+            });
+          });
+        };
+        if (Staff.cachedRole(user) === 'manager') showManager('manager');
+        Staff.role(user).then(showManager);
       }
       if (floatingCart) {
         floatingCart.style.display = 'flex';

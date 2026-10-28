@@ -29,6 +29,7 @@ var FamilyPricing = (function () {
   // Family price for one vial of unitSlug whose regular price is listPrice.
   function price(unitSlug, listPrice) {
     if (!state) return listPrice;
+    if (state.percent) return round2(listPrice * (1 - state.percent / 100));
     var cost = state.costs[unitSlug];
     if (typeof cost !== 'number') return listPrice;
     return Math.min(listPrice, round2(cost + AtCost.markupFor(unitSlug, state.markup)));
@@ -37,6 +38,7 @@ var FamilyPricing = (function () {
   // What a cart line costs a family member (cases = 10 vials at family price).
   function lineTotal(item) {
     if (!state) return round2(item.price * item.qty);
+    if (state.percent) return round2(item.price * item.qty * (1 - state.percent / 100));
     return AtCost.priceLines([item], state.costs, state.markup).atCostTotal;
   }
 
@@ -54,19 +56,43 @@ var FamilyPricing = (function () {
         });
       }, Promise.resolve(null));
     }).then(function (check) {
-      if (!check) return null;
+      if (!check) return rolePercent(db, user);
       // Costs (~100 docs) are remembered for 10 minutes in this tab so
       // browsing page to page doesn't re-read them all.
       var key = 'txbio_family_costs_' + user.uid, cached = null;
       try { cached = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) {}
-      if (cached && Date.now() - cached.at < 10 * 60 * 1000) return { code: check.code, markup: check.markupPerVial, costs: cached.costs };
+      var label = check.label || 'Family pricing';
+      if (cached && Date.now() - cached.at < 10 * 60 * 1000) return { code: check.code, markup: check.markupPerVial, costs: cached.costs, label: label };
       return db.collection('costs').get().then(function (snap) {
         var costs = {};
         snap.forEach(function (d) { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
         try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), costs: costs })); } catch (e) {}
-        return { code: check.code, markup: check.markupPerVial, costs: costs };
+        return { code: check.code, markup: check.markupPerVial, costs: costs, label: label };
       });
     });
+  }
+
+  // Customer roles with percent-off pricing (Admin → Roles, e.g. Employee).
+  function rolePercent(db, user) {
+    return db.collection('roleMembers').doc(String(user.email || '').toLowerCase()).get().then(function (m) {
+      var roles = m.exists ? (m.data().roles || []) : [];
+      return roles.reduce(function (p, id) {
+        return p.then(function (found) {
+          if (found) return found;
+          return db.collection('customerRoles').doc(id).get().then(function (r) {
+            var role = r.exists ? r.data() : null;
+            var pct = role && Number(role.percent);
+            if (!role || role.type !== 'percent' || !(pct > 0 && pct <= 100) || !role.code) return null;
+            return db.collection('promoCodes').doc(role.code).get().then(function (c) {
+              // Only while the role's code is on (and not past its end date).
+              var today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date());
+              if (!c.exists || !c.data().active || (c.data().endsOn && today > c.data().endsOn)) return null;
+              return { code: role.code, percent: Number(c.data().discountPercent) || pct, label: (role.name || 'Member') + ' pricing' };
+            });
+          });
+        });
+      }, Promise.resolve(null));
+    }).catch(function () { return null; });
   }
 
   function loadUnits() {
@@ -86,7 +112,7 @@ var FamilyPricing = (function () {
     if (readyPromise) return readyPromise;
     readyPromise = new Promise(function (resolve) {
       document.addEventListener('DOMContentLoaded', function () {
-        if (!window.firebase || !window.AtCost) return resolve(null);
+        if (!window.firebase || !window.AtCost || !firebase.firestore) return resolve(null);
         if (!firebase.apps.length && typeof firebaseConfig !== 'undefined') firebase.initializeApp(firebaseConfig); // const in firebase-config.js, not on window
         // Firebase can report "signed out" for a moment while it restores the
         // session (same as auth-guard.js), so a first empty answer isn't final.
@@ -180,11 +206,14 @@ var FamilyPricing = (function () {
     if (priceEl && !document.querySelector('.family-price-note')) {
       var note = document.createElement('p');
       note.className = 'family-price-note';
-      note.textContent = 'Family pricing';
+      note.textContent = state.label || 'Family pricing';
       priceEl.parentNode.insertBefore(note, priceEl.nextSibling);
     }
   }
 
   ready();
-  return { ready: ready, active: active, price: price, lineTotal: lineTotal, money: money };
+  // atCost(): family/at-cost pricing (one shipping option, no free shipping);
+  // false for percent-off role pricing.
+  function atCost() { return !!state && !state.percent; }
+  return { ready: ready, active: active, atCost: atCost, price: price, lineTotal: lineTotal, money: money };
 })();

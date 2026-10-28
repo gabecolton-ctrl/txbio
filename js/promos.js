@@ -86,6 +86,17 @@ var Promos = (function () {
       if (isExpired(promo)) {
         return { valid: false, reason: 'This promo code has expired.' };
       }
+      if (promo.roleOnly) {
+        // A role's code (e.g. Employee pricing) works only for that role's members.
+        var u = firebase.auth().currentUser;
+        var email = String((u && u.email) || '').toLowerCase();
+        if (!email) return { valid: false, reason: 'This promo code does not exist.' };
+        return ensureDb().collection('roleMembers').doc(email).get().then(function (m) {
+          var roles = m.exists ? (m.data().roles || []) : [];
+          if (roles.indexOf(promo.roleOnly) === -1) return { valid: false, reason: 'This promo code does not exist.' };
+          return { valid: true, discountPercent: promo.discountPercent, code: promo.code, roleOnly: promo.roleOnly, label: promo.label || '' };
+        }).catch(function () { return { valid: false, reason: 'This promo code does not exist.' }; });
+      }
       if (promo.type === 'first-order' && !isFirstOrder) {
         return { valid: false, reason: 'This code is only valid on your first order.' };
       }

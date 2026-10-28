@@ -98,8 +98,11 @@ function bogoDiscount(lines, eligibleSlugs) {
 }
 
 // Validates a promo code document the way js/promos.js does.
-function checkPromo(promo, code, isFirstOrder, now) {
+// roles: the buyer's customer roles (roleMembers/{email}.roles); a code made
+// for a role (roleOnly, e.g. Employee pricing) works only for its members.
+function checkPromo(promo, code, isFirstOrder, now, roles) {
   if (!promo) return { valid: false, reason: 'This promo code does not exist.' };
+  if (promo.roleOnly && (roles || []).indexOf(promo.roleOnly) === -1) return { valid: false, reason: 'This promo code does not exist.' };
   if (!promo.active) return { valid: false, reason: 'This promo code is no longer active.' };
   if (promo.endsOn) {
     const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(now || new Date());

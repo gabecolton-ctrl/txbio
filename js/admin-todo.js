@@ -6,6 +6,9 @@
   var STALE_DAYS = 3;
   var LOW_KEY = 'txbio_todo_low';
   var data = null;
+  var role = null;
+  // Sections about stock, suppliers and costs are the admin's, not a manager's.
+  var ADMIN_ONLY = { incoming: 1, lots: 1, stock: 1, cost: 1 };
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function money(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -30,6 +33,7 @@
     var low = Number($('todo-low').value);
     if (!(low >= 0)) low = 3;
     function add(key, title, note, items, cta, count) {
+      if (role !== 'admin' && ADMIN_ONLY[key]) return;
       if (!items.length) { clear.push(title); return; }
       count = count == null ? items.length : count;
       sections.push('<section class="todo-section" id="todo-' + key + '">' +
@@ -196,7 +200,13 @@
   }
 
   document.addEventListener('userReady', function (e) {
-    if (e.detail.user.email !== ADMIN_EMAIL) { $('admin-denied').style.display = 'block'; return; }
+    Staff.role(e.detail.user).then(function (r) {
+      if (!Staff.canOpen(r, 'admin-todo.html')) { $('admin-denied').style.display = 'block'; return; }
+      role = r;
+      start();
+    });
+  });
+  function start() {
     $('admin-content').style.display = 'block';
     try { var saved = localStorage.getItem(LOW_KEY); if (saved !== null && saved !== '') $('todo-low').value = saved; } catch (e2) {}
     $('todo-low').addEventListener('input', function () {
@@ -204,5 +214,5 @@
       if (data) build();
     });
     load();
-  });
+  }
 })();

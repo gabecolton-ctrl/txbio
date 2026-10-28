@@ -17,6 +17,17 @@ service cloud.firestore {
       return signedIn() && request.auth.token.email != null ? request.auth.token.email.lower() : '';
     }
 
+    // Staff: the admin, or a manager (staff/{email}.role == 'manager', set on
+    // Admin → Roles). Managers handle orders & shipping, customers and promo
+    // codes; sales numbers, costs, payments and traffic stay admin-only.
+    function isManager() {
+      return signedIn() && exists(/databases/$(database)/documents/staff/$(myEmail()))
+        && get(/databases/$(database)/documents/staff/$(myEmail())).data.role == 'manager';
+    }
+    function isStaff() {
+      return isAdmin() || isManager();
+    }
+
     // Each user's cart — only they can read/write it.
     match /carts/{userId} {
       allow read, write: if signedIn() && request.auth.uid == userId;
@@ -25,7 +36,7 @@ service cloud.firestore {
     // Each user's profile info (name, org, address) — only they can write it;
     // they and the admin (Customers page) can read it.
     match /users/{userId} {
-      allow read: if signedIn() && (request.auth.uid == userId || isAdmin());
+      allow read: if signedIn() && (request.auth.uid == userId || isStaff());
       allow write: if signedIn() && request.auth.uid == userId;
     }
 
@@ -34,8 +45,8 @@ service cloud.firestore {
     // them (status, tracking, cancellations, affiliate credit bookkeeping).
     match /orders/{orderId} {
       allow create: if false;
-      allow read: if signedIn() && (request.auth.uid == resource.data.userId || isAdmin());
-      allow update: if isAdmin() || (
+      allow read: if signedIn() && (request.auth.uid == resource.data.userId || isStaff());
+      allow update: if isStaff() || (
         // A buyer may cancel their own order while it's still pending
         // (not yet confirmed or paid). The admin page then returns stock
         // and any store credit (admin-orders.html).
@@ -54,6 +65,8 @@ service cloud.firestore {
     match /inventory/{productSlug} {
       allow read: if signedIn();
       allow write: if isAdmin();
+      // Managers cancel orders, which puts stock back.
+      allow update: if isManager() && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['qty', 'updatedAt']) && request.resource.data.qty is int && request.resource.data.qty >= 0;
     }
 
     // Promo codes — anyone signed in can read (to preview a code at
@@ -61,6 +74,9 @@ service cloud.firestore {
     match /promoCodes/{code} {
       allow read: if signedIn();
       allow write: if isAdmin();
+      // Managers manage ordinary codes, but not the ones behind customer roles.
+      allow create, update: if isManager() && !('roleOnly' in request.resource.data) && (resource == null || !('roleOnly' in resource.data));
+      allow delete: if isManager() && !('roleOnly' in resource.data);
     }
 
     // BOGO eligibility per product — public (the catalog shows BOGO badges to
@@ -81,12 +97,14 @@ service cloud.firestore {
     // only the admin (and the server checkout, when credit is spent) can
     // change it.
     match /credits/{email} {
-      allow read: if isAdmin() || myEmail() == email;
-      allow write: if isAdmin();
+      allow read: if isStaff() || myEmail() == email;
+      allow create, update: if isStaff();
+      allow delete: if isAdmin();
 
       match /entries/{entryId} {
-        allow read: if isAdmin() || myEmail() == email;
-        allow write: if isAdmin();
+        allow read: if isStaff() || myEmail() == email;
+        allow create: if isStaff();
+        allow update, delete: if isAdmin();
       }
     }
 
@@ -131,13 +149,29 @@ service cloud.firestore {
 
     // Lot numbers / expiration dates (js/lots.js). Admin only.
     match /lots/{id} {
-      allow read, write: if isAdmin();
+      allow read, write: if isStaff(); // managers ship orders, which assigns lots
     }
 
     // Supplier shipments on their way (Admin → Incoming). Admin only; the
     // UPS tracker uses the service account, which bypasses these rules.
     match /incoming/{id} {
       allow read, write: if isAdmin();
+    }
+
+    // Roles (Admin → Roles). Only the admin assigns them.
+    match /staff/{email} {
+      allow read: if isAdmin() || myEmail() == email;
+      allow write: if isAdmin();
+    }
+    // Customer roles with their own pricing (e.g. Employee). Readable by any
+    // signed-in buyer so their prices can be shown; membership is private.
+    match /customerRoles/{roleId} {
+      allow read: if signedIn();
+      allow write: if isAdmin();
+    }
+    match /roleMembers/{email} {
+      allow read: if isStaff() || myEmail() == email;
+      allow write: if isAdmin();
     }
 
     // Visits that arrived through a referral link (?code=CODE, js/referral.js).
@@ -150,7 +184,7 @@ service cloud.firestore {
         && request.resource.data.get('days', {}).size() <= 1000;
     }
     match /refTraffic/{code} {
-      allow read: if isAdmin()
+      allow read: if isStaff()
         || (signedIn() && get(/databases/$(database)/documents/promoCodes/$(code)).data.get('affiliateEmail', '') == myEmail());
       allow create: if exists(/databases/$(database)/documents/promoCodes/$(code))
         && refTrafficShape()

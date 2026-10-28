@@ -153,10 +153,18 @@
     var user = e.detail.user;
     var email = String(user.email || '').toLowerCase();
     var as = new URLSearchParams(location.search).get('as');
-    if (as && user.email === ADMIN_EMAIL) {
-      email = as.trim().toLowerCase();
-      $('ref-lead').textContent = 'Admin preview: what ' + email + ' sees.';
-    }
+    var who = as && window.Staff ? Staff.role(user) : Promise.resolve(user.email === ADMIN_EMAIL ? 'admin' : null);
+    who.then(function (r) {
+      // Staff (admin or manager) can preview an affiliate's dashboard.
+      if (as && (r === 'admin' || r === 'manager')) {
+        email = as.trim().toLowerCase();
+        $('ref-lead').textContent = 'Staff preview: what ' + email + ' sees.';
+      }
+      show(email);
+    });
+  });
+
+  function show(email) {
     var db = firebase.firestore();
     db.collection('promoCodes').where('affiliateEmail', '==', email).get().then(function (snap) {
       var codes = [];
@@ -173,5 +181,5 @@
     }).catch(function (err) {
       $('ref-loading').textContent = 'Could not load your referrals: ' + err.message;
     });
-  });
+  }
 })();

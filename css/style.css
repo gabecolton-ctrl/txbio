@@ -1341,3 +1341,11 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .egg-close { background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; padding: 6px; }
 .egg-fine { font-size: 0.78rem !important; color: var(--faint) !important; margin: 12px 0 0 !important; }
 @media (max-width: 860px) { .egg-hint { font-size: 0.82rem; text-align: left; margin-top: 10px; } }
+
+/* Admin → Roles */
+.role-add-row { display: flex; gap: 10px; align-items: stretch; }
+.role-add-row input { flex: 1; margin-bottom: 0; min-width: 0; }
+.role-add-row .btn { white-space: nowrap; }
+.role-type { border: 0; padding: 0; margin: 0 0 14px; }
+.role-type legend { font-weight: 600; margin-bottom: 8px; padding: 0; }
+.role-type .checkbox-row { margin: 6px 0; }

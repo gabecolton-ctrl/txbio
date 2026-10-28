@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281015">
+<link rel="stylesheet" href="css/style.css?v=202610281027">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281015"></script>
+<script src="js/splash.js?v=202610281027"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -83,6 +83,7 @@
               <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
               <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
               <li><a href="admin-traffic.html" id="nav-admin-traffic-link">Traffic</a></li>
+              <li><a href="admin-roles.html" id="nav-admin-roles-link">Roles</a></li>
             </ul>
           </details>
         </li>
@@ -329,27 +330,28 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281015"></script>
-<script src="js/analytics.js?v=202610281015"></script>
-<script src="js/referral.js?v=202610281015"></script>
-<script src="js/site-config.js?v=202610281015"></script>
-<script src="js/cart.js?v=202610281015"></script>
-<script src="js/account.js?v=202610281015"></script>
-<script src="js/inventory.js?v=202610281015"></script>
-<script src="js/promos.js?v=202610281015"></script>
-<script src="js/bogo.js?v=202610281015"></script>
-<script src="js/at-cost.js?v=202610281015"></script>
-<script src="js/free-shipping.js?v=202610281015"></script>
-<script src="js/attestation.js?v=202610281015"></script>
-<script src="js/loyalty.js?v=202610281015"></script>
-<script src="js/payment-apps.js?v=202610281015"></script>
-<script src="js/credits.js?v=202610281015"></script>
-<script src="js/order-emails.js?v=202610281015"></script>
-<script src="js/nav-auth.js?v=202610281015"></script>
-<script src="js/profile-gate.js?v=202610281015"></script>
-<script src="js/auth-guard.js?v=202610281015"></script>
-<script src="js/main.js?v=202610281015"></script>
-<script src="js/nav-toggle.js?v=202610281015"></script>
+<script src="js/firebase-config.js?v=202610281027"></script>
+<script src="js/analytics.js?v=202610281027"></script>
+<script src="js/referral.js?v=202610281027"></script>
+<script src="js/site-config.js?v=202610281027"></script>
+<script src="js/cart.js?v=202610281027"></script>
+<script src="js/account.js?v=202610281027"></script>
+<script src="js/inventory.js?v=202610281027"></script>
+<script src="js/promos.js?v=202610281027"></script>
+<script src="js/bogo.js?v=202610281027"></script>
+<script src="js/at-cost.js?v=202610281027"></script>
+<script src="js/free-shipping.js?v=202610281027"></script>
+<script src="js/attestation.js?v=202610281027"></script>
+<script src="js/loyalty.js?v=202610281027"></script>
+<script src="js/payment-apps.js?v=202610281027"></script>
+<script src="js/credits.js?v=202610281027"></script>
+<script src="js/order-emails.js?v=202610281027"></script>
+<script src="js/staff.js?v=202610281027"></script>
+<script src="js/nav-auth.js?v=202610281027"></script>
+<script src="js/profile-gate.js?v=202610281027"></script>
+<script src="js/auth-guard.js?v=202610281027"></script>
+<script src="js/main.js?v=202610281027"></script>
+<script src="js/nav-toggle.js?v=202610281027"></script>
 <script>
   // Bank transfer details live in Firestore at settings/bankTransfer
   // (fields: accountNumber, routingNumber, optional bankName and accountName),
@@ -591,7 +593,9 @@
         appliedPromoCode = result.code;
         appliedDiscountPercent = result.discountPercent;
         msg.style.color = 'var(--mint-dark)';
-        msg.textContent = result.code + ' applied — ' + result.discountPercent + '% off.' + (referralAuto ? ' (applied for you)' : '');
+        msg.textContent = result.roleOnly
+          ? (result.label || 'Member pricing') + ' applied (' + result.code + ') — ' + result.discountPercent + '% off.'
+          : result.code + ' applied — ' + result.discountPercent + '% off.' + (referralAuto ? ' (applied for you)' : '');
         input.disabled = true;
         btn.style.display = 'none';
       } else if (referralAuto) {
@@ -644,7 +648,7 @@
     btn.style.display = 'none';
     msg.style.display = 'block';
     msg.style.color = 'var(--mint-dark)';
-    msg.textContent = automatic ? 'Family pricing applied (' + ac.code + ').' : ac.code + ' applied: at-cost pricing.';
+    msg.textContent = automatic ? (ac.label || 'Family pricing') + ' applied (' + ac.code + ').' : ac.code + ' applied: at-cost pricing.';
     var sel = document.getElementById('shipping-select');
     sel.innerHTML = '';
     var opt = document.createElement('option');
@@ -666,8 +670,31 @@
       }, Promise.resolve(null));
     }).then(function (found) {
       if (found && !atCost) applyAtCost(found.atCost, true);
-      else applyReferral();
-    }).catch(function () { applyReferral(); /* not family, or rules not published yet */ });
+      else applyRolePricing();
+    }).catch(function () { applyRolePricing(); /* not family, or rules not published yet */ });
+  }
+
+  // Customer roles with a percent-off code (Admin → Roles, e.g. Employee
+  // pricing) apply it automatically; otherwise a referral link's code does.
+  function applyRolePricing() {
+    var db = firebase.firestore();
+    db.collection('roleMembers').doc(currentUserEmail.toLowerCase()).get().then(function (m) {
+      var roles = m.exists ? (m.data().roles || []) : [];
+      return roles.reduce(function (p, id) {
+        return p.then(function (found) {
+          if (found) return found;
+          return db.collection('customerRoles').doc(id).get().then(function (r) {
+            var role = r.exists ? r.data() : null;
+            return role && role.type === 'percent' && role.code ? role.code : null;
+          });
+        });
+      }, Promise.resolve(null));
+    }).then(function (code) {
+      var input = document.getElementById('promo-code-input');
+      if (!code || atCost || appliedPromoCode || input.value.trim()) return applyReferral();
+      input.value = code;
+      document.getElementById('promo-apply-btn').click();
+    }).catch(function () { applyReferral(); });
   }
 
   // An at-cost code only reads for the emails it lists (firestore.rules), so
@@ -682,7 +709,7 @@
       return db.collection('costs').get().then(function (snap) {
         var costs = {};
         snap.forEach(function (d) { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
-        return { atCost: { code: code, markupPerVial: check.markupPerVial, shipping: check.shipping, costs: costs } };
+        return { atCost: { code: code, markupPerVial: check.markupPerVial, shipping: check.shipping, costs: costs, label: check.label } };
       });
     }).catch(function () { return null; });
   }

@@ -7,7 +7,8 @@
 //   costs/{unitSlug}       { perVialCost, kitCost, updatedAt, history: [{ perVialCost, from }] }
 //                          unitSlug is the single-vial cart slug, e.g. "semaglutide-5mg"
 //                          or "cagrilintide". Kit = 10 vials; perVialCost = kitCost / 10.
-//   atCostCodes/{CODE}     { active, emails: [lowercase], markupPerVial, shippingLabel, shippingPrice }
+//   atCostCodes/{CODE}     { active, emails: [lowercase], markupPerVial, shippingLabel, shippingPrice, label?, role? }
+//                          (label/role: set on codes Admin → Roles keeps for a customer role)
 //   atCostMembers/{email}  { codes: [CODE] }   (lets listed emails read costs/)
 // Only the admin can write these; see firestore.rules.
 
@@ -75,7 +76,8 @@ var AtCost = (function () {
       return { valid: false, reason: 'This promo code does not exist.' };
     }
     var markup = doc.markupPerVial == null ? DEFAULT_MARKUP : Number(doc.markupPerVial);
-    return { valid: true, code: code, markupPerVial: markup, shipping: shippingOf(doc) };
+    // label: what the buyer sees, e.g. "Employee pricing" (default "Family pricing").
+    return { valid: true, code: code, markupPerVial: markup, shipping: shippingOf(doc), label: doc.label || '' };
   }
 
   // The single shipping option a family code gives, e.g. { label, price }.
