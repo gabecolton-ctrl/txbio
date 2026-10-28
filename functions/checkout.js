@@ -32,7 +32,9 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     // Pickup / drop-off: only for customers listed on Admin → Roles.
     const member = userEmail ? await db.collection('localMembers').doc(userEmail).get() : null;
     if (!member || !member.exists) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
-    shippingOpt = { price: LocalDelivery.PRICE, label: LocalDelivery.LABEL };
+    const ls = await db.collection('settings').doc('localDelivery').get();
+    const price = LocalDelivery.priceOf(ls.exists ? ls.data() : null);
+    shippingOpt = { price, label: LocalDelivery.labelFor(price) };
   }
   if (!shippingOpt && !familyShipping) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
   const paymentMethod = PAYMENT_METHODS.indexOf(data.paymentMethod) !== -1 ? data.paymentMethod : null;

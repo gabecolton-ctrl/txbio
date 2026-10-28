@@ -48,8 +48,10 @@
       db.collection('staff').get(),
       db.collection('roleMembers').get(),
       db.collection('customerRoles').doc(ROLE).get(),
-      db.collection('localMembers').get().catch(function () { return null; })
+      db.collection('localMembers').get().catch(function () { return null; }),
+      db.collection('settings').doc('localDelivery').get().catch(function () { return null; })
     ]).then(function (r) {
+      $('local-price').value = LocalDelivery.priceOf(r[4] && r[4].exists ? r[4].data() : null);
       locals = [];
       if (r[3]) r[3].forEach(function (d) { locals.push({ email: d.id, addedAt: d.data().addedAt }); });
       locals.sort(byEmail);
@@ -211,6 +213,15 @@
         say('mgr-msg', em + ' added. They’ll see the Admin menu next time they load a page.', true);
         return load();
       }).catch(function (err) { say('mgr-msg', 'Could not add: ' + err.message + permHint(err), false); });
+    });
+
+    $('local-price-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var price = Math.round(Number($('local-price').value) * 100) / 100;
+      if (!(price >= 0 && price <= 1000)) return say('local-price-msg', 'Enter a price from 0 to 1000.', false);
+      db.collection('settings').doc('localDelivery').set({ price: price, updatedAt: new Date().toISOString() }).then(function () {
+        say('local-price-msg', 'Saved. Checkout shows “' + LocalDelivery.labelFor(price) + '”.', true);
+      }).catch(function (err) { say('local-price-msg', 'Could not save: ' + err.message + permHint(err), false); });
     });
 
     $('local-form').addEventListener('submit', function (e) {
