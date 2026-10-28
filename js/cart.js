@@ -123,10 +123,23 @@ var Cart = (function () {
   // A line's key: its slug, or slug#quoteId for a line from an admin quote.
   function lineKey(i) { return i.quoteId ? i.slug + '#' + i.quoteId : i.slug; }
 
+  // Cart edits run one at a time, so a quantity change and a Remove tapped
+  // right after it can't overwrite each other.
+  var queue = Promise.resolve();
   function updateQty(key, qty) {
+    var run = queue.then(function () { return updateQtyNow(key, qty); });
+    queue = run.catch(function () {});
+    return run;
+  }
+  function updateQtyNow(key, qty) {
     return getCart().then(function (items) {
+      // A key from an older page may be the bare slug; match that too.
+      var exact = items.some(function (i) { return lineKey(i) === key; });
+      var matches = function (i) { return exact ? lineKey(i) === key : i.slug === String(key).split('#')[0]; };
       if (qty <= 0) {
-        items = items.filter(function (i) { return lineKey(i) !== key; });
+        var before = items.length;
+        items = items.filter(function (i) { return !matches(i); });
+        if (items.length === before) return items; // nothing to remove
       } else {
         var item = items.find(function (i) { return lineKey(i) === key && !(i.quoteId && i.caseOf); }); // quoted cases keep their quantity
         if (item) item.qty = qty;
