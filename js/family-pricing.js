@@ -55,9 +55,15 @@ var FamilyPricing = (function () {
       }, Promise.resolve(null));
     }).then(function (check) {
       if (!check) return null;
+      // Costs (~100 docs) are remembered for 10 minutes in this tab so
+      // browsing page to page doesn't re-read them all.
+      var key = 'txbio_family_costs_' + user.uid, cached = null;
+      try { cached = JSON.parse(sessionStorage.getItem(key) || 'null'); } catch (e) {}
+      if (cached && Date.now() - cached.at < 10 * 60 * 1000) return { code: check.code, markup: check.markupPerVial, costs: cached.costs };
       return db.collection('costs').get().then(function (snap) {
         var costs = {};
         snap.forEach(function (d) { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
+        try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), costs: costs })); } catch (e) {}
         return { code: check.code, markup: check.markupPerVial, costs: costs };
       });
     });
