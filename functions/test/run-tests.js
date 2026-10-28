@@ -66,7 +66,7 @@ const ADDRESS = { addressLine1: '1 Lab Way', city: 'Dallas', state: 'TX', zip: '
 const BUYER = { uid: 'u1', email: 'Buyer@Example.com' };
 function run(seed, data, who = BUYER) {
   const db = makeDb(seed);
-  return placeOrder({ db, FieldValue: db.FieldValue, uid: who.uid, email: who.email, data: Object.assign({ shippingValue: '20', paymentMethod: 'inquiry', shippingAddress: ADDRESS, attested: true }, data), catalog, now: new Date('2026-10-25T12:00:00Z') })
+  return placeOrder({ db, FieldValue: db.FieldValue, uid: who.uid, email: who.email, data: Object.assign({ shippingValue: '15', paymentMethod: 'inquiry', shippingAddress: ADDRESS, attested: true }, data), catalog, now: new Date('2026-10-25T12:00:00Z') })
     .then((order) => ({ order, db }));
 }
 async function rejects(promise, code, msgPart) {
@@ -88,23 +88,22 @@ test('prices come from the catalog, not the cart', async () => {
   assert.strictEqual(order.items[0].price, 109);
   assert.strictEqual(order.subtotal, 218);
   assert.strictEqual(order.tax, 17.99);           // 218 * 8.25% = 17.985 -> 17.99
-  assert.strictEqual(order.total, 255.99);        // 218 + 20 + 17.99
+  assert.strictEqual(order.total, 250.99);        // 218 + 15 + 17.99
   assert.strictEqual(order.placedBy, 'server');
   assert.strictEqual(order.userEmail, 'buyer@example.com');
   assert.deepStrictEqual(db.store.get('carts/u1').items, []);
   assert.ok([...db.store.keys()].some((k) => k.startsWith('orders/')));
 });
 
-test('free standard shipping at $250+ after discounts; not for faster options or below', async () => {
+test('free 2nd Day shipping at $250+ after discounts; $15 below; old options refused', async () => {
   let r = await run(cart([{ slug: 'semaglutide-10mg', qty: 3 }]));           // 327
   assert.strictEqual(r.order.shipping, 0);
   assert.ok(/FREE/.test(r.order.shippingOption), r.order.shippingOption);
   assert.strictEqual(r.order.total, Math.round((327 + 26.98) * 100) / 100);
-  r = await run(cart([{ slug: 'semaglutide-10mg', qty: 3 }]), { shippingValue: '25' });
-  assert.strictEqual(r.order.shipping, 25);
+  await rejects(run(cart([{ slug: 'semaglutide-10mg', qty: 3 }]), { shippingValue: '25' }), 'invalid-argument', 'shipping option');
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 3 }]), { 'promoCodes/BIG30': { discountPercent: 30, type: 'always', active: true } });
   r = await run(seed, { promoCode: 'BIG30' });                                 // 327 - 98.10 = 228.90
-  assert.strictEqual(r.order.shipping, 20);
+  assert.strictEqual(r.order.shipping, 15);
 });
 
 test('Platinum (2,500+ shipped) ships free on any option, any size', async () => {
@@ -112,11 +111,11 @@ test('Platinum (2,500+ shipped) ships free on any option, any size', async () =>
     'orders/old1': { userId: 'u1', status: 'delivered', subtotal: 1800, discount: 0, createdAt: '2026-01-01' },
     'orders/old2': { userId: 'u1', status: 'shipped', subtotal: 800, discount: 0, createdAt: '2026-02-01' }
   });
-  const r = await run(seed, { shippingValue: '40' });
+  const r = await run(seed, { shippingValue: '15' });
   assert.strictEqual(r.order.shipping, 0);
   assert.ok(/2nd Day — FREE/.test(r.order.shippingOption), r.order.shippingOption);
   const notYet = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'orders/old1': { userId: 'u1', status: 'delivered', subtotal: 2400, createdAt: '2026-01-01' } });
-  assert.strictEqual((await run(notYet, { shippingValue: '40' })).order.shipping, 40);
+  assert.strictEqual((await run(notYet, { shippingValue: '15' })).order.shipping, 15);
 });
 
 test('attestation: required, and saved word for word with the Terms version', async () => {
@@ -161,7 +160,7 @@ test('matches the browser test order: promo 10% + $25 credit', async () => {
   assert.strictEqual(order.discount, 21.8);
   assert.strictEqual(order.tax, 16.19);
   assert.strictEqual(order.creditUsedCents, 2500);
-  assert.strictEqual(order.total, 207.39);
+  assert.strictEqual(order.total, 202.39); // $15 shipping
   assert.strictEqual(order.affiliateCode, 'BOOP12');
   const promo = db.store.get('promoCodes/BOOP12');
   assert.strictEqual(promo.timesUsed, 4);
@@ -355,7 +354,7 @@ test('family code: one shipping option (default 2nd Day Air $15), others rejecte
   assert.deepStrictEqual([r.order.shipping, r.order.shippingOption], [15, '2nd Day Air — $15']);
   assert.strictEqual(r.order.total, P.round2(9.6 + 15 + P.round2(9.6 * catalog.taxRate)));
   // Family code with a regular shipping value still gets the family shipping.
-  r = await run(seed, { promoCode: 'FAMILY', shippingValue: '40' });
+  r = await run(seed, { promoCode: 'FAMILY', shippingValue: '15' });
   assert.strictEqual(r.order.shipping, 15);
   // Custom price on the code.
   seed['atCostCodes/FAMILY'].shippingPrice = 12;
