@@ -1229,6 +1229,18 @@ html.entry-open, html.entry-open body { overflow: hidden; }
 .entry-mark .halo { fill: var(--mint); opacity: 0.07; }
 .entry-copy h2 { font-family: var(--serif); font-weight: 400; font-size: clamp(1.6rem, 4vw, 2.3rem); margin: 0 0 12px; color: var(--frost); }
 .entry-lead { color: var(--muted); margin: 0 0 14px; }
+.entry-checks { display: flex; flex-direction: column; gap: 10px; margin: 0 0 20px; }
+.entry-check { position: relative; display: flex; align-items: flex-start; gap: 14px; padding: 14px 16px; margin: 0; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); color: var(--frost); font-weight: 400; line-height: 1.5; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: border-color 0.2s, background-color 0.2s; }
+.entry-check:hover { border-color: var(--muted); }
+.entry-check input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+.entry-box { flex: 0 0 auto; width: 24px; height: 24px; margin-top: 1px; border: 2px solid var(--muted); border-radius: 6px; display: grid; place-items: center; transition: background-color 0.18s, border-color 0.18s, transform 0.18s; }
+.entry-box::after { content: ''; width: 7px; height: 12px; border: solid var(--ink); border-width: 0 2.5px 2.5px 0; transform: rotate(45deg) scale(0); margin-top: -3px; transition: transform 0.18s ease; }
+.entry-check.is-on { border-color: var(--mint); background: var(--mint-wash); }
+.entry-check.is-on .entry-box { background: var(--mint); border-color: var(--mint); transform: scale(1.06); }
+.entry-check.is-on .entry-box::after { transform: rotate(45deg) scale(1); }
+.entry-check input:focus-visible + .entry-box { outline: 2px solid var(--mint); outline-offset: 3px; }
+#entry-yes:disabled { opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+#entry-yes { transition: opacity 0.2s; }
 .entry-list { margin: 0 0 22px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 10px; }
 .entry-list li { position: relative; padding-left: 28px; color: var(--frost); line-height: 1.5; }
 .entry-list li::before { content: ''; position: absolute; left: 4px; top: 0.45em; width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--mint); }
