@@ -1053,3 +1053,26 @@ html.family-pending .bogo-badge, html.family-pending .bogo-card-note, html.famil
 .ref-chart-head { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; color: var(--muted); font-size: 0.85rem; padding: 0 6px 8px; }
 .ref-chart-head span:last-child { color: var(--frost); }
 .ref-chart svg { display: block; max-width: 100%; }
+
+/* Admin To-do */
+.todo-section { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 18px 20px 8px; margin-bottom: 16px; }
+.todo-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+.todo-head h2 { margin: 0; font-size: 1.2rem; }
+.todo-count { display: inline-block; min-width: 24px; padding: 1px 8px; margin-left: 6px; border-radius: 999px; background: var(--mint-wash); color: var(--mint); font-family: var(--sans); font-size: 0.85rem; text-align: center; vertical-align: middle; }
+.todo-cta { font-size: 0.88rem; }
+.todo-note { margin: 6px 0 4px; color: var(--muted); font-size: 0.88rem; }
+.todo-list { list-style: none; margin: 8px 0 0; padding: 0; }
+.todo-row { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 10px 0; border-top: 1px solid var(--line-soft); font-size: 0.92rem; }
+.todo-row.is-flag { box-shadow: inset 3px 0 0 var(--alert); padding-left: 12px; }
+.todo-main { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 0; min-width: 0; }
+.todo-dot { color: var(--faint); margin: 0 8px; }
+.todo-age { color: var(--muted); }
+.todo-warn { color: var(--alert); }
+.todo-btn { padding: 6px 12px; font-size: 0.82rem; }
+.todo-clear { margin-top: 24px; color: var(--muted); }
+.todo-clear h2 { font-size: 1.05rem; color: var(--muted); }
+.todo-clear ul { list-style: none; padding: 0; margin: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; }
+.todo-clear li::before { content: '✓ '; color: var(--mint); }
+.todo-inline { display: inline; font-weight: inherit; margin: 0; }
+.todo-inline input { display: inline-block; width: 64px; margin: 0 4px; padding: 4px 8px; }
+.todo-names { color: var(--muted); line-height: 1.6; }
