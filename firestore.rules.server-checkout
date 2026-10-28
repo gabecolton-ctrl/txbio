@@ -167,6 +167,12 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
 
+    // Customers offered local pickup / drop-off at checkout (Admin → Roles).
+    match /localMembers/{email} {
+      allow read: if isAdmin() || myEmail() == email;
+      allow write: if isAdmin();
+    }
+
     // Roles (Admin → Roles). Only the admin assigns them.
     match /staff/{email} {
       allow read: if isAdmin() || myEmail() == email;

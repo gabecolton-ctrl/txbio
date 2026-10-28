@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281345">
+<link rel="stylesheet" href="css/style.css?v=202610281352">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281345"></script>
+<script src="js/splash.js?v=202610281352"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -114,7 +114,7 @@
 <main id="gated-content" style="display:none;">
   <section class="page-head">
     <h1>Roles</h1>
-    <p class="lead">Give people access and pricing. Managers can work orders &amp; shipping, customers and promo codes; sales numbers, costs, payments, inventory and traffic stay yours. Employees get their own pricing, applied automatically when they're signed in.</p>
+    <p class="lead">Give people access, pricing and pickup. Managers can work orders &amp; shipping, customers and promo codes; sales numbers, costs, payments, inventory and traffic stay yours. Employees get their own pricing, applied automatically when they're signed in.</p>
   </section>
 
   <div id="admin-denied" class="notice" style="display:none;">
@@ -139,6 +139,25 @@
           <button type="submit" class="btn">Add</button>
         </div>
         <p id="mgr-msg" class="form-message" style="display:none;"></p>
+      </form>
+    </section>
+
+    <section>
+      <h2>Local pickup / drop-off</h2>
+      <p class="section-note">These customers see “Local pickup / drop-off — $5” as a shipping option at checkout. No one else does.</p>
+      <div class="catalog-wrap" style="margin-bottom:14px;">
+        <table class="catalog-table">
+          <thead><tr><th>Email</th><th>Added</th><th></th></tr></thead>
+          <tbody id="local-rows"><tr><td colspan="3">Loading…</td></tr></tbody>
+        </table>
+      </div>
+      <form id="local-form" class="card admin-form role-add">
+        <label for="local-email">Add a customer</label>
+        <div class="role-add-row">
+          <input type="email" id="local-email" required placeholder="name@example.com" autocomplete="off">
+          <button type="submit" class="btn">Add</button>
+        </div>
+        <p id="local-msg" class="form-message" style="display:none;"></p>
       </form>
     </section>
 
@@ -221,16 +240,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281345"></script>
-<script src="js/cart.js?v=202610281345"></script>
-<script src="js/at-cost.js?v=202610281345"></script>
-<script src="js/product-search.js?v=202610281345"></script>
-<script src="js/staff.js?v=202610281345"></script>
-<script src="js/nav-auth.js?v=202610281345"></script>
-<script src="js/profile-gate.js?v=202610281345"></script>
-<script src="js/auth-guard.js?v=202610281345"></script>
-<script src="js/main.js?v=202610281345"></script>
-<script src="js/nav-toggle.js?v=202610281345"></script>
-<script src="js/admin-roles.js?v=202610281345"></script>
+<script src="js/firebase-config.js?v=202610281352"></script>
+<script src="js/cart.js?v=202610281352"></script>
+<script src="js/at-cost.js?v=202610281352"></script>
+<script src="js/product-search.js?v=202610281352"></script>
+<script src="js/staff.js?v=202610281352"></script>
+<script src="js/nav-auth.js?v=202610281352"></script>
+<script src="js/profile-gate.js?v=202610281352"></script>
+<script src="js/auth-guard.js?v=202610281352"></script>
+<script src="js/main.js?v=202610281352"></script>
+<script src="js/nav-toggle.js?v=202610281352"></script>
+<script src="js/admin-roles.js?v=202610281352"></script>
 </body>
 </html>
