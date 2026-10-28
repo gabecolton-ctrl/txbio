@@ -46,6 +46,21 @@
     return html + '</div>';
   }
 
+  // Fills any "how to pay by bank transfer" boxes on the page.
+  function fillBankDetails() {
+    var boxes = document.querySelectorAll('[data-bank-box]');
+    if (!boxes.length) return;
+    function fallback() { boxes.forEach(function (b) { b.querySelector('.bank-mini-fallback').style.display = ''; }); }
+    firebase.firestore().collection('settings').doc('bankTransfer').get().then(function (doc) {
+      var d = doc.exists ? doc.data() : null;
+      if (!d || !d.accountNumber || !d.routingNumber) return fallback();
+      var rows = [['Bank', d.bankName], ['Account name', d.accountName], ['Account number', d.accountNumber], ['Routing number', d.routingNumber]]
+        .filter(function (r) { return r[1]; })
+        .map(function (r) { return '<tr><td>' + r[0] + '</td><td>' + escHtml(r[1]) + '</td></tr>'; }).join('');
+      boxes.forEach(function (b) { var t = b.querySelector('.bank-mini'); t.innerHTML = rows; t.style.display = ''; });
+    }).catch(fallback);
+  }
+
   // Cancelling: buyers can cancel a pending order themselves (firestore.rules
   // allows only that change). Once it's confirmed or further along, money may
   // need refunding, so they ask by email instead.
@@ -222,12 +237,15 @@
           payHtml = '<div class="order-pay-box"><p>' + escHtml(PaymentApps.instructions(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber)) + '</p>' +
             '<a class="btn-outline" target="_blank" rel="noopener" href="' + escHtml(PaymentApps.payLink(order.paymentMethod, order.paymentHandle, order.total, order.orderNumber)) + '">Open ' +
             (order.paymentMethod === 'venmo' ? 'Venmo' : 'Cash App') + '</a></div>';
-        } else if ((order.status || 'pending') === 'pending' && (order.paymentMethod === 'bank' || order.paymentMethod === 'bitcoin')) {
-          var amt = '$' + Number(order.total || 0).toFixed(2);
-          payHtml = '<div class="order-pay-box"><p>' + (order.paymentMethod === 'bank'
-            ? 'Send ' + amt + ' by bank transfer using the details in your order confirmation email, with order #' + escHtml(order.orderNumber || '') + ' in the memo.'
-            : 'Send ' + amt + ' in Bitcoin using the details in your order confirmation email.') +
-            ' Can\u2019t find the email? <a href="contact.html">Contact us</a> and we\u2019ll resend it.</p></div>';
+        } else if ((order.status || 'pending') === 'pending' && order.paymentMethod === 'bank') {
+          // Bank details load from settings/bankTransfer (see fillBankDetails).
+          payHtml = '<div class="order-pay-box" data-bank-box><p>Send <strong>$' + Number(order.total || 0).toFixed(2) + '</strong> by bank transfer with order #' + escHtml(order.orderNumber || '') + ' in the memo. We ship once it arrives.</p>' +
+            '<table class="spec-table bank-mini" style="display:none;"></table>' +
+            '<p class="bank-mini-fallback" style="display:none;">Email <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> for the transfer details.</p></div>';
+        } else if ((order.status || 'pending') === 'pending' && order.paymentMethod === 'bitcoin' && typeof BTC_ADDRESS !== 'undefined') {
+          payHtml = '<div class="order-pay-box"><p>Send the equivalent of <strong>$' + Number(order.total || 0).toFixed(2) + '</strong> in Bitcoin to:</p>' +
+            '<p class="btc-mini"><code>' + escHtml(BTC_ADDRESS) + '</code></p>' +
+            '<p>Then email <a href="mailto:orders@txbioresearch.com">orders@txbioresearch.com</a> with order #' + escHtml(order.orderNumber || '') + ' and your transaction ID. We ship once it confirms.</p></div>';
         }
         box.innerHTML =
           '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) : '') + '</p>' +
@@ -243,6 +261,7 @@
         wireCancel(box, order);
         list.appendChild(box);
       });
+      fillBankDetails();
       // Links from order emails point at orders.html#order-<number>.
       var target = location.hash && document.getElementById(location.hash.slice(1));
       if (target) {
