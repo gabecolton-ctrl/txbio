@@ -152,6 +152,11 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Lot numbers / expiration dates (js/lots.js). Admin only.
+    match /lots/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Supplier shipments on their way (Admin → Incoming). Admin only; the
     // UPS tracker uses the service account, which bypasses these rules.
     match /incoming/{id} {

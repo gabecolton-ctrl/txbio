@@ -183,6 +183,18 @@ test('order cancelled meanwhile is not shipped', async () => {
   assert.strictEqual(sent.length, 0);
 });
 
+test('loyalty: Silver buyer earns 3% on an auto-shipped order; Member earns nothing', async () => {
+  const prior = (id, sub, created) => ({ ['orders/' + id]: { userId: 'u1', userEmail: 'buyer@example.com', status: 'delivered', subtotal: sub, discount: 0, createdAt: created } });
+  const seed = Object.assign({}, prior('p1', 400, '2026-09-01'), prior('p2', 200, '2026-09-15'),
+    { 'orders/a': ORDER({ userId: 'u1', createdAt: '2026-10-20', subtotal: 300, discount: 0, promoCode: null }) });
+  const { db } = await scenario(seed, { [T('0123456784')]: DROPPED });
+  assert.strictEqual(db.data['orders/a'].loyaltyCreditCents, 900);
+  assert.strictEqual(db.data['orders/a'].loyaltyTier, 'Silver');
+  assert.strictEqual(db.data['credits/buyer@example.com'].balanceCents, 900);
+  const r2 = await scenario({ 'orders/a': ORDER({ userId: 'u9', createdAt: '2026-10-20', promoCode: null }) }, { [T('0123456784')]: DROPPED });
+  assert.ok(!r2.db.data['orders/a'].loyaltyCreditedAt);
+});
+
 // --- supplier shipments (Admin → Incoming) ---
 const SHIP = (over) => Object.assign({
   supplier: 'Lab Supply', reference: 'PO-7', status: 'ordered', trackingNumber: T('5550000001'), autoReceive: true,
@@ -213,6 +225,27 @@ test('incoming: delivered + auto-receive adds kits×10 to stock once', async () 
   const again = await Incoming.receive(r.db, 's', { by: 'admin' });
   assert.strictEqual(again.already, true);
   assert.strictEqual(d['inventory/bpc-157-10mg'].qty, 25);
+});
+
+test('lots: receiving creates lots; auto-ship assigns first-to-expire-first', async () => {
+  const seed = {
+    'incoming/s': SHIP({ status: 'in-transit', items: [
+      { slug: 'bpc-157-10mg', name: 'BPC 157 10mg', kits: 1, qty: 10, lot: 'LATE', exp: '2027-09-01' },
+      { slug: 'bpc-157-10mg', name: 'BPC 157 10mg', kits: 1, qty: 10, lot: 'SOON', exp: '2027-02-01' }] }),
+    'orders/a': ORDER({ items: [{ slug: 'bpc-157-10mg', name: 'BPC 157', packSize: '1 vial x 10mg', price: 73, qty: 12 }] })
+  };
+  // Run 1: shipment delivered → received (two lots). Order still label-created (UPS label only).
+  const r1 = await scenario(seed, { [T('5550000001')]: DELIVERED, [T('0123456784')]: LABEL });
+  const lots = Object.keys(r1.db.data).filter((k) => k.startsWith('lots/')).map((k) => r1.db.data[k]);
+  assert.deepStrictEqual(lots.map((l) => l.lot).sort(), ['LATE', 'SOON']);
+  // Run 2 on the same data: the order gets its first scan → shipped, lots assigned.
+  const db = r1.db;
+  const { run } = require('./tracker');
+  await run({ db, carrier: { track: async () => DROPPED }, email: { send: async () => {} }, log: () => {} });
+  const alloc = db.data['orders/a'].lotAllocations;
+  assert.deepStrictEqual(alloc.map((a) => [a.lot, a.qty]), [['SOON', 10], ['LATE', 2]]);
+  const left = Object.keys(db.data).filter((k) => k.startsWith('lots/')).map((k) => db.data[k]).reduce((m, l) => (m[l.lot] = l.qtyRemaining, m), {});
+  assert.deepStrictEqual(left, { SOON: 0, LATE: 8 });
 });
 
 test('incoming: delivered without auto-receive waits for the admin', async () => {

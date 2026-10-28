@@ -10,14 +10,26 @@
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function msg(t) { $('msg').style.display = ''; $('msg').textContent = t; }
 
+  // Lots: the ones assigned when it shipped, or (before shipping) the ones it
+  // would use, first-to-expire-first (js/lots.js).
+  function lotText(o, item) {
+    var unit = window.Lots ? Lots.unitOf(item) : item.slug;
+    var list = (o.lotAllocations || o._lotPlan || []).filter(function (a) { return a.slug === unit && a.lot; });
+    return list.map(function (a) {
+      var exp = a.exp ? ' (exp ' + new Date(a.exp + 'T12:00:00').toLocaleDateString(undefined, { month: 'short', year: 'numeric' }) + ')' : '';
+      return esc(a.lot) + exp + (list.length > 1 ? ' ×' + a.qty : '');
+    }).join('<br>');
+  }
   function slipHtml(o) {
     var a = o.shippingAddress || {};
     var items = o.items || [];
     var units = 0;
+    var showLots = (o.lotAllocations || o._lotPlan || []).some(function (x) { return x.lot; });
     var rows = items.map(function (i) {
       var q = Number(i.qty) || 0, per = Number(i.caseOf) || 1;
       units += q * per;
       return '<tr><td class="check"><span class="box"></span></td><td><strong>' + esc(i.name) + '</strong></td><td>' + esc(i.packSize || '') + '</td>' +
+        (showLots ? '<td class="lot">' + (lotText(o, i) || '—') + '</td>' : '') +
         '<td class="num">' + q + '</td><td class="num">' + (q * per) + '</td></tr>';
     }).join('');
     var date = o.createdAt ? new Date(o.createdAt).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' }) : '';
@@ -38,9 +50,9 @@
         '<div><span>Items</span><span>' + items.length + ' line' + (items.length === 1 ? '' : 's') + ', ' + units + ' unit' + (units === 1 ? '' : 's') + '</span></div>' +
         (o.trackingNumber ? '<div><span>Tracking</span><span>' + esc(o.trackingNumber) + '</span></div>' : '') +
       '</div></div>' +
-      '<table><thead><tr><th class="check">Packed</th><th>Product</th><th>Size</th><th class="num">Qty</th><th class="num">Units</th></tr></thead>' +
-      '<tbody>' + (rows || '<tr><td colspan="5">No items on this order.</td></tr>') + '</tbody>' +
-      '<tfoot><tr><td></td><td colspan="3">Total units</td><td class="num">' + units + '</td></tr></tfoot></table>' +
+      '<table><thead><tr><th class="check">Packed</th><th>Product</th><th>Size</th>' + (showLots ? '<th>Lot' + (o.lotAllocations ? '' : ' (suggested)') + '</th>' : '') + '<th class="num">Qty</th><th class="num">Units</th></tr></thead>' +
+      '<tbody>' + (rows || '<tr><td colspan="6">No items on this order.</td></tr>') + '</tbody>' +
+      '<tfoot><tr><td></td><td colspan="' + (showLots ? 4 : 3) + '">Total units</td><td class="num">' + units + '</td></tr></tfoot></table>' +
       (o.notes ? '<div class="note"><div class="label">Customer note</div>' + esc(o.notes) + '</div>' : '') +
       '<div class="foot"><p class="thanks">Thank you for your order. Questions? Email orders@txbioresearch.com and include your order number.</p>' +
       '<p>For laboratory research use only. Not for human or animal consumption. Store according to the label; refrigerate after reconstitution.</p></div>' +
@@ -56,6 +68,17 @@
     })).then(function (orders) {
       orders = orders.filter(Boolean);
       if (!orders.length) return msg('Order not found.');
+      // Not shipped yet: suggest lots from what's in stock.
+      if (!window.Lots) return orders;
+      var need = [];
+      orders.forEach(function (o) { if (!o.lotAllocations) (o.items || []).forEach(function (i) { need.push(Lots.unitOf(i)); }); });
+      if (!need.length) return orders;
+      return Lots.list(db, need).then(function (lots) {
+        orders.forEach(function (o) { if (!o.lotAllocations) o._lotPlan = Lots.plan(lots, o.items || []); });
+        return orders;
+      }).catch(function () { return orders; });
+    }).then(function (orders) {
+      if (!orders || !orders.length) return;
       $('msg').style.display = 'none';
       $('slips').innerHTML = orders.map(slipHtml).join('');
       $('tb-text').textContent = orders.length === 1 ? 'Packing slip · Order #' + (orders[0].orderNumber || orders[0].id) : orders.length + ' packing slips';

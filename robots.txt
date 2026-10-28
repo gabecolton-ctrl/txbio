@@ -5,6 +5,7 @@ Disallow: /checkout.html
 Disallow: /account.html
 Disallow: /orders.html
 Disallow: /referrals.html
+Disallow: /favorites.html
 Disallow: /functions/
 Disallow: /tools/
 Disallow: /data/

@@ -3,6 +3,7 @@
 const { HttpsError } = require('firebase-functions/v2/https');
 const P = require('./pricing');
 const AtCost = require('./at-cost');
+const FreeShipping = require('./free-shipping');
 
 const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank', 'venmo', 'cashapp'];
 const PaymentApps = require('./payment-apps');
@@ -103,6 +104,8 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       bogo: atCost ? 0 : bogo.discountAmount,
       bogoSlugs,
       shippingPrice: shippingOpt.price,
+      shippingValue: atCost ? null : String(data.shippingValue),
+      family: !!atCost,
       taxRate: catalog.taxRate,
       creditBalanceCents: credit ? (credit.balanceCents || 0) : 0,
       useCredit: !!credit
@@ -140,7 +143,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       items,
       subtotal: totals.subtotal,
       shipping: totals.shipping,
-      shippingOption: shippingOpt.label,
+      shippingOption: totals.shipping === 0 && shippingOpt.price > 0 ? FreeShipping.freeLabel(shippingOpt.label) : shippingOpt.label,
       discount: totals.discount,
       promoCode: promo ? promo.code : (atCost ? atCost.code : null),
       bogoDiscount: totals.bogoDiscount,

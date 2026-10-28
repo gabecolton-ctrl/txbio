@@ -5,7 +5,8 @@
 // Firestore: incoming/{id} {
 //   supplier, reference, trackingNumber, expectedDate ('YYYY-MM-DD'), notes,
 //   autoReceive (add to stock when UPS shows delivered),
-//   items: [{ slug, name, kits, qty }]  entered in kits; qty = vials (kits × 10)
+//   items: [{ slug, name, kits, qty, lot, exp }]  entered in kits; qty = vials (kits × 10);
+//                                       lot / exp (YYYY-MM-DD) optional, become lots/{id} (js/lots.js)
 //   status: 'ordered' | 'in-transit' | 'delivered' | 'received' | 'cancelled'
 //   createdAt, shippedAt, deliveredAt, receivedAt, receivedBy,
 //   receivedItems: [{ slug, name, qty, before, after }],
@@ -46,7 +47,7 @@ var Incoming = (function () {
         if (ship.status === 'received') return { ok: false, already: true, lines: ship.receivedItems || [] };
         if (ship.status === 'cancelled') throw new Error('This shipment was cancelled.');
         var items = (opts.items || ship.items || []).map(function (i) {
-          return { slug: String(i.slug), name: i.name || i.slug, qty: Math.max(0, Math.round(Number(i.qty) || 0)) };
+          return { slug: String(i.slug), name: i.name || i.slug, qty: Math.max(0, Math.round(Number(i.qty) || 0)), lot: String(i.lot || '').trim(), exp: String(i.exp || '').trim() };
         }).filter(function (i) { return i.slug && i.qty > 0; });
         // Combine repeated products so each stock count is read once.
         var bySlug = {};
@@ -61,6 +62,13 @@ var Incoming = (function () {
             var after = (before || 0) + bySlug[s].qty;
             t.set(stockRefs[k], { qty: after, updatedAt: at }, { merge: true });
             return { slug: s, name: bySlug[s].name, qty: bySlug[s].qty, before: before, after: after };
+          });
+          // One lot record per received line (lot number / expiry may be blank).
+          if (!opts.noLots) items.forEach(function (i) {
+            t.set(db.collection('lots').doc(), {
+              slug: i.slug, name: i.name, lot: i.lot, exp: /^\d{4}-\d{2}-\d{2}$/.test(i.exp) ? i.exp : '',
+              qtyReceived: i.qty, qtyRemaining: i.qty, receivedAt: at, incomingId: id, supplier: ship.supplier || ''
+            });
           });
           t.update(ref, { status: 'received', receivedAt: at, receivedBy: opts.by || 'admin', receivedItems: lines });
           return { ok: true, already: false, lines: lines };

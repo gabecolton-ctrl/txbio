@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272305">
+<link rel="stylesheet" href="css/style.css?v=202610272346">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272305"></script>
+<script src="js/splash.js?v=202610272346"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -55,6 +55,7 @@
           <details>
             <summary>Admin</summary>
             <ul>
+              <li><a href="admin-dashboard.html" id="nav-admin-dashboard-link">Dashboard</a></li>
               <li><a href="admin-todo.html" id="nav-admin-todo-link">To-do</a></li>
               <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
               <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
@@ -74,6 +75,7 @@
             <summary>My account</summary>
             <ul>
               <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="favorites.html" id="nav-favorites-link">Favorites</a></li>
               <li class="nav-referrals" style="display:none;"><a href="referrals.html" id="nav-referrals-link">Referrals</a></li>
               <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
               <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
@@ -146,6 +148,21 @@
     </form>
   </section>
 
+  <section id="loyalty-section" style="display:none;">
+    <h2>Rewards</h2>
+    <div class="loyalty-card">
+      <div class="loyalty-top">
+        <span class="loyalty-badge" id="loyalty-badge">Member</span>
+        <span id="loyalty-rate" class="loyalty-rate"></span>
+      </div>
+      <p class="loyalty-spend">Lifetime spend: <strong id="loyalty-spend">$0.00</strong></p>
+      <div class="loyalty-track" aria-hidden="true"><span id="loyalty-fill"></span></div>
+      <p class="loyalty-next" id="loyalty-next"></p>
+      <ul class="loyalty-tiers" id="loyalty-tiers"></ul>
+      <p class="loyalty-fine">Rewards are added as store credit when each order ships, based on your spend on earlier orders (after discounts, before shipping and tax).</p>
+    </div>
+  </section>
+
   <section id="credit-section" style="display:none;">
     <h2>Store credit</h2>
     <div class="card" style="max-width:400px; margin-bottom:18px;">
@@ -214,17 +231,18 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272305"></script>
-<script src="js/analytics.js?v=202610272305"></script>
-<script src="js/referral.js?v=202610272305"></script>
-<script src="js/cart.js?v=202610272305"></script>
-<script src="js/account.js?v=202610272305"></script>
-<script src="js/credits.js?v=202610272305"></script>
-<script src="js/nav-auth.js?v=202610272305"></script>
-<script src="js/profile-gate.js?v=202610272305"></script>
-<script src="js/auth-guard.js?v=202610272305"></script>
-<script src="js/main.js?v=202610272305"></script>
-<script src="js/nav-toggle.js?v=202610272305"></script>
+<script src="js/firebase-config.js?v=202610272346"></script>
+<script src="js/analytics.js?v=202610272346"></script>
+<script src="js/referral.js?v=202610272346"></script>
+<script src="js/cart.js?v=202610272346"></script>
+<script src="js/account.js?v=202610272346"></script>
+<script src="js/credits.js?v=202610272346"></script>
+<script src="js/loyalty.js?v=202610272346"></script>
+<script src="js/nav-auth.js?v=202610272346"></script>
+<script src="js/profile-gate.js?v=202610272346"></script>
+<script src="js/auth-guard.js?v=202610272346"></script>
+<script src="js/main.js?v=202610272346"></script>
+<script src="js/nav-toggle.js?v=202610272346"></script>
 <script>
   var currentProfile = {};
 
@@ -347,7 +365,9 @@
       earned: 'Earned from a referral',
       reversed: 'Referral reversed (order cancelled)',
       spent: 'Used at checkout',
-      refunded: 'Returned (order cancelled)'
+      refunded: 'Returned (order cancelled)',
+      loyalty: 'Rewards credit',
+      'loyalty-reversed': 'Rewards credit taken back (order cancelled)'
     };
     function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
     document.addEventListener('userReady', function (e) {
@@ -366,12 +386,47 @@
               ? (en.amountCents >= 0 ? 'Added by TXBioResearch' : 'Removed by TXBioResearch') + (en.note ? ': ' + esc(en.note) : '')
               : (LABELS[en.type] || en.type);
             if (en.type === 'earned' && en.code) activity += ' (code ' + esc(en.code) + ')';
+            if (en.type === 'loyalty' && en.code) activity += ' (' + esc(en.code) + ')';
             return '<tr><td data-label="Date">' + date + '</td><td data-label="Activity">' + activity + '</td><td data-label="Order">' + (en.orderNumber ? '#' + esc(en.orderNumber) : '') + '</td><td data-label="Amount">' + amt + '</td></tr>';
           });
           document.getElementById('credit-history').innerHTML = rows.join('');
           document.getElementById('credit-history-wrap').style.display = '';
         });
       }).catch(function (err) { console.error('Could not load store credit:', err); });
+    });
+  })();
+</script>
+<script>
+  // Rewards tier (js/loyalty.js), from the buyer's own shipped orders.
+  (function () {
+    function money(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+    document.addEventListener('userReady', function (e) {
+      var user = e.detail.user;
+      if (!window.Loyalty) return;
+      var db = firebase.firestore();
+      var email = String(user.email || '').toLowerCase();
+      db.collection('atCostMembers').doc(email).get().catch(function () { return null; }).then(function (fam) {
+        if (fam && fam.exists) return; // family accounts have at-cost pricing instead
+        return db.collection('orders').where('userId', '==', user.uid).get().then(function (snap) {
+          var orders = [];
+          snap.forEach(function (d) { orders.push(Object.assign({ id: d.id }, d.data())); });
+          var spend = Loyalty.lifetime(orders);
+          var tier = Loyalty.tierFor(spend), next = Loyalty.nextTier(spend);
+          document.getElementById('loyalty-badge').textContent = tier.name;
+          document.getElementById('loyalty-badge').className = 'loyalty-badge tier-' + tier.name.toLowerCase();
+          document.getElementById('loyalty-rate').textContent = tier.pct ? Math.round(tier.pct * 100) + '% back on every order' : 'Start earning at ' + money(Loyalty.TIERS[1].min);
+          document.getElementById('loyalty-spend').textContent = money(spend);
+          var lo = tier.min, hi = next ? next.min : tier.min;
+          document.getElementById('loyalty-fill').style.width = next ? Math.min(100, (spend - lo) / (hi - lo) * 100) + '%' : '100%';
+          document.getElementById('loyalty-next').textContent = next
+            ? money(next.min - spend) + ' more to reach ' + next.name + ' (' + Math.round(next.pct * 100) + '% back).'
+            : 'You\u2019re at our top tier. Thank you!';
+          document.getElementById('loyalty-tiers').innerHTML = Loyalty.TIERS.map(function (t) {
+            return '<li class="' + (t.name === tier.name ? 'is-on' : '') + '"><strong>' + t.name + '</strong> ' + (t.min ? money(t.min).replace('.00', '') + '+' : 'any spend') + ' · ' + (t.pct ? Math.round(t.pct * 100) + '% back' : 'no reward yet') + '</li>';
+          }).join('');
+          document.getElementById('loyalty-section').style.display = '';
+        });
+      }).catch(function (err) { console.error('Could not load rewards:', err); });
     });
   })();
 </script>

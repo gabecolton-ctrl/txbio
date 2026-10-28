@@ -9,6 +9,7 @@
   var unitName = {};
   var stock = {};
   var shipments = [];
+  var lots = [];
   var editing = null;      // id being edited
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -40,7 +41,10 @@
     var kits = item.kits != null ? item.kits : (item.qty ? item.qty / KIT : 1);
     tr.innerHTML = '<td><select class="inc-unit">' + unitOptions(item.slug) + '</select></td>' +
       '<td><input type="number" class="inc-kits" min="1" step="1" value="' + esc(kits) + '"></td>' +
-      '<td class="inc-vials"></td><td><button type="button" class="inc-remove" aria-label="Remove line">Remove</button></td>';
+      '<td class="inc-vials"></td>' +
+      '<td><input type="text" class="inc-lot" maxlength="40" value="' + esc(item.lot || '') + '" placeholder="e.g. 20261015"></td>' +
+      '<td><input type="date" class="inc-exp" value="' + esc(item.exp || '') + '"></td>' +
+      '<td><button type="button" class="inc-remove" aria-label="Remove line">Remove</button></td>';
     $('inc-lines').appendChild(tr);
     tr.querySelector('.inc-kits').addEventListener('input', totals);
     tr.querySelector('.inc-unit').addEventListener('change', totals);
@@ -50,7 +54,8 @@
   function readLines() {
     return Array.prototype.map.call($('inc-lines').querySelectorAll('tr'), function (tr) {
       var slug = tr.querySelector('.inc-unit').value, kits = Math.round(Number(tr.querySelector('.inc-kits').value) || 0);
-      return { slug: slug, name: unitName[slug] || slug, kits: kits, qty: kits * KIT };
+      return { slug: slug, name: unitName[slug] || slug, kits: kits, qty: kits * KIT,
+        lot: tr.querySelector('.inc-lot').value.trim(), exp: tr.querySelector('.inc-exp').value || '' };
     });
   }
   function totals() {
@@ -120,11 +125,15 @@
 
   // ---------- lists ----------
   function itemsTable(items, receiving) {
-    return '<table class="catalog-table pnl-table inc-items"><thead><tr><th>Product</th><th>Kits</th><th>Vials</th><th>In stock now</th>' + (receiving ? '<th>Kits received</th><th>After</th>' : '') + '</tr></thead><tbody>' +
+    var anyLot = receiving || items.some(function (i) { return i.lot || i.exp; });
+    return '<table class="catalog-table pnl-table inc-items"><thead><tr><th>Product</th><th>Kits</th><th>Vials</th>' + (anyLot ? '<th>Lot #</th><th>Expires</th>' : '') + '<th>In stock now</th>' + (receiving ? '<th>Kits received</th><th>After</th>' : '') + '</tr></thead><tbody>' +
       items.map(function (i, k) {
         var have = stock[i.slug];
         var kits = i.kits != null ? i.kits : i.qty / KIT;
-        return '<tr><td>' + esc(unitName[i.slug] || i.name) + '</td><td>' + n(kits) + '</td><td>' + n(i.qty) + '</td>' +
+        var lotCells = !anyLot ? '' : receiving
+          ? '<td><input type="text" class="inc-rlot" data-k="' + k + '" maxlength="40" value="' + esc(i.lot || '') + '"></td><td><input type="date" class="inc-rexp" data-k="' + k + '" value="' + esc(i.exp || '') + '"></td>'
+          : '<td>' + esc(i.lot || '—') + '</td><td>' + (i.exp ? esc(fmtDate(i.exp, true)) : '—') + '</td>';
+        return '<tr><td>' + esc(unitName[i.slug] || i.name) + '</td><td>' + n(kits) + '</td><td>' + n(i.qty) + '</td>' + lotCells +
           '<td>' + (typeof have === 'number' ? n(have) : '<span class="inc-untracked">not tracked</span>') + '</td>' +
           (receiving ? '<td><input type="number" class="inc-recv" data-k="' + k + '" min="0" step="1" value="' + esc(kits) + '"></td><td class="inc-after" data-k="' + k + '"></td>' : '') + '</tr>';
       }).join('') + '</tbody></table>';
@@ -178,6 +187,15 @@
     $('inc-open-count').textContent = open.length;
     $('inc-open-wrap').hidden = !open.length;
     $('inc-empty').hidden = !!open.length;
+    var inStock = lots.filter(function (l) { return (Number(l.qtyRemaining) || 0) > 0; }).sort(Lots.order);
+    $('inc-lots').innerHTML = '<thead><tr><th>Product</th><th>Lot #</th><th>Expires</th><th>Vials left</th><th>Received</th></tr></thead><tbody>' +
+      inStock.map(function (l) {
+        var d = Lots.daysLeft(l.exp), warn = d != null && d <= Lots.WARN_DAYS;
+        return '<tr><td>' + esc(unitName[l.slug] || l.name) + '</td><td>' + esc(l.lot || '—') + '</td>' +
+          '<td' + (warn ? ' class="todo-warn"' : '') + '>' + (l.exp ? esc(fmtDate(l.exp, true)) + (d != null ? (d < 0 ? ' (expired)' : ' (' + d + ' days)') : '') : '—') + '</td>' +
+          '<td>' + n(l.qtyRemaining) + ' of ' + n(l.qtyReceived) + '</td><td>' + esc(fmtDate(l.receivedAt, true)) + (l.supplier ? ' · ' + esc(l.supplier) : '') + '</td></tr>';
+      }).join('') + '</tbody>';
+    $('inc-lots-wrap').hidden = !inStock.length;
     $('inc-done').innerHTML = done.map(doneCard).join('');
     $('inc-done-wrap').hidden = !done.length;
     var sup = {}; shipments.forEach(function (s) { if (s.supplier) sup[s.supplier] = 1; });
@@ -202,7 +220,7 @@
     var s = shipments.filter(function (x) { return x.id === id; })[0];
     var el = $('inc-' + id);
     el.querySelector('.inc-items-wrap').innerHTML = itemsTable(s.items || [], true) +
-      '<p class="section-note">Change a number if a kit is missing or extra. Products marked "not tracked" start being tracked at the new count.</p>';
+      '<p class="section-note">Change a number if a kit is missing or extra, and add lot numbers and expiration dates from the labels. Products marked "not tracked" start being tracked at the new count.</p>';
     var preview = function () {
       el.querySelectorAll('.inc-recv').forEach(function (inp) {
         var k = Number(inp.getAttribute('data-k')), i = s.items[k], have = stock[i.slug];
@@ -219,9 +237,17 @@
       var btn = this; btn.disabled = true; btn.textContent = 'Adding…';
       var items = (s.items || []).map(function (i, k) {
         var kits = Math.max(0, Math.round(Number(el.querySelector('.inc-recv[data-k="' + k + '"]').value) || 0));
-        return { slug: i.slug, name: unitName[i.slug] || i.name, qty: kits * KIT };
+        var lotIn = el.querySelector('.inc-rlot[data-k="' + k + '"]'), expIn = el.querySelector('.inc-rexp[data-k="' + k + '"]');
+        return { slug: i.slug, name: unitName[i.slug] || i.name, qty: kits * KIT, lot: lotIn ? lotIn.value.trim() : '', exp: expIn ? expIn.value : '' };
       });
-      Incoming.receive(db(), id, { items: items, by: 'admin' }).then(function (r) {
+      Incoming.receive(db(), id, { items: items, by: 'admin' }).catch(function (err) {
+        // Firestore rules not yet updated for lots: add the stock anyway.
+        if (!/permission/i.test(err.message)) throw err;
+        return Incoming.receive(db(), id, { items: items, by: 'admin', noLots: true }).then(function (r) {
+          alert('Added to stock. Lot numbers weren\u2019t saved because the Firestore rules need updating (publish the latest firestore.rules).');
+          return r;
+        });
+      }).then(function (r) {
         if (r.already) el.querySelector('.inc-msg').textContent = 'Already received.';
         return load();
       }).catch(function (err) {
@@ -232,8 +258,9 @@
   }
 
   function load() {
-    return Promise.all([db().collection('incoming').get(), db().collection('inventory').get()]).then(function (r) {
-      shipments = []; stock = {};
+    return Promise.all([db().collection('incoming').get(), db().collection('inventory').get(), db().collection('lots').get().catch(function () { return null; })]).then(function (r) {
+      shipments = []; stock = {}; lots = [];
+      if (r[2]) r[2].forEach(function (d) { lots.push(Object.assign({ id: d.id }, d.data())); });
       r[0].forEach(function (d) { shipments.push(Object.assign({ id: d.id }, d.data())); });
       r[1].forEach(function (d) { if (typeof d.data().qty === 'number') stock[d.id] = d.data().qty; });
       render();
