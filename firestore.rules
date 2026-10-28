@@ -152,6 +152,12 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // Supplier shipments on their way (Admin → Incoming). Admin only; the
+    // UPS tracker uses the service account, which bypasses these rules.
+    match /incoming/{id} {
+      allow read, write: if isAdmin();
+    }
+
     // Visits that arrived through a referral link (?code=CODE, js/referral.js).
     // Anyone may add one visit to an existing promo code's counter; only the
     // admin and that code's affiliate can read it (affiliate dashboard).

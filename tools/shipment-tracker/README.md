@@ -65,3 +65,12 @@ npm test        # fake Firestore, UPS and EmailJS. No secrets needed.
 
 The tracker reuses `js/order-emails.js` (email content and template IDs) and
 `js/credits.js` (commission math), so the automatic and manual paths match.
+
+## Supplier shipments (Admin → Incoming)
+
+Each run also checks `incoming` shipments that are `ordered` or `in-transit`
+and have a UPS tracking number: first scan → `in-transit`, delivery →
+`delivered`. If the shipment has "Add to stock automatically" ticked, its
+kits (×10 vials) are added to `inventory` and it becomes `received`
+(`js/incoming.js`, one transaction, never twice). Shipments are watched for
+60 days.
