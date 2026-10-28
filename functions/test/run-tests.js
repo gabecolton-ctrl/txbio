@@ -95,6 +95,18 @@ test('prices come from the catalog, not the cart', async () => {
   assert.ok([...db.store.keys()].some((k) => k.startsWith('orders/')));
 });
 
+test('free standard shipping at $250+ after discounts; not for faster options or below', async () => {
+  let r = await run(cart([{ slug: 'semaglutide-10mg', qty: 3 }]));           // 327
+  assert.strictEqual(r.order.shipping, 0);
+  assert.ok(/FREE/.test(r.order.shippingOption), r.order.shippingOption);
+  assert.strictEqual(r.order.total, Math.round((327 + 26.98) * 100) / 100);
+  r = await run(cart([{ slug: 'semaglutide-10mg', qty: 3 }]), { shippingValue: '25' });
+  assert.strictEqual(r.order.shipping, 25);
+  const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 3 }]), { 'promoCodes/BIG30': { discountPercent: 30, type: 'always', active: true } });
+  r = await run(seed, { promoCode: 'BIG30' });                                 // 327 - 98.10 = 228.90
+  assert.strictEqual(r.order.shipping, 20);
+});
+
 test('matches the browser test order: promo 10% + $25 credit', async () => {
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }]), {
     'promoCodes/BOOP12': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'aff@example.com', timesUsed: 3, totalDiscounted: 10 },

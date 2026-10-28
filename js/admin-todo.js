@@ -103,6 +103,15 @@
           s.status === 'delivered' ? '<span class="todo-warn">Delivered, receive into stock</span>' : '<span class="todo-warn">Expected ' + esc(s.expectedDate) + ', late</span>']);
       }), ['Incoming', 'admin-incoming.html']);
 
+    // 6c. Lots expiring soon (js/lots.js)
+    var lotsSoon = (data.lots || []).filter(function (l) { var d = Lots.daysLeft(l.exp); return (Number(l.qtyRemaining) || 0) > 0 && d != null && d <= Lots.WARN_DAYS; }).sort(Lots.order);
+    add('lots', 'Lots expiring soon', 'Lots with vials left that expire within ' + Lots.WARN_DAYS + ' days (or already have). They ship first; consider a promotion, or pull expired vials.',
+      lotsSoon.map(function (l) {
+        var d = Lots.daysLeft(l.exp);
+        return row([esc(data.names[l.slug] || l.name || l.slug), 'lot ' + esc(l.lot || '—'), (Number(l.qtyRemaining) || 0) + ' vials',
+          '<span class="todo-warn">' + (d < 0 ? 'expired ' + esc(l.exp) : 'expires ' + esc(l.exp) + ' (' + d + ' days)') + '</span>'], d < 0);
+      }), ['Incoming', 'admin-incoming.html#inc-lots-wrap']);
+
     // 7. Stock
     var stockRows = [], sold = 0;
     Object.keys(data.stock).forEach(function (slug) {
@@ -121,7 +130,7 @@
       missing.length ? ['<li class="todo-row"><div class="todo-main todo-names">' + missing.slice(0, 12).map(function (u) { return esc(data.names[u] || u); }).join(', ') +
         (missing.length > 12 ? ', and ' + (missing.length - 12) + ' more' : '') + '</div></li>'] : [], ['At cost', 'admin-at-cost.html'], missing.length);
 
-    var total = sections.length ? pending.length + toShip.length + labels.length + noTrack.length + cancels.length + owed.length + inc.length + stockRows.length + missing.length : 0;
+    var total = sections.length ? pending.length + toShip.length + labels.length + noTrack.length + cancels.length + owed.length + inc.length + lotsSoon.length + stockRows.length + missing.length : 0;
     $('todo-lead').textContent = sections.length ? total + ' item' + (total === 1 ? '' : 's') + ' waiting on you, oldest first.' : 'Nothing waiting on you right now.';
     $('todo-sections').innerHTML = sections.join('');
     $('todo-clear').innerHTML = clear.length ? '<h2>All clear</h2><ul>' + clear.map(function (c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '';
@@ -157,11 +166,14 @@
       db.collection('promoCodes').get(),
       db.collection('costs').get().catch(function () { return null; }),
       db.collection('incoming').get().catch(function () { return null; }),
+      db.collection('lots').get().catch(function () { return null; }),
       fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
     ]).then(function (r) {
       var incoming = [];
       if (r[4]) r[4].forEach(function (d) { incoming.push(Object.assign({ id: d.id }, d.data())); });
-      r.splice(4, 1);
+      var lots = [];
+      if (r[5]) r[5].forEach(function (d) { lots.push(Object.assign({ id: d.id }, d.data())); });
+      r.splice(4, 2);
       var stock = {}, promos = {}, costs = {}, names = {}, units = [];
       r[1].forEach(function (d) { if (typeof d.data().qty === 'number') stock[d.id] = d.data().qty; });
       r[2].forEach(function (d) { var p = d.data(); promos[d.id.toUpperCase()] = { affiliateEmail: String(p.affiliateEmail || '').toLowerCase() }; });
@@ -174,7 +186,7 @@
         else units.push(slug);
       });
       units.sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
-      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming };
+      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming, lots: lots };
       $('todo-loading').style.display = 'none';
       $('todo-body').style.display = '';
       build();

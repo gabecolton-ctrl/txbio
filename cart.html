@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272305">
+<link rel="stylesheet" href="css/style.css?v=202610272346">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272305"></script>
+<script src="js/splash.js?v=202610272346"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -55,6 +55,7 @@
           <details>
             <summary>Admin</summary>
             <ul>
+              <li><a href="admin-dashboard.html" id="nav-admin-dashboard-link">Dashboard</a></li>
               <li><a href="admin-todo.html" id="nav-admin-todo-link">To-do</a></li>
               <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
               <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
@@ -74,6 +75,7 @@
             <summary>My account</summary>
             <ul>
               <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="favorites.html" id="nav-favorites-link">Favorites</a></li>
               <li class="nav-referrals" style="display:none;"><a href="referrals.html" id="nav-referrals-link">Referrals</a></li>
               <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
               <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
@@ -137,6 +139,10 @@
         </tfoot>
       </table>
     </div>
+    <div id="free-ship-bar" class="free-ship-bar" hidden>
+      <p id="free-ship-text"></p>
+      <div class="free-ship-track" aria-hidden="true"><span id="free-ship-fill"></span></div>
+    </div>
     <a href="checkout.html" class="btn">Proceed to Order Summary</a>
   </section>
 </main>
@@ -173,18 +179,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272305"></script>
-<script src="js/analytics.js?v=202610272305"></script>
-<script src="js/referral.js?v=202610272305"></script>
-<script src="js/cart.js?v=202610272305"></script>
-<script src="js/at-cost.js?v=202610272305"></script>
-<script src="js/family-pricing.js?v=202610272305"></script>
-<script src="js/pairings.js?v=202610272305"></script>
-<script src="js/nav-auth.js?v=202610272305"></script>
-<script src="js/profile-gate.js?v=202610272305"></script>
-<script src="js/auth-guard.js?v=202610272305"></script>
-<script src="js/main.js?v=202610272305"></script>
-<script src="js/nav-toggle.js?v=202610272305"></script>
+<script src="js/firebase-config.js?v=202610272346"></script>
+<script src="js/analytics.js?v=202610272346"></script>
+<script src="js/referral.js?v=202610272346"></script>
+<script src="js/cart.js?v=202610272346"></script>
+<script src="js/at-cost.js?v=202610272346"></script>
+<script src="js/family-pricing.js?v=202610272346"></script>
+<script src="js/free-shipping.js?v=202610272346"></script>
+<script src="js/pairings.js?v=202610272346"></script>
+<script src="js/nav-auth.js?v=202610272346"></script>
+<script src="js/profile-gate.js?v=202610272346"></script>
+<script src="js/auth-guard.js?v=202610272346"></script>
+<script src="js/main.js?v=202610272346"></script>
+<script src="js/nav-toggle.js?v=202610272346"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -255,6 +262,17 @@
         rowsEl.appendChild(tr);
       });
       totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + total;
+      // Free shipping progress (js/free-shipping.js); family orders have their own shipping.
+      var bar = document.getElementById('free-ship-bar');
+      if (window.FreeShipping && !fam) {
+        var left = FreeShipping.remaining(total);
+        document.getElementById('free-ship-text').innerHTML = left > 0
+          ? 'You\u2019re <strong>$' + left.toFixed(2) + '</strong> away from free 3-5 day shipping.'
+          : '<strong>You\u2019ve got free shipping!</strong> 3-5 day shipping is free at checkout (orders $250+ after discounts).';
+        document.getElementById('free-ship-fill').style.width = Math.min(100, total / FreeShipping.MIN * 100) + '%';
+        bar.classList.toggle('is-free', left <= 0);
+        bar.hidden = false;
+      } else if (bar) { bar.hidden = true; }
 
       rowsEl.querySelectorAll('input[data-slug]').forEach(function (input) {
         input.addEventListener('change', function () {

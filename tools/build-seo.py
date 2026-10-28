@@ -42,7 +42,7 @@ PUBLIC_PAGES = {
     'terms.html': ('Terms & Conditions | TXBioResearch', 'Terms and conditions of sale for TXBioResearch research products.'),
     'privacy.html': ('Privacy Policy | TXBioResearch', 'How TXBioResearch collects, uses, and protects your information.'),
 }
-PRIVATE = ['cart.html', 'checkout.html', 'account.html', 'orders.html', 'login.html', 'referrals.html']
+PRIVATE = ['cart.html', 'checkout.html', 'account.html', 'orders.html', 'login.html', 'referrals.html', 'favorites.html']
 SUPPLY_SLUGS = {'bac-water', 'sterile-water', 'acetic-acid-water', 'b12', 'l-carnitine-600mg'}
 
 e = lambda v: html.escape(v, quote=True)
@@ -193,6 +193,7 @@ def main():
                 'Disallow: /account.html\n'
                 'Disallow: /orders.html\n'
                 'Disallow: /referrals.html\n'
+                'Disallow: /favorites.html\n'
                 'Disallow: /functions/\n'
                 'Disallow: /tools/\n'
                 'Disallow: /data/\n'

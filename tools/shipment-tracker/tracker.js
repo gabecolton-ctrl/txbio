@@ -10,6 +10,8 @@ const path = require('path');
 const OrderEmails = require(path.join(__dirname, '../../js/order-emails.js'));
 const Credits = require(path.join(__dirname, '../../js/credits.js'));
 const Incoming = require(path.join(__dirname, '../../js/incoming.js'));
+const Loyalty = require(path.join(__dirname, '../../js/loyalty.js'));
+const Lots = require(path.join(__dirname, '../../js/lots.js'));
 const { summarize, isUpsNumber } = require('./ups');
 
 const DELIVERY_WATCH_DAYS = 21; // stop checking for delivery after this long
@@ -119,6 +121,18 @@ async function emailAndCredit({ db, email, ref, log }) {
     await creditAffiliate({ db, orderRef: ref, log });
   } catch (err) {
     log('  affiliate credit FAILED: ' + (err && err.message || err));
+  }
+  try {
+    const r = await Loyalty.credit(db, ref.id, 'Auto: UPS first scan');
+    if (r) log('  loyalty ' + r.tier.name + ' ' + Credits.formatCents(r.cents) + ' to the buyer');
+  } catch (err) {
+    log('  loyalty credit FAILED: ' + (err && err.message || err));
+  }
+  try {
+    const alloc = await Lots.allocate(db, ref.id);
+    if (alloc) log('  lots: ' + alloc.map((a) => a.slug + ' ' + (a.lot || 'no lot') + ' ×' + a.qty).join(', '));
+  } catch (err) {
+    log('  lot assignment FAILED: ' + (err && err.message || err));
   }
 }
 

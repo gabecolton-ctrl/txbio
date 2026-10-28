@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272305">
+<link rel="stylesheet" href="css/style.css?v=202610272346">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272305"></script>
+<script src="js/splash.js?v=202610272346"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -53,6 +53,7 @@
           <details>
             <summary>Admin</summary>
             <ul>
+              <li><a href="admin-dashboard.html" id="nav-admin-dashboard-link">Dashboard</a></li>
               <li><a href="admin-todo.html" id="nav-admin-todo-link">To-do</a></li>
               <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
               <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
@@ -72,6 +73,7 @@
             <summary>My account</summary>
             <ul>
               <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="favorites.html" id="nav-favorites-link">Favorites</a></li>
               <li class="nav-referrals" style="display:none;"><a href="referrals.html" id="nav-referrals-link">Referrals</a></li>
               <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
               <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
@@ -147,20 +149,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272305"></script>
-<script src="js/cart.js?v=202610272305"></script>
-<script src="js/site-config.js?v=202610272305"></script>
-<script src="js/payment-apps.js?v=202610272305"></script>
-<script src="js/account.js?v=202610272305"></script>
-<script src="js/inventory.js?v=202610272305"></script>
-<script src="js/promos.js?v=202610272305"></script>
-<script src="js/credits.js?v=202610272305"></script>
-<script src="js/order-emails.js?v=202610272305"></script>
-<script src="js/nav-auth.js?v=202610272305"></script>
-<script src="js/profile-gate.js?v=202610272305"></script>
-<script src="js/auth-guard.js?v=202610272305"></script>
-<script src="js/main.js?v=202610272305"></script>
-<script src="js/nav-toggle.js?v=202610272305"></script>
+<script src="js/firebase-config.js?v=202610272346"></script>
+<script src="js/cart.js?v=202610272346"></script>
+<script src="js/site-config.js?v=202610272346"></script>
+<script src="js/payment-apps.js?v=202610272346"></script>
+<script src="js/account.js?v=202610272346"></script>
+<script src="js/inventory.js?v=202610272346"></script>
+<script src="js/promos.js?v=202610272346"></script>
+<script src="js/credits.js?v=202610272346"></script>
+<script src="js/loyalty.js?v=202610272346"></script>
+<script src="js/lots.js?v=202610272346"></script>
+<script src="js/order-emails.js?v=202610272346"></script>
+<script src="js/nav-auth.js?v=202610272346"></script>
+<script src="js/profile-gate.js?v=202610272346"></script>
+<script src="js/auth-guard.js?v=202610272346"></script>
+<script src="js/main.js?v=202610272346"></script>
+<script src="js/nav-toggle.js?v=202610272346"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -269,7 +273,7 @@
           .catch(function (err) { errors.push('Stock was not returned (' + err.message + ').'); });
         return restock.then(function () {
           if (!window.Credits) return;
-          return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order)])
+          return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order), reverseLoyalty(order), releaseLots(order)])
             .catch(function (err) { errors.push('Store credit was not returned (' + err.message + ').'); });
         }).then(function () {
           if (errors.length) { setCancelStatus(order.id, errors.join(' ') + ' Reload the page to try again.', true); return; }
@@ -326,7 +330,7 @@
 
     return restock.then(function () {
       if (!window.Credits) return;
-      return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order)]).then(function (msgs) {
+      return Promise.all([reverseAffiliateCredit(order), refundBuyerCredit(order), reverseLoyalty(order), releaseLots(order)]).then(function (msgs) {
         msgs.filter(Boolean).forEach(function (m) { notes.push(m); });
       }).catch(function (err) {
         errors.push('Store credit was not adjusted (' + err.message + '); fix it before re-crediting.');
@@ -414,6 +418,48 @@
     }).catch(function (err) {
       setAffiliateText(order, 'Referral credit failed: ' + err.message, true);
     });
+  }
+
+  // Loyalty reward (js/loyalty.js): store credit by the buyer's tier when the
+  // order ships; taken back if the order is cancelled.
+  function loyaltyText(order) {
+    if (!order.loyaltyCreditedAt) return '';
+    return 'Loyalty: ' + Credits.formatCents(order.loyaltyCreditCents) + ' (' + (order.loyaltyTier || '') + ') to the buyer' + (order.loyaltyReversedAt ? ', then reversed.' : '.');
+  }
+  function setLoyaltyText(order, extra, isError) {
+    var el = document.querySelector('[data-loyalty-for="' + order.id + '"]');
+    if (!el) return;
+    el.textContent = [loyaltyText(order), extra].filter(Boolean).join(' ');
+    el.style.color = isError ? 'var(--danger)' : 'var(--text-light)';
+  }
+  function creditLoyalty(order) {
+    if (!window.Loyalty || order.atCostCode) return Promise.resolve();
+    return Loyalty.credit(firebase.firestore(), order.id, '').then(function (r) {
+      if (!r) return;
+      Object.assign(order, { loyaltyCreditCents: r.cents, loyaltyTier: r.tier.name, loyaltyCreditedAt: new Date().toISOString(), loyaltyReversedAt: null });
+      setLoyaltyText(order);
+    }).catch(function (err) { setLoyaltyText(order, 'Loyalty credit failed: ' + err.message, true); });
+  }
+  function reverseLoyalty(order) {
+    if (!window.Loyalty || !order.loyaltyCreditedAt || order.loyaltyReversedAt) return Promise.resolve('');
+    return Loyalty.reverse(firebase.firestore(), order.id).then(function (r) {
+      if (!r) return '';
+      order.loyaltyReversedAt = new Date().toISOString();
+      setLoyaltyText(order);
+      return 'Loyalty credit taken back.';
+    });
+  }
+
+  // Lots (js/lots.js): assigned first-to-expire-first when the order ships.
+  function allocateLots(order) {
+    if (!window.Lots) return Promise.resolve();
+    return Lots.allocate(firebase.firestore(), order.id).then(function (alloc) {
+      if (alloc) { order.lotAllocations = alloc; order.lotsAllocatedAt = new Date().toISOString(); }
+    }).catch(function (err) { console.error('Lot assignment failed:', err); });
+  }
+  function releaseLots(order) {
+    if (!window.Lots || !order.lotsAllocatedAt) return Promise.resolve('');
+    return Lots.release(firebase.firestore(), order.id).then(function (r) { return r ? 'Lot quantities returned.' : ''; });
   }
 
   function reverseAffiliateCredit(order) {
@@ -523,6 +569,7 @@
         '</div>' +
         '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
         '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
+        '<p class="tracking-status" data-loyalty-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? loyaltyText(order) : '') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
         '<div class="tracking-row">' +
           '<label for="tracking-' + order.id + '">Tracking number</label>' +
@@ -619,7 +666,7 @@
         Account.updateOrderStatus(orderId, newStatus).then(function () {
           select.disabled = false;
           if (order) order.status = newStatus;
-          if (order && newStatus === 'shipped') { sendShippedEmail(order); creditAffiliate(order); }
+          if (order && newStatus === 'shipped') { sendShippedEmail(order); creditAffiliate(order); creditLoyalty(order); allocateLots(order); }
           if (order && newStatus === 'cancelled') {
             setCancelStatus(orderId, 'Cancelling\u2026');
             cancelOrder(order).catch(function (err) {

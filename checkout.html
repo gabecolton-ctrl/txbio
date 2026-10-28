@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610272305">
+<link rel="stylesheet" href="css/style.css?v=202610272346">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610272305"></script>
+<script src="js/splash.js?v=202610272346"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -55,6 +55,7 @@
           <details>
             <summary>Admin</summary>
             <ul>
+              <li><a href="admin-dashboard.html" id="nav-admin-dashboard-link">Dashboard</a></li>
               <li><a href="admin-todo.html" id="nav-admin-todo-link">To-do</a></li>
               <li><a href="admin-orders.html" id="nav-admin-orders-link">Orders</a></li>
               <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
@@ -74,6 +75,7 @@
             <summary>My account</summary>
             <ul>
               <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
+              <li><a href="favorites.html" id="nav-favorites-link">Favorites</a></li>
               <li class="nav-referrals" style="display:none;"><a href="referrals.html" id="nav-referrals-link">Referrals</a></li>
               <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
               <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
@@ -148,6 +150,7 @@
           <option value="25">3 Business Days — $25</option>
           <option value="40">2nd Day — $40</option>
         </select>
+        <p id="free-ship-note" class="free-ship-note" style="display:none;"></p>
         <p style="font-size:0.85rem; color:var(--text-light); margin:-8px 0 0;">Orders ship 1&ndash;2 business days after payment. <a href="shipping.html" target="_blank">Shipping &amp; returns</a></p>
 
         <label for="promo-code-input" style="margin-top:16px;">Promo Code (optional)</label>
@@ -310,24 +313,25 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-<script src="js/firebase-config.js?v=202610272305"></script>
-<script src="js/analytics.js?v=202610272305"></script>
-<script src="js/referral.js?v=202610272305"></script>
-<script src="js/site-config.js?v=202610272305"></script>
-<script src="js/cart.js?v=202610272305"></script>
-<script src="js/account.js?v=202610272305"></script>
-<script src="js/inventory.js?v=202610272305"></script>
-<script src="js/promos.js?v=202610272305"></script>
-<script src="js/bogo.js?v=202610272305"></script>
-<script src="js/at-cost.js?v=202610272305"></script>
-<script src="js/payment-apps.js?v=202610272305"></script>
-<script src="js/credits.js?v=202610272305"></script>
-<script src="js/order-emails.js?v=202610272305"></script>
-<script src="js/nav-auth.js?v=202610272305"></script>
-<script src="js/profile-gate.js?v=202610272305"></script>
-<script src="js/auth-guard.js?v=202610272305"></script>
-<script src="js/main.js?v=202610272305"></script>
-<script src="js/nav-toggle.js?v=202610272305"></script>
+<script src="js/firebase-config.js?v=202610272346"></script>
+<script src="js/analytics.js?v=202610272346"></script>
+<script src="js/referral.js?v=202610272346"></script>
+<script src="js/site-config.js?v=202610272346"></script>
+<script src="js/cart.js?v=202610272346"></script>
+<script src="js/account.js?v=202610272346"></script>
+<script src="js/inventory.js?v=202610272346"></script>
+<script src="js/promos.js?v=202610272346"></script>
+<script src="js/bogo.js?v=202610272346"></script>
+<script src="js/at-cost.js?v=202610272346"></script>
+<script src="js/free-shipping.js?v=202610272346"></script>
+<script src="js/payment-apps.js?v=202610272346"></script>
+<script src="js/credits.js?v=202610272346"></script>
+<script src="js/order-emails.js?v=202610272346"></script>
+<script src="js/nav-auth.js?v=202610272346"></script>
+<script src="js/profile-gate.js?v=202610272346"></script>
+<script src="js/auth-guard.js?v=202610272346"></script>
+<script src="js/main.js?v=202610272346"></script>
+<script src="js/nav-toggle.js?v=202610272346"></script>
 <script>
   // Bank transfer details live in Firestore at settings/bankTransfer
   // (fields: accountNumber, routingNumber, optional bankName and accountName),
@@ -416,6 +420,28 @@
     }
     appliedDiscountAmount = discountAmount;
     var discountedSubtotal = currentSubtotal - discountAmount - bogoForTotals;
+    // Free standard shipping at $250+ after discounts (js/free-shipping.js).
+    // Family orders keep their own option.
+    if (window.FreeShipping) {
+      var freeNote = document.getElementById('free-ship-note');
+      if (!atCost) {
+        Array.prototype.forEach.call(shipSel.options, function (o) {
+          if (!o.hasAttribute('data-label')) o.setAttribute('data-label', o.textContent);
+          var base = parseFloat(o.getAttribute('data-price') || o.value) || 0;
+          var p = FreeShipping.priceFor(o.value, base, discountedSubtotal, false);
+          o.textContent = p === 0 && base > 0 ? FreeShipping.freeLabel(o.getAttribute('data-label')) : o.getAttribute('data-label');
+        });
+        shipping = FreeShipping.priceFor(shipSel.value, shipping, discountedSubtotal, false);
+        var left = FreeShipping.remaining(discountedSubtotal);
+        freeNote.textContent = left > 0
+          ? 'Add $' + left.toFixed(2) + ' more for free 3-5 day shipping (orders $' + FreeShipping.MIN + '+).'
+          : (String(shipSel.value) === FreeShipping.OPTION ? 'Free shipping applied.' : 'Your order qualifies for free 3-5 day shipping.');
+        freeNote.classList.toggle('is-free', left <= 0);
+        freeNote.style.display = '';
+      } else {
+        freeNote.style.display = 'none';
+      }
+    }
     var tax = Math.round(discountedSubtotal * TAX_RATE * 100) / 100;
     var total = discountedSubtotal + shipping + tax;
 
@@ -446,7 +472,7 @@
       });
     }
     document.getElementById('summary-subtotal').textContent = '$' + (atCost ? currentSubtotal - discountAmount : currentSubtotal).toFixed(2);
-    document.getElementById('summary-shipping').textContent = '$' + shipping.toFixed(2);
+    document.getElementById('summary-shipping').textContent = shipping === 0 && !atCost ? 'FREE' : '$' + shipping.toFixed(2);
     document.getElementById('summary-tax').textContent = '$' + tax.toFixed(2);
     document.getElementById('summary-total').textContent = '$' + total.toFixed(2);
 

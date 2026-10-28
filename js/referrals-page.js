@@ -129,7 +129,7 @@
       return '<div class="pnl-tile"><span class="pnl-label">' + r[0] + '</span><span class="pnl-value">' + r[1] + '</span>' + (r[2] ? '<span class="pnl-sub">' + r[2] + '</span>' : '') + '</div>';
     }).join('');
 
-    var LABELS = { earned: 'Referral credit', reversed: 'Referral reversed (order cancelled)', spent: 'Used at checkout', refunded: 'Returned (order cancelled)', adjusted: 'Adjustment' };
+    var LABELS = { earned: 'Referral credit', reversed: 'Referral reversed (order cancelled)', spent: 'Used at checkout', refunded: 'Returned (order cancelled)', adjusted: 'Adjustment', loyalty: 'Rewards credit', 'loyalty-reversed': 'Rewards credit taken back' };
     var rows = entries.map(function (en) {
       var amt = en.amountCents || 0;
       var activity = (LABELS[en.type] || en.type) + (en.type === 'earned' && en.code && myCodes.length > 1 ? ' (' + esc(en.code) + ')' : '');
