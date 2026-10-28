@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281412">
+<link rel="stylesheet" href="css/style.css?v=202610281417">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281412"></script>
+<script src="js/splash.js?v=202610281417"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -144,6 +144,7 @@
           <thead><tr><th>Method</th><th>Percent</th><th>Flat per payment</th></tr></thead>
           <tbody id="fee-rows"></tbody>
         </table>
+        <label class="checkbox-row" style="margin-top:14px;"><input type="checkbox" id="fees-charge" checked> <span>Add these fees to the customer’s total at checkout (shown as “Processing fee”)</span></label>
         <p id="fees-msg" class="form-message" style="display:none; margin-top:14px;"></p>
         <button type="submit" class="btn" style="margin-top:14px;">Save fees</button>
       </form>
@@ -200,15 +201,15 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281412"></script>
-<script src="js/cart.js?v=202610281412"></script>
-<script src="js/payment-apps.js?v=202610281412"></script>
-<script src="js/staff.js?v=202610281412"></script>
-<script src="js/nav-auth.js?v=202610281412"></script>
-<script src="js/profile-gate.js?v=202610281412"></script>
-<script src="js/auth-guard.js?v=202610281412"></script>
-<script src="js/main.js?v=202610281412"></script>
-<script src="js/nav-toggle.js?v=202610281412"></script>
+<script src="js/firebase-config.js?v=202610281417"></script>
+<script src="js/cart.js?v=202610281417"></script>
+<script src="js/payment-apps.js?v=202610281417"></script>
+<script src="js/staff.js?v=202610281417"></script>
+<script src="js/nav-auth.js?v=202610281417"></script>
+<script src="js/profile-gate.js?v=202610281417"></script>
+<script src="js/auth-guard.js?v=202610281417"></script>
+<script src="js/main.js?v=202610281417"></script>
+<script src="js/nav-toggle.js?v=202610281417"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   function msg(id, text, ok) {
@@ -255,6 +256,7 @@
     }).join('');
     settings.doc('paymentFees').get().then(function (doc) {
       var d = doc.exists ? doc.data() : {};
+      document.getElementById('fees-charge').checked = d.chargeCustomer !== false;
       feeRows.querySelectorAll('input[data-fee]').forEach(function (inp) {
         var v = d[inp.getAttribute('data-fee')] && d[inp.getAttribute('data-fee')][inp.getAttribute('data-part')];
         if (v) inp.value = v;
@@ -262,7 +264,7 @@
     }).catch(function (err) { msg('fees-msg', 'Could not load: ' + err.message, false); });
     document.getElementById('fees-form').addEventListener('submit', function (ev) {
       ev.preventDefault();
-      var out = { updatedAt: new Date().toISOString() };
+      var out = { updatedAt: new Date().toISOString(), chargeCustomer: document.getElementById('fees-charge').checked };
       var bad = false;
       PaymentApps.FEE_METHODS.forEach(function (m) {
         var pct = Number(feeRows.querySelector('[data-fee="' + m + '"][data-part="pct"]').value || 0);
@@ -271,7 +273,7 @@
         out[m] = { pct: Math.round(pct * 100) / 100, flat: Math.round(flat * 100) / 100 };
       });
       if (bad) return msg('fees-msg', 'Use a percent between 0 and 20 and a flat fee of 0 or more.', false);
-      settings.doc('paymentFees').set(out).then(function () { msg('fees-msg', 'Saved. The P&L now subtracts these fees.', true); })
+      settings.doc('paymentFees').set(out).then(function () { msg('fees-msg', out.chargeCustomer ? 'Saved. Customers pay these fees at checkout, and the P&L subtracts what you’re charged.' : 'Saved. You absorb these fees; the P&L subtracts them.', true); })
         .catch(function (err) { msg('fees-msg', 'Could not save: ' + err.message, false); });
     });
 

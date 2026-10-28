@@ -213,6 +213,7 @@
             discountRowHtml +
             (order.bogoDiscount > 0 ? '<tr><td>BOGO discount</td><td>-$' + Number(order.bogoDiscount).toFixed(2) + '</td></tr>' : '') +
             '<tr><td>Tax</td><td>$' + order.tax + '</td></tr>' +
+            (order.paymentFee > 0 ? '<tr><td>Processing fee</td><td>$' + Number(order.paymentFee).toFixed(2) + '</td></tr>' : '') +
             (order.creditUsed > 0 ? '<tr><td>Store credit</td><td>-$' + Number(order.creditUsed).toFixed(2) + '</td></tr>' : '') +
             '<tr><td style="font-weight:700;">Total</td><td style="font-weight:700;">$' + order.total + '</td></tr>' +
             '</table>';

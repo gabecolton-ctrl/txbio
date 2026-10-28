@@ -45,6 +45,10 @@ var PaymentApps = (function () {
   //   { venmo: { pct, flat }, cashapp: { pct, flat }, bank: {...}, bitcoin: {...}, inquiry: {...} }
   // pct is a percent of the amount received; flat is dollars per payment.
   var FEE_METHODS = ['venmo', 'cashapp', 'bank', 'bitcoin', 'inquiry'];
+  // Whether checkout adds the fee to the customer's total (default yes).
+  function chargesCustomer(fees) { return !!fees && fees.chargeCustomer !== false; }
+  // What the customer pays on top for this method, given what they owe.
+  function customerFee(fees, method, amount) { return chargesCustomer(fees) ? feeFor(fees, method, amount) : 0; }
   function feeFor(fees, method, amount) {
     var f = fees && fees[method];
     if (!f || !(amount > 0)) return 0;
@@ -62,7 +66,7 @@ var PaymentApps = (function () {
   return {
     LABELS: LABELS, cleanVenmo: cleanVenmo, cleanCashtag: cleanCashtag, display: display,
     note: note, payLink: payLink, instructions: instructions, load: load,
-    FEE_METHODS: FEE_METHODS, feeFor: feeFor
+    FEE_METHODS: FEE_METHODS, feeFor: feeFor, chargesCustomer: chargesCustomer, customerFee: customerFee
   };
 })();
 

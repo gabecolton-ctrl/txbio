@@ -276,6 +276,18 @@ test('local pickup / drop-off: $5 for listed customers only', async () => {
   assert.strictEqual(r2.order.shipping, 7.5);
 });
 
+test('processing fee: added for the chosen method unless turned off', async () => {
+  const base = Object.assign(cart([{ slug: 'cagrilintide', qty: 1 }]), { 'settings/paymentFees': { bank: { pct: 3, flat: 0.5 } } });
+  const plain = (await run(Object.assign({}, base, { 'settings/paymentFees': {} }), { paymentMethod: 'bank' })).order;
+  const { order } = await run(base, { paymentMethod: 'bank' });
+  assert.strictEqual(order.paymentFee, Math.round((plain.total * 0.03 + 0.5) * 100) / 100);
+  assert.strictEqual(order.total, Math.round((plain.total + order.paymentFee) * 100) / 100);
+  const btc = (await run(base, { paymentMethod: 'bitcoin' })).order;
+  assert.strictEqual(btc.paymentFee, 0);
+  const off = (await run(Object.assign({}, base, { 'settings/paymentFees': { chargeCustomer: false, bank: { pct: 3 } } }), { paymentMethod: 'bank' })).order;
+  assert.strictEqual(off.total, plain.total);
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');
