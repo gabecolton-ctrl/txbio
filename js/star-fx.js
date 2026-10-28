@@ -77,7 +77,7 @@
     wake();
 
     if (document.documentElement.classList.contains('season-halloween')) {
-      addBats(svg.parentNode);
+      if (!svg.parentNode.classList.contains('has-bats')) addBats(svg.parentNode);
       halloweenEgg(svg, verts, wake);
     }
   }
@@ -162,6 +162,11 @@
     var tries = 0;
     (function wait() {
       if (document.documentElement.classList.contains('hero-paused') && tries++ < 600) return setTimeout(wait, 200);
+      // Bats come out right away; the star's physics wait for it to finish drawing in.
+      var svg = document.querySelector('.hero-mark > svg');
+      if (svg && document.documentElement.classList.contains('season-halloween') && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        setTimeout(function () { if (!svg.parentNode.classList.contains('has-bats')) addBats(svg.parentNode); }, 500);
+      }
       setTimeout(init, document.documentElement.classList.contains('entry-open') ? 2600 : 2400);
     })();
   }
