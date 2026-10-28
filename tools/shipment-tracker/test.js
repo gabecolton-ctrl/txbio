@@ -30,7 +30,7 @@ function fakeDb(seed) {
       const t = {
         get: async (r) => snap(r.path),
         update: (r, f) => writes.push(() => Object.assign(data[r.path], f)),
-        set: (r, d) => writes.push(() => { data[r.path] = JSON.parse(JSON.stringify(d)); })
+        set: (r, d, o) => writes.push(() => { data[r.path] = o && o.merge ? Object.assign(data[r.path] || {}, JSON.parse(JSON.stringify(d))) : JSON.parse(JSON.stringify(d)); })
       };
       const out = await fn(t);
       writes.forEach((w) => w());
@@ -181,6 +181,53 @@ test('order cancelled meanwhile is not shipped', async () => {
   const { db, sent } = await scenario({ 'orders/a': ORDER({ status: 'cancelled' }) }, { [T('0123456784')]: DROPPED });
   assert.strictEqual(db.data['orders/a'].status, 'cancelled');
   assert.strictEqual(sent.length, 0);
+});
+
+// --- supplier shipments (Admin → Incoming) ---
+const SHIP = (over) => Object.assign({
+  supplier: 'Lab Supply', reference: 'PO-7', status: 'ordered', trackingNumber: T('5550000001'), autoReceive: true,
+  createdAt: new Date().toISOString(),
+  items: [{ slug: 'bpc-157-10mg', name: 'BPC 157 10mg', kits: 2, qty: 20 }, { slug: 'kpv-5mg', name: 'KPV 5mg', kits: 1, qty: 10 }]
+}, over);
+
+test('incoming: label only stays ordered; first scan → in transit', async () => {
+  let r = await scenario({ 'incoming/s': SHIP() }, { [T('5550000001')]: LABEL });
+  assert.strictEqual(r.db.data['incoming/s'].status, 'ordered');
+  r = await scenario({ 'incoming/s': SHIP() }, { [T('5550000001')]: DROPPED });
+  assert.strictEqual(r.db.data['incoming/s'].status, 'in-transit');
+  assert.ok(r.db.data['incoming/s'].shippedAt);
+});
+
+test('incoming: delivered + auto-receive adds kits×10 to stock once', async () => {
+  const seed = { 'incoming/s': SHIP({ status: 'in-transit' }), 'inventory/bpc-157-10mg': { qty: 5 } };
+  const r = await scenario(seed, { [T('5550000001')]: DELIVERED });
+  const d = r.db.data;
+  assert.strictEqual(d['incoming/s'].status, 'received');
+  assert.strictEqual(d['inventory/bpc-157-10mg'].qty, 25);
+  assert.strictEqual(d['inventory/kpv-5mg'].qty, 10); // wasn't tracked: starts at the received count
+  assert.ok(/auto/.test(d['incoming/s'].receivedBy));
+  const line = d['incoming/s'].receivedItems.find((l) => l.slug === 'kpv-5mg');
+  assert.strictEqual(line.before, null);
+  // A second receive does nothing.
+  const Incoming = require('../../js/incoming.js');
+  const again = await Incoming.receive(r.db, 's', { by: 'admin' });
+  assert.strictEqual(again.already, true);
+  assert.strictEqual(d['inventory/bpc-157-10mg'].qty, 25);
+});
+
+test('incoming: delivered without auto-receive waits for the admin', async () => {
+  const r = await scenario({ 'incoming/s': SHIP({ autoReceive: false }), 'inventory/bpc-157-10mg': { qty: 5 } }, { [T('5550000001')]: DELIVERED });
+  assert.strictEqual(r.db.data['incoming/s'].status, 'delivered');
+  assert.strictEqual(r.db.data['inventory/bpc-157-10mg'].qty, 5);
+});
+
+test('incoming: received/cancelled/no-tracking/non-UPS are not looked up', async () => {
+  const r = await scenario({
+    'incoming/a': SHIP({ status: 'received' }), 'incoming/b': SHIP({ status: 'cancelled' }),
+    'incoming/c': SHIP({ trackingNumber: '' }), 'incoming/d': SHIP({ trackingNumber: '9400111899223344556677' })
+  }, {});
+  assert.deepStrictEqual(r.calls, []);
+  assert.ok(/Not a UPS/.test(r.db.data['incoming/d'].trackingStatusText));
 });
 
 (async () => {

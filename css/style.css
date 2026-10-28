@@ -1092,3 +1092,42 @@ html.family-pending .bogo-badge, html.family-pending .bogo-card-note, html.famil
 .pairs-cart { margin-top: 36px; }
 .order-pay-box .bank-mini { max-width: 420px; margin: 0 0 4px; }
 .order-pay-box .btc-mini code { overflow-wrap: anywhere; font-size: 0.92rem; }
+
+/* Admin Incoming */
+.inc-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; margin-bottom: 22px; }
+.inc-bar .section-note { margin: 0; }
+.inc-form { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 28px; }
+.inc-form[hidden] { display: none; }
+.inc-form h2 { margin-top: 0; font-size: 1.25rem; }
+.inc-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 0 16px; }
+.inc-lines select, .inc-lines input { margin: 0; }
+.inc-lines .inc-kits { width: 90px; }
+.inc-lines td:first-child { min-width: 240px; }
+.inc-remove, .inc-cancel-link { background: none; border: 0; color: var(--alert); font: inherit; font-size: 0.85rem; cursor: pointer; padding: 4px; }
+.inc-add-line { margin: 10px 0 4px; padding: 8px 14px; font-size: 0.88rem; }
+.inc-total { color: var(--muted); font-size: 0.9rem; margin: 4px 0 14px; }
+.inc-check { display: flex; gap: 8px; align-items: center; font-weight: 500; margin: 14px 0 2px; }
+.inc-check input { width: auto; margin: 0; }
+.inc-auto-note { margin-top: 0; }
+.inc-form-actions { display: flex; gap: 10px; margin-top: 12px; }
+.inc-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 18px 20px; margin-bottom: 16px; }
+.inc-card-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap; }
+.inc-meta { color: var(--muted); font-size: 0.86rem; margin-top: 2px; }
+.inc-tracking, .inc-auto-line, .inc-notes { font-size: 0.88rem; margin: 10px 0 0; }
+.inc-auto-line { color: var(--muted); margin-top: 4px; }
+.inc-notes { color: var(--muted); font-style: italic; }
+.inc-checked, .inc-untracked { color: var(--faint); }
+.inc-items { margin-top: 12px; }
+.inc-items input { width: 80px; margin: 0; padding: 6px 8px; }
+.inc-items-wrap { overflow-x: auto; }
+.inc-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin-top: 14px; }
+.inc-actions .btn, .inc-actions .btn-outline-light { padding: 9px 16px; font-size: 0.9rem; }
+.inc-msg { margin: 8px 0 0; font-size: 0.88rem; color: var(--alert); }
+.inc-msg:empty { display: none; }
+.status-pill.inc-status-ordered { background: var(--raised); color: var(--muted); }
+.status-pill.inc-status-in-transit { background: var(--mint-wash); color: var(--mint); }
+.status-pill.inc-status-delivered { background: var(--alert-wash); color: var(--alert); }
+details.inc-done { border-top: 1px solid var(--line-soft); padding: 10px 0; font-size: 0.9rem; }
+details.inc-done summary { cursor: pointer; color: var(--muted); }
+details.inc-done summary strong { color: var(--frost); }
+#inc-open-wrap h2, #inc-done-wrap h2 { font-size: 1.25rem; }

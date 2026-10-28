@@ -9,9 +9,11 @@
 const path = require('path');
 const OrderEmails = require(path.join(__dirname, '../../js/order-emails.js'));
 const Credits = require(path.join(__dirname, '../../js/credits.js'));
+const Incoming = require(path.join(__dirname, '../../js/incoming.js'));
 const { summarize, isUpsNumber } = require('./ups');
 
 const DELIVERY_WATCH_DAYS = 21; // stop checking for delivery after this long
+const INCOMING_WATCH_DAYS = 60; // supplier shipments: stop checking after this long
 
 function nowIso() { return new Date().toISOString(); }
 
@@ -133,6 +135,33 @@ async function checkDelivered({ carrier, doc }) {
   return s.state === 'delivered' ? 'delivered' : 'in-transit';
 }
 
+// Supplier shipments (Admin → Incoming): ordered → in-transit → delivered.
+// On delivery, a shipment set to auto-receive is added to stock
+// (js/incoming.js, one transaction, never twice).
+async function checkIncoming({ db, carrier, doc, log }) {
+  const ship = doc.data();
+  const num = String(ship.trackingNumber || '').replace(/\s+/g, '').toUpperCase();
+  if (!num) return 'incoming-no-tracking';
+  if (!isUpsNumber(num)) {
+    if (!ship.trackingCheckedAt) await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: 'Not a UPS number, so it isn’t checked automatically.' });
+    return 'incoming-not-ups';
+  }
+  const since = Date.parse(ship.createdAt || 0);
+  if (since && Date.now() - since > INCOMING_WATCH_DAYS * 864e5) return 'incoming-too-old';
+  const s = summarize(await carrier.track(num));
+  const fields = { trackingCheckedAt: nowIso(), trackingStatusText: s.description };
+  if (s.state === 'moving' && ship.status === 'ordered') Object.assign(fields, { status: 'in-transit', shippedAt: s.at || nowIso() });
+  if (s.state === 'delivered') Object.assign(fields, { status: 'delivered', deliveredAt: s.deliveredAt || nowIso(), shippedAt: ship.shippedAt || s.at || nowIso() });
+  await doc.ref.update(fields);
+  const label = (ship.supplier || 'Supplier') + (ship.reference ? ' ' + ship.reference : '');
+  if (s.state !== 'delivered') return s.state === 'moving' ? 'incoming-in-transit' : 'incoming-waiting';
+  log('Incoming ' + label + ' delivered');
+  if (ship.autoReceive === false) return 'incoming-delivered';
+  const r = await Incoming.receive(db, doc.id, { by: 'auto (UPS delivered)' });
+  if (r.ok) log('  added to stock: ' + r.lines.map((l) => l.slug + ' +' + l.qty).join(', '));
+  return r.ok ? 'incoming-received' : 'incoming-delivered';
+}
+
 async function run({ db, carrier, email, log = console.log }) {
   const tally = {};
   const count = (k) => { tally[k] = (tally[k] || 0) + 1; };
@@ -161,8 +190,16 @@ async function run({ db, carrier, email, log = console.log }) {
     catch (err) { count('error'); log('#' + (doc.data().orderNumber || doc.id) + ' delivery check error: ' + err.message); }
   }
 
+  for (const st of ['ordered', 'in-transit']) {
+    const inc = await db.collection('incoming').where('status', '==', st).get();
+    for (const doc of inc.docs) {
+      try { count(await checkIncoming({ db, carrier, doc, log })); }
+      catch (err) { count('error'); log('Incoming ' + doc.id + ' error: ' + err.message); }
+    }
+  }
+
   log('Done: ' + (Object.keys(tally).length ? JSON.stringify(tally) : 'nothing to check'));
   return tally;
 }
 
-module.exports = { run, DELIVERY_WATCH_DAYS };
+module.exports = { run, DELIVERY_WATCH_DAYS, INCOMING_WATCH_DAYS };

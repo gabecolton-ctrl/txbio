@@ -91,6 +91,18 @@
           cents > 0 ? '<button type="button" class="btn-outline-light todo-btn" data-credit="' + esc(o.id) + '">Give credit</button>' : '');
       }));
 
+    // 6b. Incoming supplier shipments: delivered but not in stock yet, or late
+    var today = new Date().toISOString().slice(0, 10);
+    var inc = (data.incoming || []).filter(function (s) {
+      return s.status === 'delivered' || ((s.status === 'ordered' || s.status === 'in-transit') && s.expectedDate && s.expectedDate < today);
+    });
+    add('incoming', 'Incoming shipments', 'Delivered boxes to check in, and shipments past their expected date.',
+      inc.map(function (s) {
+        var vials = (s.items || []).reduce(function (n, i) { return n + (Number(i.qty) || 0); }, 0);
+        return row(['<a href="admin-incoming.html#inc-' + esc(s.id) + '">' + esc(s.supplier || 'Supplier') + (s.reference ? ' · ' + esc(s.reference) : '') + '</a>', vials + ' vials',
+          s.status === 'delivered' ? '<span class="todo-warn">Delivered, receive into stock</span>' : '<span class="todo-warn">Expected ' + esc(s.expectedDate) + ', late</span>']);
+      }), ['Incoming', 'admin-incoming.html']);
+
     // 7. Stock
     var stockRows = [], sold = 0;
     Object.keys(data.stock).forEach(function (slug) {
@@ -109,7 +121,7 @@
       missing.length ? ['<li class="todo-row"><div class="todo-main todo-names">' + missing.slice(0, 12).map(function (u) { return esc(data.names[u] || u); }).join(', ') +
         (missing.length > 12 ? ', and ' + (missing.length - 12) + ' more' : '') + '</div></li>'] : [], ['At cost', 'admin-at-cost.html'], missing.length);
 
-    var total = sections.length ? pending.length + toShip.length + labels.length + noTrack.length + cancels.length + owed.length + stockRows.length + missing.length : 0;
+    var total = sections.length ? pending.length + toShip.length + labels.length + noTrack.length + cancels.length + owed.length + inc.length + stockRows.length + missing.length : 0;
     $('todo-lead').textContent = sections.length ? total + ' item' + (total === 1 ? '' : 's') + ' waiting on you, oldest first.' : 'Nothing waiting on you right now.';
     $('todo-sections').innerHTML = sections.join('');
     $('todo-clear').innerHTML = clear.length ? '<h2>All clear</h2><ul>' + clear.map(function (c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '';
@@ -144,8 +156,12 @@
       db.collection('inventory').get(),
       db.collection('promoCodes').get(),
       db.collection('costs').get().catch(function () { return null; }),
+      db.collection('incoming').get().catch(function () { return null; }),
       fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
     ]).then(function (r) {
+      var incoming = [];
+      if (r[4]) r[4].forEach(function (d) { incoming.push(Object.assign({ id: d.id }, d.data())); });
+      r.splice(4, 1);
       var stock = {}, promos = {}, costs = {}, names = {}, units = [];
       r[1].forEach(function (d) { if (typeof d.data().qty === 'number') stock[d.id] = d.data().qty; });
       r[2].forEach(function (d) { var p = d.data(); promos[d.id.toUpperCase()] = { affiliateEmail: String(p.affiliateEmail || '').toLowerCase() }; });
@@ -158,7 +174,7 @@
         else units.push(slug);
       });
       units.sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
-      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units };
+      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming };
       $('todo-loading').style.display = 'none';
       $('todo-body').style.display = '';
       build();
