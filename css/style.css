@@ -1029,3 +1029,23 @@ html.family-pending .bogo-badge, html.family-pending .bogo-card-note, html.famil
 .ref-copy { background: transparent; border: 1px solid var(--line); color: var(--mint); border-radius: var(--radius-sm); padding: 4px 10px; font: inherit; font-size: 0.8rem; cursor: pointer; }
 .ref-copy:hover { border-color: var(--mint); }
 .ref-copy.is-done { color: var(--frost); border-color: var(--mint); background: var(--mint-wash); }
+
+/* Affiliate dashboard (referrals.html) */
+.ref-card { background: var(--surface); border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 20px 22px; margin-bottom: 16px; }
+.ref-card-label { color: var(--muted); font-size: 0.85rem; }
+.ref-card-row { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 10px 0 12px; }
+.ref-card-url { flex: 1 1 260px; min-width: 0; overflow-wrap: anywhere; font-size: 1.05rem; color: var(--frost); background: var(--raised); border: 1px solid var(--line); border-radius: var(--radius-sm); padding: 10px 12px; }
+.ref-card-row .btn, .ref-card-row .btn-outline-light { padding: 10px 18px; }
+.ref-card-row .btn.is-done { background: var(--mint-press); }
+.ref-card-perk { margin: 0 0 6px; color: var(--frost); }
+.ref-card-more { margin: 0; color: var(--muted); font-size: 0.88rem; }
+.ref-mini { background: transparent; border: 1px solid var(--line); color: var(--mint); border-radius: 999px; padding: 3px 10px; font: inherit; font-size: 0.8rem; cursor: pointer; margin: 4px 2px 0; }
+.ref-mini.is-done { border-color: var(--mint); background: var(--mint-wash); color: var(--frost); }
+.ref-paused { color: var(--alert); }
+.ref-stats { margin-top: 8px; }
+.ref-steps { padding-left: 20px; color: var(--muted); }
+.ref-steps li { margin-bottom: 8px; }
+.ref-pos { color: var(--mint); }
+.ref-neg { color: var(--muted); }
+#ref-body h2 { margin-top: 36px; }
+.ref-preview { font-size: 0.8rem; }
