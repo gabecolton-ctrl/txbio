@@ -53,7 +53,7 @@ var Bogo = (function () {
 
     items.forEach(function (item) {
       // Cases already carry their own bulk discount, so BOGO skips them.
-      if (item.caseOf || /-case$/.test(item.slug)) return;
+      if (item.caseOf || item.quoteId || /-case$/.test(item.slug)) return; // quotes keep their price
       if (!isEligible(item.slug, eligibleSlugs)) return;
       var freeUnits = Math.floor(item.qty / 2);
       if (freeUnits <= 0) return;

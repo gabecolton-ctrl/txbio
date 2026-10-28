@@ -1363,3 +1363,24 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .carts-bar select { margin-bottom: 0; width: auto; }
 .carts-table .cart-sub, .carts-table .cart-pack { color: var(--muted); font-size: 0.85rem; }
 .carts-table tr.cart-idle td:first-child { box-shadow: inset 3px 0 0 rgba(255, 170, 60, 0.7); }
+
+/* Quotes (Admin → New order) */
+.quote-tag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; font-size: 0.74rem; font-weight: 600; color: var(--mint); background: var(--mint-wash); border: 1px solid rgba(94, 234, 212, 0.35); vertical-align: middle; white-space: nowrap; }
+.quote-tag.is-ended { color: var(--alert); background: var(--alert-wash); border-color: rgba(242, 134, 122, 0.4); }
+#quote-problems p { margin: 4px 0; }
+.no-card { max-width: 720px; }
+.no-customer-info { margin: 8px 0 0; font-size: 0.9rem; color: var(--muted); }
+.no-table select, .no-table input { margin-bottom: 0; }
+.no-table .no-qty { width: 72px; }
+.no-table .no-price { width: 110px; }
+.no-table .no-case { margin: 6px 0 0; font-size: 0.85rem; }
+.no-loss { color: var(--alert); }
+.no-row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.no-row3 { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
+.no-summary { margin: 16px 0; }
+@media (max-width: 560px) { .no-row2, .no-row3 { grid-template-columns: 1fr; } }
+#no-body .catalog-wrap { max-width: 980px; }
+.no-table .no-prod { min-width: 230px; }
+.no-table td { vertical-align: top; }
+@media (max-width: 700px) { .no-table .no-prod { min-width: 0; width: 100%; } }
+#no-form { max-width: none; }

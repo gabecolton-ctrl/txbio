@@ -19,7 +19,7 @@
     if (d < 1) return Math.round(d * 24) + 'h ago';
     var n = Math.floor(d); return n + ' day' + (n === 1 ? '' : 's') + ' ago';
   }
-  var METHOD = { venmo: 'Venmo', cashapp: 'Cash App', bank: 'Bank transfer', bitcoin: 'Bitcoin' };
+  var METHOD = { venmo: 'Venmo', cashapp: 'Cash App', bank: 'Bank transfer', bitcoin: 'Bitcoin', cash: 'Cash' };
   function orderLink(o) { return '<a href="admin-orders.html?q=' + encodeURIComponent(o.orderNumber || o.id) + '">#' + esc(o.orderNumber || o.id.slice(0, 8)) + '</a>'; }
 
   function row(cells, flag, actions) {
