@@ -1384,3 +1384,6 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .no-table td { vertical-align: top; }
 @media (max-width: 700px) { .no-table .no-prod { min-width: 0; width: 100%; } }
 #no-form { max-width: none; }
+/* Fixed quantity (quoted case): same box width as the editable ones, so numbers line up. */
+.cart-table td.cart-qty .quote-qty { display: inline-block; width: 72px; padding: 8px; text-align: center; border: 1px solid transparent; }
+@media (max-width: 720px) { .cart-table td.cart-qty .quote-qty { margin-left: auto; } }
