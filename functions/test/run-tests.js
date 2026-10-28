@@ -238,6 +238,14 @@ test('role-only code (Employee pricing): members only', async () => {
   assert.ok(order.discount > 0);
 });
 
+test('once-per-customer code: second use refused; cancelled first use does not count', async () => {
+  const base = Object.assign(cart([{ slug: 'cagrilintide', qty: 1 }]), { 'promoCodes/SPOOKY31': { discountPercent: 31, type: 'always', active: true, oncePerCustomer: true } });
+  const { order } = await run(base, { promoCode: 'SPOOKY31' });
+  assert.strictEqual(order.promoCode, 'SPOOKY31');
+  await rejects(run(Object.assign({ 'orders/prev': { userId: 'u1', promoCode: 'SPOOKY31', status: 'shipped' } }, base), { promoCode: 'SPOOKY31' }), 'failed-precondition', 'one use per customer');
+  await run(Object.assign({ 'orders/prev': { userId: 'u1', promoCode: 'SPOOKY31', status: 'cancelled' } }, base), { promoCode: 'SPOOKY31' });
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');
