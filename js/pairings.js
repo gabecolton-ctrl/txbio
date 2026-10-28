@@ -4,7 +4,8 @@
 // an Add button; family accounts see their price; sold-out sizes are skipped.
 var Pairings = (function () {
   // Product slug -> related product slugs, best first. Edit freely; unknown
-  // slugs are ignored.
+  // slugs are ignored. GLP-1 / amylin products are deliberately left out so
+  // the site never suggests combining them; they only get their diluent.
   var PAIRS = {
     'bpc-157': ['tb500-thymosin-beta-4', 'kpv', 'ghk-cu'],
     'tb500-thymosin-beta-4': ['bpc-157', 'bpc-5mg-tb5mg', 'ghk-cu'],
@@ -22,14 +23,6 @@ var Pairings = (function () {
     'ipamorelin': ['cjc-1295-without-dac', 'sermorelin-acetate', 'tesamorelin'],
     'sermorelin-acetate': ['ipamorelin', 'tesamorelin'],
     'tesamorelin': ['ipamorelin', 'cjc-1295-without-dac'],
-    'semaglutide': ['cagrilintide', 'cagrisema-5mg-5mg'],
-    'cagrilintide': ['semaglutide', 'r-3', 'retatrutide-5mg-cagrilintide-5mg'],
-    'cagrisema-2-5mg-2-5mg': ['semaglutide', 'cagrilintide'],
-    'cagrisema-5mg-5mg': ['semaglutide', 'cagrilintide'],
-    'tirzepatide': ['retatrutide-20mg-tirzepatide-40mg', 'cagrilintide'],
-    'r-3': ['retatrutide-5mg-cagrilintide-5mg', 'cagrilintide', 'tirzepatide'],
-    'retatrutide-5mg-cagrilintide-5mg': ['r-3', 'cagrilintide'],
-    'retatrutide-20mg-tirzepatide-40mg': ['tirzepatide', 'r-3'],
     'semax': ['selank', 'semax-10mg-selank-10mg'],
     'selank': ['semax', 'semax-10mg-selank-10mg'],
     'semax-10mg-selank-10mg': ['semax', 'selank', 'dihexa'],
@@ -47,14 +40,11 @@ var Pairings = (function () {
     'thymalin-thymulin': ['thymosin-alpha-1', 'epithalon'],
     'thymosin-alpha-1': ['thymalin-thymulin', 'll37'],
     'll37': ['thymosin-alpha-1', 'kpv'],
-    'vip': ['kpv', 'thymosin-alpha-1'],
-    'dsip': ['epithalon', 'pinealon'],
     'melanotan-i': ['melanotan-ii'],
     'melanotan-ii': ['melanotan-i', 'pt141'],
     'pt141': ['kisspeptin-10', 'oxytocin', 'melanotan-ii'],
     'kisspeptin-10': ['oxytocin', 'pt141'],
     'oxytocin': ['kisspeptin-10', 'pt141'],
-    'aod9604': ['5-amino-1mq', 'mots-c-human'],
     'b12': ['lipo-c-with-b12', 'l-carnitine-600mg'],
     'lipo-c': ['l-carnitine-600mg', 'b12'],
     'lipo-c-with-b12': ['l-carnitine-600mg'],
