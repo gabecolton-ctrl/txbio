@@ -5,6 +5,17 @@
 // home page (or the header logo on other pages) and the page appears.
 // Already confirmed: the short branded intro, once per browser session.
 (function () {
+  // Seasonal look, by date in Dallas (preview any time with ?season=halloween,
+  // or ?season=off). Sets a class on <html> before anything paints.
+  try {
+    var q = (location.search.match(/[?&]season=([a-z]+)/) || [])[1];
+    if (q) sessionStorage.setItem('txbio_season', q);
+    var forced = sessionStorage.getItem('txbio_season');
+    var md = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', month: '2-digit', day: '2-digit' }).format(new Date()).replace('/', '-');
+    var season = forced && forced !== 'auto' ? forced : (md >= '10-24' && md <= '10-31' ? 'halloween' : '');
+    if (season && season !== 'off') document.documentElement.classList.add('season-' + season);
+  } catch (e) {}
+
   var SESSION_KEY = 'txbio_splash_shown';
   var ENTRY_KEY = 'txbio_entry_ok';
   var ENTRY_DAYS = 30;
@@ -80,7 +91,7 @@
       if (!e.target.closest || !e.target.closest('#entry-yes') || yes.disabled) return;
       try { localStorage.setItem(ENTRY_KEY, String(Date.now())); } catch (err) {}
       var star = gate.querySelector('.entry-mark svg');
-      var hero = document.querySelector('.hero-mark svg');
+      var hero = document.querySelector('.hero-mark > svg');
       if (hero && hero.getBoundingClientRect().width === 0) hero = null;
       gate.classList.add('is-leaving'); // text and backdrop fade
       if (reduce || !star) {
