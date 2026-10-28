@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Packing slip | TXBioResearch</title>
+<link rel="icon" href="images/logo-icon.png">
+<style>
+  :root { --ink: #111; --muted: #555; --line: #ccc; --accent: #0f9f8d; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #e9eceb; color: var(--ink); font: 14px/1.45 -apple-system, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; }
+  .toolbar { position: sticky; top: 0; z-index: 2; display: flex; gap: 10px; align-items: center; justify-content: space-between; flex-wrap: wrap; padding: 12px 16px; background: #0f1b1d; color: #e6efed; }
+  .toolbar a { color: #5eead4; }
+  .toolbar button { background: #5eead4; color: #0f1b1d; border: 0; border-radius: 6px; padding: 9px 18px; font: inherit; font-weight: 600; cursor: pointer; }
+  .msg { max-width: 8.5in; margin: 40px auto; padding: 0 16px; color: var(--muted); }
+  .slip { width: 8.5in; max-width: 100%; min-height: 10in; margin: 20px auto; padding: 0.6in 0.6in 0.5in; background: #fff; box-shadow: 0 2px 12px rgba(0,0,0,0.12); display: flex; flex-direction: column; }
+  .slip-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; border-bottom: 2px solid var(--ink); padding-bottom: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; }
+  .brand img { width: 40px; height: 40px; }
+  .brand strong { display: block; font-size: 17px; font-family: Georgia, 'Times New Roman', serif; font-weight: 400; }
+  .brand span { color: var(--muted); font-size: 12px; }
+  .doc-title { text-align: right; }
+  .doc-title h1 { margin: 0; font-size: 22px; letter-spacing: 0.04em; text-transform: uppercase; }
+  .doc-title div { color: var(--muted); font-size: 13px; }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin: 20px 0; }
+  .label { font-size: 11px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 4px; }
+  .ship-to { font-size: 15px; line-height: 1.5; }
+  .ship-to strong { font-size: 16px; }
+  .facts div { display: flex; justify-content: space-between; gap: 12px; border-bottom: 1px solid #eee; padding: 3px 0; }
+  .facts span:first-child { color: var(--muted); }
+  table { width: 100%; border-collapse: collapse; margin-top: 6px; }
+  th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); border-bottom: 1px solid var(--ink); padding: 6px 8px; }
+  td { padding: 10px 8px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  td.check, th.check { width: 56px; text-align: center; }
+  .box { display: inline-block; width: 16px; height: 16px; border: 1.5px solid var(--ink); border-radius: 2px; }
+  tfoot td { border-bottom: 0; font-weight: 600; }
+  .note { margin-top: 18px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 4px; }
+  .foot { margin-top: auto; padding-top: 24px; font-size: 11.5px; color: var(--muted); border-top: 1px solid var(--line); }
+  .foot p { margin: 4px 0; }
+  .thanks { font-size: 13px; color: var(--ink); }
+  @media (max-width: 700px) { .slip { padding: 24px 16px; min-height: 0; } .grid { grid-template-columns: 1fr; } }
+  @page { size: letter; margin: 0; }
+  @media print {
+    body { background: #fff; }
+    .toolbar, .msg { display: none !important; }
+    .slip { margin: 0; box-shadow: none; width: auto; min-height: 11in; page-break-after: always; break-after: page; }
+    .slip:last-child { page-break-after: auto; break-after: auto; }
+  }
+</style>
+<!-- seo:start -->
+<meta name="robots" content="noindex">
+<!-- seo:end -->
+</head>
+<body>
+<div class="toolbar">
+  <span id="tb-text">Packing slip</span>
+  <span><a href="admin-orders.html">Orders</a> &nbsp;·&nbsp; <a href="admin-todo.html">To-do</a> &nbsp; <button type="button" id="print-btn" disabled>Print</button></span>
+</div>
+<div id="msg" class="msg">Loading&hellip;</div>
+<div id="slips"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-config.js?v=202610272125"></script>
+<script src="js/payment-apps.js?v=202610272125"></script>
+<script src="js/packing-slip.js?v=202610272125"></script>
+</body>
+</html>
