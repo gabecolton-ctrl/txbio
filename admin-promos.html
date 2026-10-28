@@ -13,7 +13,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610271952">
+<link rel="stylesheet" href="css/style.css?v=202610272005">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -23,7 +23,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610271952"></script>
+<script src="js/splash.js?v=202610272005"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -138,7 +138,7 @@
       <div class="catalog-wrap" id="promo-table-wrap" style="display:none;">
         <table class="catalog-table" id="promo-table">
           <thead>
-            <tr><th>Code</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Affiliate</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
+            <tr><th>Code</th><th>Referral link</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Affiliate</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
           </thead>
           <tbody id="promo-rows"></tbody>
         </table>
@@ -179,14 +179,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610271952"></script>
-<script src="js/cart.js?v=202610271952"></script>
-<script src="js/promos.js?v=202610271952"></script>
-<script src="js/nav-auth.js?v=202610271952"></script>
-<script src="js/profile-gate.js?v=202610271952"></script>
-<script src="js/auth-guard.js?v=202610271952"></script>
-<script src="js/main.js?v=202610271952"></script>
-<script src="js/nav-toggle.js?v=202610271952"></script>
+<script src="js/firebase-config.js?v=202610272005"></script>
+<script src="js/cart.js?v=202610272005"></script>
+<script src="js/promos.js?v=202610272005"></script>
+<script src="js/nav-auth.js?v=202610272005"></script>
+<script src="js/profile-gate.js?v=202610272005"></script>
+<script src="js/auth-guard.js?v=202610272005"></script>
+<script src="js/main.js?v=202610272005"></script>
+<script src="js/nav-toggle.js?v=202610272005"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var editingCode = null;
@@ -224,12 +224,24 @@
       tableWrap.style.display = 'block';
       rowsEl.innerHTML = '';
 
+      function refLink(code) { return 'txbioresearch.com/?code=' + encodeURIComponent(code); }
+      function copyText(btn) {
+        var url = 'https://' + btn.getAttribute('data-copy');
+        var done = function () {
+          btn.textContent = 'Copied'; btn.classList.add('is-done');
+          setTimeout(function () { btn.textContent = 'Copy'; btn.classList.remove('is-done'); }, 1600);
+        };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(url).then(done, function () { prompt('Copy this link:', url); });
+        else prompt('Copy this link:', url);
+      }
+
       codes.sort(function (a, b) { return a.code < b.code ? -1 : 1; });
 
       codes.forEach(function (promo) {
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td>' + promo.code + '</td>' +
+          '<td class="ref-link-cell"><code class="ref-link">' + refLink(promo.code) + '</code><button type="button" class="ref-copy" data-copy="' + refLink(promo.code) + '">Copy</button></td>' +
           '<td>' + promo.discountPercent + '%</td>' +
           '<td>' + typeLabel(promo.type) + '</td>' +
           '<td>' + (promo.active ? 'Active' : 'Inactive') + '</td>' +
@@ -238,6 +250,8 @@
           '<td>$' + (promo.totalDiscounted || 0).toFixed(2) + '</td>' +
           '<td><a href="#" data-edit-code="' + promo.code + '" style="margin-right:12px;">Edit</a><a href="#" data-delete-code="' + promo.code + '" style="color:var(--danger);">Delete</a></td>';
         rowsEl.appendChild(tr);
+
+        tr.querySelector('.ref-copy').addEventListener('click', function () { copyText(this); });
 
         tr.querySelector('[data-edit-code]').addEventListener('click', function (ev) {
           ev.preventDefault();
