@@ -13,3 +13,6 @@ var USE_SERVER_CHECKOUT = false;
 // UPS's first scan. Turn on only after the GitHub secrets are added (see
 // tools/shipment-tracker/README.md); until then, mark orders shipped by hand.
 var AUTO_SHIP_TRACKING = false;
+
+// Bitcoin address shown at checkout and on My orders for unpaid Bitcoin orders.
+var BTC_ADDRESS = '3LUok9839v13tLejLzaex4iucW3QeAaDU2';
