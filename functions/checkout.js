@@ -84,7 +84,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       db.collection('promoCodes').doc(promoCode).get(),
       db.collection('orders').where('userId', '==', uid).limit(1).get()
     ]);
-    const check = P.checkPromo(promoSnap.exists ? promoSnap.data() : null, promoCode, priorOrders.empty);
+    const check = P.checkPromo(promoSnap.exists ? promoSnap.data() : null, promoCode, priorOrders.empty, now || new Date());
     if (!check.valid) throw new HttpsError('failed-precondition', check.reason);
     promo = check;
   }

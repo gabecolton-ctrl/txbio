@@ -1315,3 +1315,29 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
   70% { left: 78%; top: 44%; opacity: 0.6; } 84%, 100% { left: 104%; top: 26%; opacity: 0; }
 }
 @media (prefers-reduced-motion: reduce) { .bat { display: none; } html.season-halloween .hero-mark > svg { animation: none; } }
+
+/* Halloween easter egg (js/star-fx.js) */
+.egg-hint { position: relative; margin: 14px 0 0; text-align: center; font-size: 0.86rem; color: #ffb04a; opacity: 0.85; animation: egg-hint-in 1s ease 3s both; }
+.egg-hint em { color: var(--frost); font-style: italic; }
+@keyframes egg-hint-in { from { opacity: 0; transform: translateY(4px); } to { opacity: 0.85; transform: none; } }
+.hero-mark > svg.egg-spin { animation: egg-spin 0.9s cubic-bezier(0.3, 1.4, 0.5, 1); }
+@keyframes egg-spin { 0% { transform: rotate(0) scale(1); filter: brightness(1); } 40% { transform: rotate(200deg) scale(1.12); filter: brightness(1.6) drop-shadow(0 0 40px rgba(255, 140, 20, 0.7)); } 100% { transform: rotate(360deg) scale(1); filter: brightness(1); } }
+.bat-swarm { left: 50%; top: 45%; width: 30px; height: 15px; animation: bat-swarm 1.6s ease-out forwards; }
+@keyframes bat-swarm { 0% { opacity: 1; transform: translate(-50%, -50%) rotate(var(--a)) translateX(0) scale(0.4); } 100% { opacity: 0; transform: translate(-50%, -50%) rotate(var(--a)) translateX(260px) scale(1.1); } }
+#egg-prize { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 16px; background: rgba(5, 8, 9, 0); transition: background-color 0.3s ease; }
+#egg-prize.is-open { background: rgba(5, 8, 9, 0.72); }
+.egg-card { width: 100%; max-width: 420px; text-align: center; background: linear-gradient(180deg, #1d1410, var(--surface)); border: 1px solid rgba(255, 140, 30, 0.55); border-radius: var(--radius); padding: 28px 24px 22px; box-shadow: 0 0 60px rgba(255, 120, 0, 0.25); transform: scale(0.85) translateY(12px); opacity: 0; transition: transform 0.35s cubic-bezier(0.3, 1.5, 0.5, 1), opacity 0.25s ease; }
+#egg-prize.is-open .egg-card { transform: none; opacity: 1; }
+.egg-pumpkin { font-size: 3rem; line-height: 1; animation: egg-bob 1.8s ease-in-out infinite; }
+@keyframes egg-bob { 0%, 100% { transform: translateY(0) rotate(-4deg); } 50% { transform: translateY(-6px) rotate(4deg); } }
+.egg-card h2 { margin: 10px 0 6px; font-size: 1.6rem; }
+.egg-card p { color: var(--muted); margin: 0 0 14px; }
+.egg-card p strong { color: #ffb04a; }
+.egg-code { display: flex; align-items: center; justify-content: center; gap: 10px; margin: 6px 0 18px; }
+.egg-code span { font-family: ui-monospace, Menlo, monospace; font-size: 1.5rem; letter-spacing: 0.12em; color: #ffb04a; border: 2px dashed rgba(255, 150, 50, 0.7); border-radius: var(--radius-sm); padding: 8px 16px; }
+.egg-code .btn-outline-light { padding: 9px 14px; }
+.egg-actions { display: flex; flex-direction: column; gap: 8px; align-items: center; }
+.egg-actions .btn { background: #ff8a1f; border-color: #ff8a1f; color: #1a0f06; width: 100%; }
+.egg-close { background: none; border: 0; color: var(--muted); font: inherit; cursor: pointer; padding: 6px; }
+.egg-fine { font-size: 0.78rem !important; color: var(--faint) !important; margin: 12px 0 0 !important; }
+@media (max-width: 860px) { .egg-hint { font-size: 0.82rem; text-align: left; margin-top: 10px; } }

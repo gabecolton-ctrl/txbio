@@ -76,7 +76,72 @@
     svg.style.webkitTapHighlightColor = 'transparent';
     wake();
 
-    if (document.documentElement.classList.contains('season-halloween')) addBats(svg.parentNode);
+    if (document.documentElement.classList.contains('season-halloween')) {
+      addBats(svg.parentNode);
+      halloweenEgg(svg, verts, wake);
+    }
+  }
+
+  // ---------- Halloween easter egg: tap the star 3 times quickly ----------
+  // The code must exist on Admin → Promo codes (31%, Any Order, last day Oct 31).
+  var EGG = { code: 'SPOOKY31', pct: 31, through: 'October 31' };
+  function halloweenEgg(svg, verts, wake) {
+    var host = svg.parentNode;
+    var hint = document.createElement('p');
+    hint.className = 'egg-hint';
+    hint.innerHTML = '🎃 Something\u2019s hiding in this star\u2026 <em>knock three times.</em>';
+    host.appendChild(hint);
+    var taps = [];
+    svg.addEventListener('pointerdown', function () {
+      var now = Date.now();
+      taps = taps.filter(function (t) { return now - t < 1400; });
+      taps.push(now);
+      if (taps.length >= 3) { taps = []; reveal(); }
+    });
+    function reveal() {
+      // Big burst + spin, more bats, then the prize.
+      verts.forEach(function (v) { var a = Math.random() * 6.28; v.vx += Math.cos(a) * 30; v.vy += Math.sin(a) * 30; });
+      wake();
+      svg.classList.remove('egg-spin'); void svg.getBoundingClientRect(); svg.classList.add('egg-spin');
+      for (var i = 0; i < 6; i++) {
+        var b = host.querySelector('.bat-1').cloneNode(true);
+        b.className = 'bat bat-swarm'; b.style.setProperty('--a', (i * 60 + Math.random() * 30) + 'deg'); b.style.animationDelay = (i * 0.05) + 's';
+        host.appendChild(b);
+        (function (el) { setTimeout(function () { el.remove(); }, 1800); })(b);
+      }
+      try { localStorage.setItem('txbio_egg_spooky', '1'); } catch (e) {}
+      hint.innerHTML = '🎃 You found it!';
+      setTimeout(showPrize, 700);
+    }
+    function showPrize() {
+      if (document.getElementById('egg-prize')) return;
+      var base = '';
+      var box = document.createElement('div');
+      box.id = 'egg-prize'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'egg-title');
+      box.innerHTML = '<div class="egg-card">' +
+        '<div class="egg-pumpkin" aria-hidden="true">🎃</div>' +
+        '<h2 id="egg-title">You found the secret!</h2>' +
+        '<p>Take <strong>' + EGG.pct + '% off everything</strong>, through ' + EGG.through + '.</p>' +
+        '<div class="egg-code"><span>' + EGG.code + '</span><button type="button" class="btn-outline-light" id="egg-copy">Copy</button></div>' +
+        '<div class="egg-actions"><a href="' + base + 'services.html" class="btn" id="egg-use">Shop with ' + EGG.code + '</a><button type="button" class="egg-close" id="egg-close">Maybe later</button></div>' +
+        '<p class="egg-fine">Applied automatically at checkout. Doesn\u2019t combine with other codes or buy-one-get-one.</p>' +
+      '</div>';
+      document.body.appendChild(box);
+      requestAnimationFrame(function () { box.classList.add('is-open'); });
+      function close() { box.classList.remove('is-open'); setTimeout(function () { box.remove(); }, 300); }
+      // Save the code so checkout applies it (same as a referral link, js/referral.js).
+      function save() { try { localStorage.setItem('txbio_ref_code', JSON.stringify({ code: EGG.code, at: Date.now() })); } catch (e) {} }
+      box.querySelector('#egg-use').addEventListener('click', save);
+      box.querySelector('#egg-copy').addEventListener('click', function () {
+        var b = this; save();
+        var done = function () { b.textContent = 'Copied'; };
+        if (navigator.clipboard && window.isSecureContext) navigator.clipboard.writeText(EGG.code).then(done, done); else done();
+      });
+      box.querySelector('#egg-close').addEventListener('click', close);
+      box.addEventListener('click', function (e) { if (e.target === box) close(); });
+      document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+      box.querySelector('#egg-use').focus();
+    }
   }
 
   // Halloween: a few bats fluttering around the star.

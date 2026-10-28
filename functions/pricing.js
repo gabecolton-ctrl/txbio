@@ -98,9 +98,13 @@ function bogoDiscount(lines, eligibleSlugs) {
 }
 
 // Validates a promo code document the way js/promos.js does.
-function checkPromo(promo, code, isFirstOrder) {
+function checkPromo(promo, code, isFirstOrder, now) {
   if (!promo) return { valid: false, reason: 'This promo code does not exist.' };
   if (!promo.active) return { valid: false, reason: 'This promo code is no longer active.' };
+  if (promo.endsOn) {
+    const today = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(now || new Date());
+    if (today > promo.endsOn) return { valid: false, reason: 'This promo code has expired.' };
+  }
   if (promo.type === 'first-order' && !isFirstOrder) return { valid: false, reason: 'This code is only valid on your first order.' };
   if (promo.type === 'repeat-order' && isFirstOrder) return { valid: false, reason: 'This code is only valid on repeat orders (not your first).' };
   const pct = Number(promo.discountPercent);
