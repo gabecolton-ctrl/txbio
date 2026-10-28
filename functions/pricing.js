@@ -100,7 +100,8 @@ function bogoDiscount(lines, eligibleSlugs) {
 // Validates a promo code document the way js/promos.js does.
 // roles: the buyer's customer roles (roleMembers/{email}.roles); a code made
 // for a role (roleOnly, e.g. Employee pricing) works only for its members.
-function checkPromo(promo, code, isFirstOrder, now, roles) {
+// usedCodes: codes on this buyer's earlier, non-cancelled orders (oncePerCustomer).
+function checkPromo(promo, code, isFirstOrder, now, roles, usedCodes) {
   if (!promo) return { valid: false, reason: 'This promo code does not exist.' };
   if (promo.roleOnly && (roles || []).indexOf(promo.roleOnly) === -1) return { valid: false, reason: 'This promo code does not exist.' };
   if (!promo.active) return { valid: false, reason: 'This promo code is no longer active.' };
@@ -110,6 +111,7 @@ function checkPromo(promo, code, isFirstOrder, now, roles) {
   }
   if (promo.type === 'first-order' && !isFirstOrder) return { valid: false, reason: 'This code is only valid on your first order.' };
   if (promo.type === 'repeat-order' && isFirstOrder) return { valid: false, reason: 'This code is only valid on repeat orders (not your first).' };
+  if (promo.oncePerCustomer && (usedCodes || []).indexOf(String(code).toUpperCase()) !== -1) return { valid: false, reason: 'You’ve already used this code. It’s one use per customer.' };
   const pct = Number(promo.discountPercent);
   if (!(pct > 0 && pct <= 100)) return { valid: false, reason: 'This promo code is misconfigured.' };
   return { valid: true, code, discountPercent: pct, affiliateEmail: promo.affiliateEmail || '' };

@@ -49,7 +49,7 @@ var Promos = (function () {
   }
   function isExpired(promo) { return !!(promo && promo.endsOn && todayCentral() > promo.endsOn); }
 
-  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail, endsOn) {
+  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail, endsOn, oncePerCustomer) {
     var normalized = normalizeCode(code);
     var ref = ensureDb().collection('promoCodes').doc(normalized);
     return ref.get().then(function (doc) {
@@ -60,6 +60,7 @@ var Promos = (function () {
         active: active,
         affiliateEmail: (affiliateEmail || '').trim().toLowerCase(),
         endsOn: /^\d{4}-\d{2}-\d{2}$/.test(endsOn || '') ? endsOn : '',
+        oncePerCustomer: !!oncePerCustomer,
         timesUsed: existing.timesUsed || 0,
         totalDiscounted: existing.totalDiscounted || 0,
         createdAt: existing.createdAt || new Date().toISOString()
@@ -103,8 +104,20 @@ var Promos = (function () {
       if (promo.type === 'repeat-order' && isFirstOrder) {
         return { valid: false, reason: 'This code is only valid on repeat orders (not your first).' };
       }
+      if (promo.oncePerCustomer && window.Account && Account.getOrderHistory) {
+        return Account.getOrderHistory().then(function (orders) {
+          if (usedBefore(orders, promo.code)) return { valid: false, reason: 'You’ve already used this code. It’s one use per customer.' };
+          return { valid: true, discountPercent: promo.discountPercent, code: promo.code };
+        });
+      }
       return { valid: true, discountPercent: promo.discountPercent, code: promo.code };
     });
+  }
+
+  // Has this buyer already used the code on an order that wasn't cancelled?
+  function usedBefore(orders, code) {
+    var c = normalizeCode(code);
+    return (orders || []).some(function (o) { return normalizeCode(o.promoCode) === c && o.status !== 'cancelled'; });
   }
 
   // Records a code's usage — increments timesUsed and adds to
@@ -159,7 +172,7 @@ var Promos = (function () {
     getCode: function (code) { return withRetry(getCode, [code], 10000, 15000, 'Checking promo code is taking too long. Please try again.'); },
     getAllCodes: function () { return withRetry(getAllCodes, [], 10000, 15000, 'Loading promo codes is taking too long. Please try again.'); },
     isExpired: isExpired,
-    createOrUpdateCode: function (code, pct, type, active, affiliateEmail, endsOn) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail, endsOn], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
+    createOrUpdateCode: function (code, pct, type, active, affiliateEmail, endsOn, once) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail, endsOn, once], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
     deleteCode: function (code) { return withRetry(deleteCode, [code], 10000, 15000, 'Deleting promo code is taking too long. Please try again.'); },
     validateCode: function (code, isFirstOrder) { return withDoubleRetry(validateCode, [code, isFirstOrder], 8000, 8000, 12000, 'Validating promo code is taking too long. Please check your connection and try again.'); },
     recordUsage: recordUsage
