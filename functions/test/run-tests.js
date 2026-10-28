@@ -129,6 +129,13 @@ test('attestation: required, and saved word for word with the Terms version', as
   assert.strictEqual(order.attestation.agreedAt, '2026-10-25T12:00:00.000Z');
 });
 
+test('promo end date: works through its last day (Dallas time), refused after', async () => {
+  const seed = (endsOn) => Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), { 'promoCodes/SPOOKY31': { discountPercent: 31, type: 'always', active: true, endsOn } });
+  const ok = await run(seed('2026-10-25'), { promoCode: 'spooky31' });           // test clock: 2026-10-25 07:00 Dallas
+  assert.strictEqual(ok.order.discount, 33.79);
+  await rejects(run(seed('2026-10-24'), { promoCode: 'spooky31' }), 'failed-precondition', 'expired');
+});
+
 test('matches the browser test order: promo 10% + $25 credit', async () => {
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 2 }]), {
     'promoCodes/BOOP12': { discountPercent: 10, type: 'always', active: true, affiliateEmail: 'aff@example.com', timesUsed: 3, totalDiscounted: 10 },

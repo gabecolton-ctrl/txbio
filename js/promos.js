@@ -42,7 +42,14 @@ var Promos = (function () {
     });
   }
 
-  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail) {
+  // Last day a code works (YYYY-MM-DD, Dallas time), or '' for no end.
+  function todayCentral() {
+    try { return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago' }).format(new Date()); }
+    catch (e) { return new Date().toISOString().slice(0, 10); }
+  }
+  function isExpired(promo) { return !!(promo && promo.endsOn && todayCentral() > promo.endsOn); }
+
+  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail, endsOn) {
     var normalized = normalizeCode(code);
     var ref = ensureDb().collection('promoCodes').doc(normalized);
     return ref.get().then(function (doc) {
@@ -52,6 +59,7 @@ var Promos = (function () {
         type: type,
         active: active,
         affiliateEmail: (affiliateEmail || '').trim().toLowerCase(),
+        endsOn: /^\d{4}-\d{2}-\d{2}$/.test(endsOn || '') ? endsOn : '',
         timesUsed: existing.timesUsed || 0,
         totalDiscounted: existing.totalDiscounted || 0,
         createdAt: existing.createdAt || new Date().toISOString()
@@ -74,6 +82,9 @@ var Promos = (function () {
       }
       if (!promo.active) {
         return { valid: false, reason: 'This promo code is no longer active.' };
+      }
+      if (isExpired(promo)) {
+        return { valid: false, reason: 'This promo code has expired.' };
       }
       if (promo.type === 'first-order' && !isFirstOrder) {
         return { valid: false, reason: 'This code is only valid on your first order.' };
@@ -136,7 +147,8 @@ var Promos = (function () {
   return {
     getCode: function (code) { return withRetry(getCode, [code], 10000, 15000, 'Checking promo code is taking too long. Please try again.'); },
     getAllCodes: function () { return withRetry(getAllCodes, [], 10000, 15000, 'Loading promo codes is taking too long. Please try again.'); },
-    createOrUpdateCode: function (code, pct, type, active, affiliateEmail) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
+    isExpired: isExpired,
+    createOrUpdateCode: function (code, pct, type, active, affiliateEmail, endsOn) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail, endsOn], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
     deleteCode: function (code) { return withRetry(deleteCode, [code], 10000, 15000, 'Deleting promo code is taking too long. Please try again.'); },
     validateCode: function (code, isFirstOrder) { return withDoubleRetry(validateCode, [code, isFirstOrder], 8000, 8000, 12000, 'Validating promo code is taking too long. Please check your connection and try again.'); },
     recordUsage: recordUsage

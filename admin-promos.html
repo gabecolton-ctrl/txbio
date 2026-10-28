@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610280947">
+<link rel="stylesheet" href="css/style.css?v=202610280955">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610280947"></script>
+<script src="js/splash.js?v=202610280955"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -136,6 +136,9 @@
           <option value="repeat-order">Repeat Orders Only (not first)</option>
         </select>
 
+        <label for="promo-ends-field">Last day <span class="field-note">(optional; the code stops working after this date)</span></label>
+        <input type="date" id="promo-ends-field">
+
         <label for="promo-affiliate-field">Affiliate email (optional)</label>
         <input type="email" id="promo-affiliate-field" placeholder="Their account email, e.g. partner@example.com" autocomplete="off">
         <p style="font-size:0.85rem; color:var(--text-light); margin:-10px 0 18px;">Orders using this code earn this account 10% of the order subtotal (after discounts) as store credit when you mark the order shipped.</p>
@@ -200,14 +203,14 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610280947"></script>
-<script src="js/cart.js?v=202610280947"></script>
-<script src="js/promos.js?v=202610280947"></script>
-<script src="js/nav-auth.js?v=202610280947"></script>
-<script src="js/profile-gate.js?v=202610280947"></script>
-<script src="js/auth-guard.js?v=202610280947"></script>
-<script src="js/main.js?v=202610280947"></script>
-<script src="js/nav-toggle.js?v=202610280947"></script>
+<script src="js/firebase-config.js?v=202610280955"></script>
+<script src="js/cart.js?v=202610280955"></script>
+<script src="js/promos.js?v=202610280955"></script>
+<script src="js/nav-auth.js?v=202610280955"></script>
+<script src="js/profile-gate.js?v=202610280955"></script>
+<script src="js/auth-guard.js?v=202610280955"></script>
+<script src="js/main.js?v=202610280955"></script>
+<script src="js/nav-toggle.js?v=202610280955"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var editingCode = null;
@@ -265,7 +268,7 @@
           '<td class="ref-link-cell"><code class="ref-link">' + refLink(promo.code) + '</code><button type="button" class="ref-copy" data-copy="' + refLink(promo.code) + '">Copy</button></td>' +
           '<td>' + promo.discountPercent + '%</td>' +
           '<td>' + typeLabel(promo.type) + '</td>' +
-          '<td>' + (promo.active ? 'Active' : 'Inactive') + '</td>' +
+          '<td>' + (!promo.active ? 'Inactive' : Promos.isExpired(promo) ? 'Ended ' + promo.endsOn : 'Active' + (promo.endsOn ? '<br><span style="color:var(--text-light);font-size:0.82rem;">through ' + promo.endsOn + '</span>' : '')) + '</td>' +
           '<td>' + (promo.affiliateEmail ? promo.affiliateEmail + '<br><a href="referrals.html?as=' + encodeURIComponent(promo.affiliateEmail) + '" class="ref-preview">View their dashboard</a>' : '&mdash;') + '</td>' +
           '<td>' + (promo.timesUsed || 0) + '</td>' +
           '<td>$' + (promo.totalDiscounted || 0).toFixed(2) + '</td>' +
@@ -281,6 +284,7 @@
           document.getElementById('promo-type-field').value = promo.type;
           document.getElementById('promo-active-field').checked = promo.active;
           document.getElementById('promo-affiliate-field').value = promo.affiliateEmail || '';
+          document.getElementById('promo-ends-field').value = promo.endsOn || '';
           editingCode = promo.code;
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -306,6 +310,7 @@
     var type = document.getElementById('promo-type-field').value;
     var active = document.getElementById('promo-active-field').checked;
     var affiliateEmail = document.getElementById('promo-affiliate-field').value.trim().toLowerCase();
+    var endsOn = document.getElementById('promo-ends-field').value || '';
 
     if (affiliateEmail && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(affiliateEmail)) {
       alert('Please enter a valid affiliate email, or leave it blank.');
@@ -319,7 +324,7 @@
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
-    Promos.createOrUpdateCode(code, discount, type, active, affiliateEmail).then(function () {
+    Promos.createOrUpdateCode(code, discount, type, active, affiliateEmail, endsOn).then(function () {
       btn.disabled = false;
       btn.textContent = 'Save Code';
       var msg = document.getElementById('promo-save-msg');
