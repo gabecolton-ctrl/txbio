@@ -97,6 +97,22 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     platinum = !!Loyalty.tierFor(Loyalty.lifetime(list)).freeShipping;
   }
 
+  // Referral credit: the applied code's affiliate, or else the affiliate whose
+  // link brought the shopper (data.referralCode), even with another code.
+  let affiliateCode = '';
+  if (!atCost) {
+    if (promo && promo.affiliateEmail && promo.affiliateEmail.toLowerCase() !== userEmail) affiliateCode = promo.code;
+    else {
+      const linked = P.cleanText(data.referralCode, 40).toUpperCase();
+      if (linked && (!promo || linked !== promo.code)) {
+        const ls = await db.collection('promoCodes').doc(linked).get();
+        const lp = ls.exists ? ls.data() : null;
+        if (lp && lp.active && lp.affiliateEmail && String(lp.affiliateEmail).toLowerCase() !== userEmail) affiliateCode = linked;
+      }
+      if (!affiliateCode && promo) affiliateCode = promo.code;
+    }
+  }
+
   const needs = P.stockNeeds(lines);
   const orderRef = db.collection('orders').doc();
   const creditRef = userEmail ? db.collection('credits').doc(userEmail) : null;
@@ -164,7 +180,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       totalBeforeCredit: totals.totalBeforeCredit,
       creditUsed: totals.creditUsed,
       creditUsedCents: totals.creditUsedCents,
-      affiliateCode: promo ? promo.code : '',
+      affiliateCode,
       total: totals.total,
       shippingAddress: address,
       notes,
@@ -207,6 +223,9 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
         timesUsed: FieldValue.increment(1),
         totalDiscounted: FieldValue.increment(totals.discount)
       });
+    }
+    if (affiliateCode && (!promo || affiliateCode !== promo.code)) {
+      t.update(db.collection('promoCodes').doc(affiliateCode), { timesUsed: FieldValue.increment(1) });
     }
     t.set(orderRef, orderDoc);
     t.set(db.collection('carts').doc(uid), { items: [], updatedAt: nowIso });
