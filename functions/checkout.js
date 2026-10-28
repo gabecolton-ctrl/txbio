@@ -3,6 +3,7 @@
 const { HttpsError } = require('firebase-functions/v2/https');
 const P = require('./pricing');
 const AtCost = require('./at-cost');
+const LocalDelivery = require('./local-delivery');
 const FreeShipping = require('./free-shipping');
 const Loyalty = require('./loyalty');
 const Attestation = require('./attestation');
@@ -25,7 +26,14 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   const nowIso = (now || new Date()).toISOString();
 
   const familyShipping = String(data.shippingValue) === AtCost.FAMILY_SHIPPING_VALUE;
-  let shippingOpt = familyShipping ? null : catalog.shipping[String(data.shippingValue)];
+  const localShipping = String(data.shippingValue) === LocalDelivery.VALUE;
+  let shippingOpt = familyShipping || localShipping ? null : catalog.shipping[String(data.shippingValue)];
+  if (localShipping) {
+    // Pickup / drop-off: only for customers listed on Admin → Roles.
+    const member = userEmail ? await db.collection('localMembers').doc(userEmail).get() : null;
+    if (!member || !member.exists) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
+    shippingOpt = { price: LocalDelivery.PRICE, label: LocalDelivery.LABEL };
+  }
   if (!shippingOpt && !familyShipping) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
   const paymentMethod = PAYMENT_METHODS.indexOf(data.paymentMethod) !== -1 ? data.paymentMethod : null;
   if (!paymentMethod) throw new HttpsError('invalid-argument', 'Please choose a payment method.');
@@ -76,7 +84,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       const costs = {};
       costSnap.docs.forEach((d) => { if (typeof d.data().perVialCost === 'number') costs[d.id] = d.data().perVialCost; });
       atCost = { code: promoCode, markupPerVial: check.markupPerVial, result: AtCost.priceLines(lines, costs, check.markupPerVial) };
-      shippingOpt = { price: check.shipping.price, label: check.shipping.label };
+      if (!localShipping) shippingOpt = { price: check.shipping.price, label: check.shipping.label };
     }
   }
   // The family shipping option exists only with a valid family code.

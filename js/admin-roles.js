@@ -17,6 +17,7 @@
   var role = null;        // customerRoles/employee
   var members = [];       // [{ email, addedAt }]
   var managers = [];      // [{ email, addedAt }]
+  var locals = [];        // localMembers: pickup / drop-off customers
 
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
@@ -46,8 +47,13 @@
     return Promise.all([
       db.collection('staff').get(),
       db.collection('roleMembers').get(),
-      db.collection('customerRoles').doc(ROLE).get()
+      db.collection('customerRoles').doc(ROLE).get(),
+      db.collection('localMembers').get().catch(function () { return null; })
     ]).then(function (r) {
+      locals = [];
+      if (r[3]) r[3].forEach(function (d) { locals.push({ email: d.id, addedAt: d.data().addedAt }); });
+      locals.sort(byEmail);
+      renderLocals();
       managers = [];
       r[0].forEach(function (d) { if (d.data().role === 'manager') managers.push({ email: d.id, addedAt: d.data().addedAt }); });
       members = [];
@@ -72,6 +78,21 @@
         if (!confirm('Remove ' + em + ' as a manager? They lose access right away.')) return;
         b.disabled = true;
         db.collection('staff').doc(em).delete().then(load).catch(function (err) { b.disabled = false; alert('Could not remove: ' + err.message); });
+      });
+    });
+  }
+
+  // ---------- Pickup / drop-off ----------
+  function renderLocals() {
+    $('local-rows').innerHTML = locals.map(function (m) {
+      return '<tr><td>' + esc(m.email) + '</td><td>' + esc(fmtDate(m.addedAt)) + '</td><td><button type="button" class="btn-outline-light" data-rm-local="' + esc(m.email) + '">Remove</button></td></tr>';
+    }).join('') || '<tr><td colspan="3">No one yet.</td></tr>';
+    document.querySelectorAll('[data-rm-local]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var em = b.getAttribute('data-rm-local');
+        if (!confirm('Remove pickup / drop-off for ' + em + '?')) return;
+        b.disabled = true;
+        db.collection('localMembers').doc(em).delete().then(load).catch(function (err) { b.disabled = false; alert('Could not remove: ' + err.message); });
       });
     });
   }
@@ -190,6 +211,18 @@
         say('mgr-msg', em + ' added. They’ll see the Admin menu next time they load a page.', true);
         return load();
       }).catch(function (err) { say('mgr-msg', 'Could not add: ' + err.message + permHint(err), false); });
+    });
+
+    $('local-form').addEventListener('submit', function (e) {
+      e.preventDefault();
+      var em = $('local-email').value.trim().toLowerCase();
+      if (!okEmail(em)) return say('local-msg', 'Enter a valid email.', false);
+      if (locals.some(function (m) { return m.email === em; })) return say('local-msg', em + ' already has pickup / drop-off.', false);
+      db.collection('localMembers').doc(em).set({ addedAt: new Date().toISOString() }).then(function () {
+        $('local-email').value = '';
+        say('local-msg', em + ' added.', true);
+        return load();
+      }).catch(function (err) { say('local-msg', 'Could not add: ' + err.message + permHint(err), false); });
     });
 
     $('emp-form').addEventListener('submit', function (e) {

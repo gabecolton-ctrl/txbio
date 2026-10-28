@@ -66,7 +66,7 @@
       $('no-customers').innerHTML = users.map(function (u) { return '<option value="' + esc(u.email) + '">' + esc(u.name || '') + '</option>'; }).join('');
       $('no-ship').innerHTML = Object.keys(catalog.shipping).map(function (k) {
         return '<option value="' + k + '" data-price="' + catalog.shipping[k].price + '">' + esc(catalog.shipping[k].label) + '</option>';
-      }).join('') + '<option value="free" data-price="0">Free shipping</option><option value="custom">Custom price…</option>';
+      }).join('') + '<option value="local" data-price="5">Local pickup / drop-off — $5</option><option value="free" data-price="0">Free shipping</option><option value="custom">Custom price…</option>';
       wire();
       addLine();
       showMode();

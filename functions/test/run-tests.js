@@ -263,6 +263,14 @@ test('admin quote in cart: quoted price and qty, no promo/BOGO on it, expired or
   await rejects(run(Object.assign({}, seed, { 'quotes/q1': Object.assign({}, quote, { uid: 'someone-else' }) }), {}), 'failed-precondition', 'no longer available');
 });
 
+test('local pickup / drop-off: $5 for listed customers only', async () => {
+  const base = cart([{ slug: 'cagrilintide', qty: 1 }]);
+  await rejects(run(base, { shippingValue: 'local' }), 'invalid-argument', 'shipping option');
+  const { order } = await run(Object.assign({ 'localMembers/buyer@example.com': { addedAt: 'x' } }, base), { shippingValue: 'local' });
+  assert.strictEqual(order.shipping, 5);
+  assert.ok(/pickup/i.test(order.shippingOption));
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');
