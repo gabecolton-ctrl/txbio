@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281645">
+<link rel="stylesheet" href="css/style.css?v=202610281653">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281645"></script>
+<script src="js/splash.js?v=202610281653"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -124,6 +124,7 @@
 
   <div id="admin-content" style="display:none;">
     <section>
+      <div id="customer-stats" class="carts-stats"></div>
       <input type="text" id="customer-search" placeholder="Search by name, institution, or email" autocomplete="off" style="max-width:480px;">
       <div id="customers-loading" class="cart-empty">Loading customers&hellip;</div>
       <div id="customers-empty" class="cart-empty" style="display:none;"><p>No customers yet.</p></div>
@@ -208,16 +209,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281645"></script>
-<script src="js/cart.js?v=202610281645"></script>
-<script src="js/account.js?v=202610281645"></script>
-<script src="js/credits.js?v=202610281645"></script>
-<script src="js/staff.js?v=202610281645"></script>
-<script src="js/nav-auth.js?v=202610281645"></script>
-<script src="js/profile-gate.js?v=202610281645"></script>
-<script src="js/auth-guard.js?v=202610281645"></script>
-<script src="js/main.js?v=202610281645"></script>
-<script src="js/nav-toggle.js?v=202610281645"></script>
+<script src="js/firebase-config.js?v=202610281653"></script>
+<script src="js/cart.js?v=202610281653"></script>
+<script src="js/account.js?v=202610281653"></script>
+<script src="js/credits.js?v=202610281653"></script>
+<script src="js/staff.js?v=202610281653"></script>
+<script src="js/nav-auth.js?v=202610281653"></script>
+<script src="js/profile-gate.js?v=202610281653"></script>
+<script src="js/auth-guard.js?v=202610281653"></script>
+<script src="js/main.js?v=202610281653"></script>
+<script src="js/nav-toggle.js?v=202610281653"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -300,11 +301,21 @@
     });
   }
 
+  function stat(v, label) { return '<div class="carts-stat"><span class="carts-stat-v">' + v + '</span><span class="carts-stat-l">' + label + '</span></div>'; }
   function renderList() {
     var q = document.getElementById('customer-search').value.trim().toLowerCase();
     var list = customers.filter(function (c) {
       return !q || [c.name, c.institution, c.email].join(' ').toLowerCase().indexOf(q) !== -1;
     });
+    // Totals: everyone, who has bought (a non-cancelled order), and new this month.
+    var monthAgo = new Date(Date.now() - 30 * 864e5).toISOString();
+    var buyers = customers.filter(function (c) { return c.orders.some(function (o) { return o.status !== 'cancelled'; }); }).length;
+    var recent = customers.filter(function (c) { return c.createdAt && c.createdAt >= monthAgo; }).length;
+    document.getElementById('customer-stats').innerHTML =
+      stat(customers.length.toLocaleString(), 'total customer' + (customers.length === 1 ? '' : 's')) +
+      stat(buyers.toLocaleString(), 'have ordered') +
+      stat(recent.toLocaleString(), 'new in 30 days') +
+      (q ? stat(list.length.toLocaleString(), 'match your search') : '');
     document.getElementById('customers-empty').style.display = customers.length ? 'none' : 'block';
     document.getElementById('customers-wrap').style.display = customers.length ? 'block' : 'none';
     document.getElementById('customer-rows').innerHTML = list.map(function (c) {
