@@ -41,12 +41,14 @@
         '<div class="entry-mark">' + STAR + '</div>' +
         '<div class="entry-copy">' +
           '<h2 id="entry-title">Texas Advanced BioResearch</h2>' +
-          '<p class="entry-lead">This site sells research chemicals for laboratory use only. To continue, please confirm:</p>' +
-          '<ul class="entry-list">' +
-            '<li>I am <strong>21 years of age or older</strong>.</li>' +
-            '<li>I am ordering <strong>on behalf of a laboratory or research institution, or for research purposes only</strong>, not for human or animal consumption.</li>' +
-          '</ul>' +
-          '<div class="entry-actions"><button type="button" class="btn" id="entry-yes">I confirm, enter site</button>' +
+          '<p class="entry-lead">This site sells research chemicals for laboratory use only. To continue, check both boxes:</p>' +
+          '<div class="entry-checks">' +
+            '<label class="entry-check"><input type="checkbox" id="entry-age"><span class="entry-box" aria-hidden="true"></span>' +
+              '<span>I am <strong>21 years of age or older</strong>.</span></label>' +
+            '<label class="entry-check"><input type="checkbox" id="entry-research"><span class="entry-box" aria-hidden="true"></span>' +
+              '<span>I am ordering <strong>on behalf of a laboratory or research institution, or for research purposes only</strong>, not for human or animal consumption.</span></label>' +
+          '</div>' +
+          '<div class="entry-actions"><button type="button" class="btn" id="entry-yes" disabled aria-disabled="true">I confirm, enter site</button>' +
           '<a href="https://www.google.com" class="entry-leave" id="entry-no">Leave</a></div>' +
           '<p class="entry-fine">By entering you agree to our <a href="' + base + 'terms.html">Terms &amp; Conditions</a>.</p>' +
         '</div>' +
@@ -58,10 +60,16 @@
     // The home page star waits (paused at the very start of its draw-in)
     // until the visitor confirms, then plays as the welcome star shrinks away.
     document.documentElement.classList.add('hero-paused');
-    document.addEventListener('DOMContentLoaded', function () {
-      var btn = document.getElementById('entry-yes');
-      if (btn) btn.focus();
-    });
+    // Confirm unlocks only when both boxes are ticked.
+    var boxes = gate.querySelectorAll('.entry-check input');
+    var yes = gate.querySelector('#entry-yes');
+    function sync() {
+      var all = Array.prototype.every.call(boxes, function (b) { return b.checked; });
+      yes.disabled = !all; yes.setAttribute('aria-disabled', all ? 'false' : 'true');
+      Array.prototype.forEach.call(boxes, function (b) { b.closest('.entry-check').classList.toggle('is-on', b.checked); });
+    }
+    Array.prototype.forEach.call(boxes, function (b) { b.addEventListener('change', sync); });
+    document.addEventListener('DOMContentLoaded', function () { if (boxes[0]) boxes[0].focus(); });
 
     function finish() {
       document.documentElement.classList.remove('entry-open');
@@ -69,7 +77,7 @@
     }
 
     gate.addEventListener('click', function (e) {
-      if (!e.target.closest || !e.target.closest('#entry-yes')) return;
+      if (!e.target.closest || !e.target.closest('#entry-yes') || yes.disabled) return;
       try { localStorage.setItem(ENTRY_KEY, String(Date.now())); } catch (err) {}
       var star = gate.querySelector('.entry-mark svg');
       var hero = document.querySelector('.hero-mark svg');
