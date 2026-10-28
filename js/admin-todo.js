@@ -45,8 +45,18 @@
     add('pay', 'Payments to check', 'Look for these in Venmo, Cash App, your bank or wallet, then mark the order Confirmed. Highlighted orders have waited ' + STALE_DAYS + '+ days; consider cancelling them.',
       pending.map(function (o) {
         var stale = daysSince(o.createdAt) >= STALE_DAYS;
-        return row([orderLink(o), esc(o.userEmail || ''), '<strong>' + money(o.total) + '</strong>', esc(METHOD[o.paymentMethod] || o.paymentMethod || 'unknown'), '<span class="todo-age">' + age(o.createdAt) + '</span>'], stale);
+        return row([orderLink(o), esc(o.userEmail || ''), '<strong>' + money(o.total) + '</strong>', esc(METHOD[o.paymentMethod] || o.paymentMethod || 'unknown'), '<span class="todo-age">' + age(o.createdAt) + (o.paymentReminderSentAt ? ', reminder sent' : '') + '</span>'], stale);
       }), ['Orders', 'admin-orders.html?q=pending']);
+
+    // 1b. Payment emails the automation couldn't match (tools/order-automation)
+    var payMails = (data.paymentEmails || []).filter(function (m) { return (m.status === 'unmatched' || m.status === 'untrusted') && !m.dismissedAt; })
+      .sort(function (a, b) { return String(b.receivedAt).localeCompare(String(a.receivedAt)); });
+    add('paymail', 'Payments to match by hand', 'Venmo / Cash App payments that came in but couldn\u2019t be matched to an order automatically. Check them, confirm the right order on the Orders page, then dismiss.',
+      payMails.map(function (m) {
+        return row([esc(m.app === 'venmo' ? 'Venmo' : 'Cash App'), '<strong>' + money(m.amount) + '</strong>', esc(m.payer || 'unknown payer'), m.orderNumber ? 'note: ' + esc(m.orderNumber) : 'no order # in note',
+          '<span class="todo-warn">' + esc(m.reason || m.status) + '</span>', '<span class="todo-age">' + age(m.receivedAt) + '</span>'], m.status === 'untrusted',
+          '<button type="button" class="btn-outline-light todo-btn" data-dismiss-pay="' + esc(m.id) + '">Dismiss</button>');
+      }));
 
     // 2. Ready to ship
     var toShip = orders.filter(function (o) { return o.status === 'confirmed' || o.status === 'processing'; }).sort(oldest);
@@ -121,11 +131,21 @@
       missing.length ? ['<li class="todo-row"><div class="todo-main todo-names">' + missing.slice(0, 12).map(function (u) { return esc(data.names[u] || u); }).join(', ') +
         (missing.length > 12 ? ', and ' + (missing.length - 12) + ' more' : '') + '</div></li>'] : [], ['At cost', 'admin-at-cost.html'], missing.length);
 
-    var total = sections.length ? pending.length + toShip.length + labels.length + noTrack.length + cancels.length + owed.length + inc.length + stockRows.length + missing.length : 0;
+    var total = sections.length ? payMails.length + pending.length + toShip.length + labels.length + noTrack.length + cancels.length + owed.length + inc.length + stockRows.length + missing.length : 0;
     $('todo-lead').textContent = sections.length ? total + ' item' + (total === 1 ? '' : 's') + ' waiting on you, oldest first.' : 'Nothing waiting on you right now.';
     $('todo-sections').innerHTML = sections.join('');
     $('todo-clear').innerHTML = clear.length ? '<h2>All clear</h2><ul>' + clear.map(function (c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '';
 
+    document.querySelectorAll('[data-dismiss-pay]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var id = b.getAttribute('data-dismiss-pay');
+        b.disabled = true;
+        firebase.firestore().collection('paymentEmails').doc(id).update({ dismissedAt: new Date().toISOString() }).then(function () {
+          data.paymentEmails.forEach(function (m) { if (m.id === id) m.dismissedAt = 'now'; });
+          build();
+        }).catch(function (err) { b.disabled = false; alert('Could not dismiss: ' + err.message); });
+      });
+    });
     document.querySelectorAll('[data-credit]').forEach(function (b) {
       b.addEventListener('click', function () { giveCredit(b); });
     });
@@ -157,11 +177,14 @@
       db.collection('promoCodes').get(),
       db.collection('costs').get().catch(function () { return null; }),
       db.collection('incoming').get().catch(function () { return null; }),
+      db.collection('paymentEmails').get().catch(function () { return null; }),
       fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
     ]).then(function (r) {
       var incoming = [];
       if (r[4]) r[4].forEach(function (d) { incoming.push(Object.assign({ id: d.id }, d.data())); });
-      r.splice(4, 1);
+      var paymentEmails = [];
+      if (r[5]) r[5].forEach(function (d) { paymentEmails.push(Object.assign({ id: d.id }, d.data())); });
+      r.splice(4, 2);
       var stock = {}, promos = {}, costs = {}, names = {}, units = [];
       r[1].forEach(function (d) { if (typeof d.data().qty === 'number') stock[d.id] = d.data().qty; });
       r[2].forEach(function (d) { var p = d.data(); promos[d.id.toUpperCase()] = { affiliateEmail: String(p.affiliateEmail || '').toLowerCase() }; });
@@ -174,7 +197,7 @@
         else units.push(slug);
       });
       units.sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
-      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming };
+      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming, paymentEmails: paymentEmails };
       $('todo-loading').style.display = 'none';
       $('todo-body').style.display = '';
       build();
