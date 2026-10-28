@@ -1022,3 +1022,10 @@ html.family-pending .bogo-badge, html.family-pending .bogo-card-note, html.famil
   .calc { grid-template-columns: 1fr; }
   .calc-results { position: static; }
 }
+
+/* Referral link + copy button on Admin > Promo codes */
+.ref-link-cell { white-space: nowrap; }
+.ref-link { font-size: 0.82rem; color: var(--muted); margin-right: 8px; }
+.ref-copy { background: transparent; border: 1px solid var(--line); color: var(--mint); border-radius: var(--radius-sm); padding: 4px 10px; font: inherit; font-size: 0.8rem; cursor: pointer; }
+.ref-copy:hover { border-color: var(--mint); }
+.ref-copy.is-done { color: var(--frost); border-color: var(--mint); background: var(--mint-wash); }
