@@ -112,12 +112,36 @@
     drawRows();
     $('bd-form').scrollIntoView({ behavior: 'smooth', block: 'start' });
   }
+  // Research-area groupings from the catalog (GLP-1s left out on purpose).
+  var SUGGESTED = [
+    ['Tissue Repair Research Panel', 'Peptides studied in connective tissue and wound-repair research models.', ['bpc-157-10mg', 'tb500-thymosin-beta-4-10mg', 'kpv-10mg']],
+    ['GH Secretagogue Research Panel', 'A GHRH analog and a ghrelin-receptor agonist used in growth hormone secretion research.', ['cjc-1295-without-dac-10mg', 'ipamorelin-10mg']],
+    ['Copper Peptide Research Panel', 'Copper peptide complexes studied in dermal and extracellular matrix research.', ['ghk-cu-100mg', 'ahk-cu']],
+    ['Mitochondrial Research Panel', 'Compounds studied in mitochondrial function and cellular energy research.', ['mots-c-human-10mg', 'ss-31-10mg', 'nad-plus-500mg']],
+    ['Neuropeptide Research Panel', 'Synthetic neuropeptides studied in neuroscience research models.', ['semax-10mg', 'selank', 'pinealon']],
+    ['Thymic Peptide Research Panel', 'Thymic peptides and fragments studied in immunology research.', ['thymosin-alpha-1', 'thymalin-thymulin', 'kpv-10mg']],
+    ['Bioregulator Research Panel', 'Short peptide bioregulators studied in cellular regulation and aging research.', ['epithalon', 'pinealon', 'cartalax']]
+  ];
+  function addSuggested() {
+    var have = bundles.map(function (b) { return slugify(b.name); });
+    var batch = db.batch(), n = 0, now = new Date().toISOString();
+    SUGGESTED.forEach(function (s, i) {
+      var id = slugify(s[0]);
+      if (have.indexOf(id) !== -1 || !s[2].every(function (x) { return units[x]; })) return;
+      batch.set(db.collection('bundles').doc(id), { name: s[0], description: s[1], discountPercent: 15, items: s[2].map(function (x) { return { slug: x, qty: 1 }; }), active: false, sort: i + 1, updatedAt: now });
+      n++;
+    });
+    if (!n) return say('All the suggested panels are already here.', true);
+    batch.commit().then(function () { say(n + ' suggested panel' + (n === 1 ? '' : 's') + ' added, hidden. Edit each one and tick “Show on site” when you’re happy with it.', true); load(); })
+      .catch(function (err) { say('Could not add: ' + esc(err.message) + (/permission/i.test(err.message) ? ' Publish the updated Firestore rules first.' : '')); });
+  }
   function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'panel'; }
 
   function wire() {
     ['bd-name', 'bd-desc', 'bd-pct'].forEach(function (id) { $(id).addEventListener('input', refresh); });
     $('bd-add').addEventListener('click', function () { rows.push({ slug: '', qty: 1 }); drawRows(); });
     $('bd-cancel').addEventListener('click', resetForm);
+    $('bd-suggest').addEventListener('click', addSuggested);
     $('bd-form').addEventListener('submit', function (e) {
       e.preventDefault();
       var b = current();
