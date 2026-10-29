@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610281653">
+<link rel="stylesheet" href="css/style.css?v=202610282158">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610281653"></script>
+<script src="js/splash.js?v=202610282158"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -80,6 +80,7 @@
               <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
               <li><a href="admin-incoming.html" id="nav-admin-incoming-link">Incoming</a></li>
               <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
+              <li><a href="admin-gift-cards.html" id="nav-admin-giftcards-link">Gift cards</a></li>
               <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
               <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
               <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
@@ -96,6 +97,7 @@
               <li><a href="orders.html" id="nav-orders-link">My orders</a></li>
               <li><a href="favorites.html" id="nav-favorites-link">Favorites</a></li>
               <li class="nav-referrals" style="display:none;"><a href="referrals.html" id="nav-referrals-link">Referrals</a></li>
+              <li><a href="gift.html" id="nav-gift-link">Redeem a gift card</a></li>
               <li><a href="account.html" id="nav-myaccount-link">Account details</a></li>
               <li><a href="index.html" class="nav-signout-link">Sign out</a></li>
             </ul>
@@ -183,6 +185,14 @@
           <input type="checkbox" id="use-credit">
           <label for="use-credit">Use my store credit (<span id="credit-available">$0.00</span> available)</label>
         </div>
+        <details id="gift-box" class="gift-box">
+          <summary>Have a gift card?</summary>
+          <div class="role-add-row" style="margin-top:8px;">
+            <input type="text" id="gift-code-input" placeholder="TXB-XXXX-XXXX-XXXX" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="24">
+            <button type="button" id="gift-apply-btn" class="btn-outline-light" style="white-space:nowrap;">Redeem</button>
+          </div>
+          <p id="gift-message" class="form-message" style="display:none; margin-top:8px;"></p>
+        </details>
 
         <table class="spec-table" style="margin-bottom:0;">
           <tr><td>Subtotal</td><td id="summary-subtotal">$0</td></tr>
@@ -332,30 +342,31 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-functions-compat.js"></script>
-<script src="js/firebase-config.js?v=202610281653"></script>
-<script src="js/analytics.js?v=202610281653"></script>
-<script src="js/referral.js?v=202610281653"></script>
-<script src="js/site-config.js?v=202610281653"></script>
-<script src="js/cart.js?v=202610281653"></script>
-<script src="js/quotes.js?v=202610281653"></script>
-<script src="js/account.js?v=202610281653"></script>
-<script src="js/inventory.js?v=202610281653"></script>
-<script src="js/promos.js?v=202610281653"></script>
-<script src="js/bogo.js?v=202610281653"></script>
-<script src="js/at-cost.js?v=202610281653"></script>
-<script src="js/free-shipping.js?v=202610281653"></script>
-<script src="js/local-delivery.js?v=202610281653"></script>
-<script src="js/attestation.js?v=202610281653"></script>
-<script src="js/loyalty.js?v=202610281653"></script>
-<script src="js/payment-apps.js?v=202610281653"></script>
-<script src="js/credits.js?v=202610281653"></script>
-<script src="js/order-emails.js?v=202610281653"></script>
-<script src="js/staff.js?v=202610281653"></script>
-<script src="js/nav-auth.js?v=202610281653"></script>
-<script src="js/profile-gate.js?v=202610281653"></script>
-<script src="js/auth-guard.js?v=202610281653"></script>
-<script src="js/main.js?v=202610281653"></script>
-<script src="js/nav-toggle.js?v=202610281653"></script>
+<script src="js/firebase-config.js?v=202610282158"></script>
+<script src="js/analytics.js?v=202610282158"></script>
+<script src="js/referral.js?v=202610282158"></script>
+<script src="js/site-config.js?v=202610282158"></script>
+<script src="js/cart.js?v=202610282158"></script>
+<script src="js/quotes.js?v=202610282158"></script>
+<script src="js/account.js?v=202610282158"></script>
+<script src="js/inventory.js?v=202610282158"></script>
+<script src="js/promos.js?v=202610282158"></script>
+<script src="js/bogo.js?v=202610282158"></script>
+<script src="js/at-cost.js?v=202610282158"></script>
+<script src="js/free-shipping.js?v=202610282158"></script>
+<script src="js/local-delivery.js?v=202610282158"></script>
+<script src="js/attestation.js?v=202610282158"></script>
+<script src="js/loyalty.js?v=202610282158"></script>
+<script src="js/payment-apps.js?v=202610282158"></script>
+<script src="js/credits.js?v=202610282158"></script>
+<script src="js/gift-cards.js?v=202610282158"></script>
+<script src="js/order-emails.js?v=202610282158"></script>
+<script src="js/staff.js?v=202610282158"></script>
+<script src="js/nav-auth.js?v=202610282158"></script>
+<script src="js/profile-gate.js?v=202610282158"></script>
+<script src="js/auth-guard.js?v=202610282158"></script>
+<script src="js/main.js?v=202610282158"></script>
+<script src="js/nav-toggle.js?v=202610282158"></script>
 <script>
   // Bank transfer details live in Firestore at settings/bankTransfer
   // (fields: accountNumber, routingNumber, optional bankName and accountName),
@@ -799,6 +810,29 @@
     });
   }
   document.addEventListener('userReady', function (e) { loadStoreCredit(e.detail.user); });
+  // Gift card: redeems into store credit (js/gift-cards.js), then uses it on this order.
+  document.getElementById('gift-apply-btn').addEventListener('click', function () {
+    var btn = this, msg = document.getElementById('gift-message');
+    var user = firebase.auth().currentUser;
+    if (!user || !window.GiftCards) return;
+    btn.disabled = true; btn.textContent = 'Redeeming…';
+    GiftCards.redeem(firebase.firestore(), user.email, document.getElementById('gift-code-input').value).then(function (r) {
+      btn.disabled = false; btn.textContent = 'Redeem';
+      document.getElementById('gift-code-input').value = '';
+      msg.style.display = 'block'; msg.style.color = 'var(--mint-dark)';
+      msg.textContent = GiftCards.money(r.amountCents) + ' added to your store credit and applied below.';
+      return Credits.getAccount(user.email).then(function (account) {
+        creditAccount = account;
+        document.getElementById('credit-available').textContent = Credits.formatCents(account.balanceCents);
+        document.getElementById('credit-box').style.display = 'flex';
+        document.getElementById('use-credit').checked = true;
+        computeAndDisplayTotals();
+      });
+    }).catch(function (err) {
+      btn.disabled = false; btn.textContent = 'Redeem';
+      msg.style.display = 'block'; msg.style.color = 'var(--danger)'; msg.textContent = err.message;
+    });
+  });
   document.getElementById('use-credit').addEventListener('change', function () { computeAndDisplayTotals(); });
 
   function renderSummary() {

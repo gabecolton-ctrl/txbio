@@ -1387,3 +1387,22 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 /* Fixed quantity (quoted case): same box width as the editable ones, so numbers line up. */
 .cart-table td.cart-qty .quote-qty { display: inline-block; width: 72px; padding: 8px; text-align: center; border: 1px solid transparent; }
 @media (max-width: 720px) { .cart-table td.cart-qty .quote-qty { margin-left: auto; } }
+
+/* Gift cards */
+.gc-amounts { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.gc-share { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 20px; align-items: start; }
+.gc-canvas { width: 100%; height: auto; border-radius: 18px; box-shadow: 0 18px 50px rgba(0, 0, 0, 0.45); }
+.gc-share-tools textarea { margin-bottom: 8px; }
+.gc-code { font-family: ui-monospace, Menlo, Consolas, monospace; color: var(--mint); font-size: 0.92rem; }
+.gc-status { font-weight: 600; color: var(--mint); }
+.gc-status.is-used { color: var(--muted); }
+.gc-status.is-void { color: var(--alert); }
+.gc-actions { white-space: nowrap; }
+.gift-redeem { max-width: 560px; }
+.gift-redeem #gift-code { font-family: ui-monospace, Menlo, Consolas, monospace; letter-spacing: 0.04em; text-transform: uppercase; }
+.gift-done { max-width: 560px; text-align: left; }
+.gift-done-amt { font-family: var(--serif); font-size: 2.4rem; color: var(--mint); margin: 0 0 6px; }
+@media (max-width: 860px) { .gc-share { grid-template-columns: 1fr; } }
+.gift-box { margin: 10px 0 14px; }
+.gift-box summary { cursor: pointer; color: var(--mint); font-size: 0.92rem; font-weight: 600; }
+.gift-box #gift-code-input { font-family: ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase; margin-bottom: 0; }
