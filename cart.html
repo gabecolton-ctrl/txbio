@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610282216">
+<link rel="stylesheet" href="css/style.css?v=202610290631">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610282216"></script>
+<script src="js/splash.js?v=202610290631"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -62,6 +62,7 @@
     <nav>
       <ul class="nav-primary">
         <li><a href="services.html">Catalog</a></li>
+        <li><a href="bundles.html">Panels</a></li>
         <li><a href="calculator.html">Calculator</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="contact.html">Contact</a></li>
@@ -82,6 +83,7 @@
               <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
               <li><a href="admin-gift-cards.html" id="nav-admin-giftcards-link">Gift cards</a></li>
               <li><a href="admin-bogo.html" id="nav-admin-bogo-link">BOGO</a></li>
+              <li><a href="admin-bundles.html" id="nav-admin-bundles-link">Panels</a></li>
               <li><a href="admin-at-cost.html" id="nav-admin-atcost-link">At cost</a></li>
               <li><a href="admin-pnl.html" id="nav-admin-pnl-link">P&amp;L</a></li>
               <li><a href="admin-payments.html" id="nav-admin-payments-link">Payments</a></li>
@@ -181,6 +183,7 @@
       </div>
       <div class="footer-links">
         <a href="services.html">Catalog</a>
+        <a href="bundles.html">Research panels</a>
         <a href="calculator.html">Reconstitution calculator</a>
         <a href="gift-cards.html">Gift cards</a>
         <a href="about.html">About</a>
@@ -202,22 +205,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610282216"></script>
-<script src="js/analytics.js?v=202610282216"></script>
-<script src="js/referral.js?v=202610282216"></script>
-<script src="js/cart.js?v=202610282216"></script>
-<script src="js/quotes.js?v=202610282216"></script>
-<script src="js/at-cost.js?v=202610282216"></script>
-<script src="js/family-pricing.js?v=202610282216"></script>
-<script src="js/free-shipping.js?v=202610282216"></script>
-<script src="js/loyalty.js?v=202610282216"></script>
-<script src="js/pairings.js?v=202610282216"></script>
-<script src="js/staff.js?v=202610282216"></script>
-<script src="js/nav-auth.js?v=202610282216"></script>
-<script src="js/profile-gate.js?v=202610282216"></script>
-<script src="js/auth-guard.js?v=202610282216"></script>
-<script src="js/main.js?v=202610282216"></script>
-<script src="js/nav-toggle.js?v=202610282216"></script>
+<script src="js/firebase-config.js?v=202610290631"></script>
+<script src="js/analytics.js?v=202610290631"></script>
+<script src="js/referral.js?v=202610290631"></script>
+<script src="js/cart.js?v=202610290631"></script>
+<script src="js/quotes.js?v=202610290631"></script>
+<script src="js/at-cost.js?v=202610290631"></script>
+<script src="js/family-pricing.js?v=202610290631"></script>
+<script src="js/free-shipping.js?v=202610290631"></script>
+<script src="js/loyalty.js?v=202610290631"></script>
+<script src="js/pairings.js?v=202610290631"></script>
+<script src="js/staff.js?v=202610290631"></script>
+<script src="js/nav-auth.js?v=202610290631"></script>
+<script src="js/profile-gate.js?v=202610290631"></script>
+<script src="js/auth-guard.js?v=202610290631"></script>
+<script src="js/main.js?v=202610290631"></script>
+<script src="js/nav-toggle.js?v=202610290631"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -308,6 +311,7 @@
     }
     // Lines from a quote we sent (js/quotes.js): fixed price and quantity.
     function quoteTag(item) {
+      if (item.bundleName) return ' <span class="quote-tag">' + String(item.bundleName).replace(/[&<>"]/g, '') + '</span>';
       if (item.giftCard) return ' <span class="quote-tag">Gift card · emailed to ' + String(item.giftCard.toEmail || '').replace(/[&<>"]/g, '') + '</span>';
       if (!item.quoteId) return '';
       var ended = window.Quotes && item.quoteExpiresOn && Quotes.isExpired({ expiresOn: item.quoteExpiresOn });
@@ -336,14 +340,14 @@
         tr.innerHTML =
           '<td data-label="Product">' + item.name + quoteTag(item) + '</td>' +
           '<td data-label="Pack Size">' + item.packSize + '</td>' +
-          '<td data-label="Price">' + (fam ? FamilyPricing.money(each) : '$' + item.price) + '</td>' +
-          '<td class="cart-qty" data-label="Qty">' + ((item.quoteId && item.caseOf) || item.giftId ? '<span class="quote-qty">' + item.qty + '</span>'
+          '<td data-label="Price">' + (fam ? FamilyPricing.money(each) : '$' + (item.price % 1 ? Number(item.price).toFixed(2) : item.price)) + '</td>' +
+          '<td class="cart-qty" data-label="Qty">' + ((item.quoteId && item.caseOf) || item.giftId || item.bundleKey ? '<span class="quote-qty">' + item.qty + '</span>'
             : '<input type="number" min="1" value="' + item.qty + '" data-slug="' + Cart.lineKey(item) + '">') + '</td>' +
-          '<td data-label="Subtotal">' + (fam ? FamilyPricing.money(subtotal) : '$' + (Math.round(subtotal * 100) / 100)) + '</td>' +
-          '<td class="cart-remove" data-label=""><a href="#" data-remove-slug="' + Cart.lineKey(item) + '">Remove</a></td>';
+          '<td data-label="Subtotal">' + (fam ? FamilyPricing.money(subtotal) : '$' + (subtotal % 1 ? (Math.round(subtotal * 100) / 100).toFixed(2) : subtotal)) + '</td>' +
+          '<td class="cart-remove" data-label=""><a href="#" data-remove-slug="' + Cart.lineKey(item) + '">' + (item.bundleKey ? 'Remove bundle' : 'Remove') + '</a></td>';
         rowsEl.appendChild(tr);
       });
-      totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + (Math.round(total * 100) / 100);
+      totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + (total % 1 ? (Math.round(total * 100) / 100).toFixed(2) : total);
       // Free shipping progress (js/free-shipping.js); family orders have their own shipping.
       var bar = document.getElementById('free-ship-bar');
       var giftOnlyCart = items.every(function (i) { return i.giftCard; });

@@ -204,6 +204,7 @@
             giftNote = '<br><span class="order-gift-note">' + (item.giftEmailedAt ? '&#10003; Emailed to ' + to
               : item.giftCode ? 'Sent to ' + to : order.status === 'cancelled' ? 'Not sent (order cancelled)' : 'We’ll email it to ' + to + ' once your payment is confirmed') + '</span>';
           }
+          if (item.bundleName) giftNote = ' <span class="quote-tag">' + String(item.bundleName).replace(/[&<>"]/g, '') + '</span>' + giftNote;
           return '<tr><td data-label="Product">' + item.name + giftNote + '</td><td data-label="Pack Size">' + item.packSize + '</td><td data-label="Qty">' + qtyDisplay + '</td><td data-label="Subtotal">$' + (fam && typeof item.atCostPrice === 'number' ? item.atCostPrice.toFixed(2) : (item.price * item.qty)) + '</td></tr>';
         }).join('');
         var breakdownHtml = '';

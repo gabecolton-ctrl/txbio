@@ -96,7 +96,7 @@ var Cart = (function () {
     return ensureDb().runTransaction(function (transaction) {
       return transaction.get(ref).then(function (doc) {
         var items = (doc.exists && doc.data().items) ? doc.data().items : [];
-        var existing = product.giftCard ? null : items.find(function (i) { return i.slug === product.slug && !i.quoteId && !i.giftId; }); // quotes and gift cards stay separate
+        var existing = product.giftCard ? null : items.find(function (i) { return i.slug === product.slug && !i.quoteId && !i.giftId && !i.bundleKey; }); // quotes, gift cards and bundles stay separate
         if (existing) {
           existing.qty += qty;
         } else {
@@ -127,7 +127,7 @@ var Cart = (function () {
   }
 
   // A line's key: its slug, or slug#quoteId for a line from an admin quote.
-  function lineKey(i) { return i.giftId ? i.slug + '#' + i.giftId : i.quoteId ? i.slug + '#' + i.quoteId : i.slug; }
+  function lineKey(i) { return i.giftId ? i.slug + '#' + i.giftId : i.bundleKey ? i.slug + '#' + i.bundleKey : i.quoteId ? i.slug + '#' + i.quoteId : i.slug; }
 
   // Cart edits run one at a time, so a quantity change and a Remove tapped
   // right after it can't overwrite each other.
@@ -144,13 +144,34 @@ var Cart = (function () {
       var matches = function (i) { return exact ? lineKey(i) === key : i.slug === String(key).split('#')[0]; };
       if (qty <= 0) {
         var before = items.length;
-        items = items.filter(function (i) { return !matches(i); });
+        // Removing one line of a bundle removes the whole bundle.
+        var hit = items.filter(matches)[0];
+        var group = hit && hit.bundleKey;
+        items = items.filter(function (i) { return !matches(i) && !(group && i.bundleKey === group); });
         if (items.length === before) return items; // nothing to remove
       } else {
-        var item = items.find(function (i) { return lineKey(i) === key && !(i.quoteId && i.caseOf) && !i.giftId; }); // quoted cases and gift cards keep their quantity
+        var item = items.find(function (i) { return lineKey(i) === key && !(i.quoteId && i.caseOf) && !i.giftId && !i.bundleKey; }); // quoted cases, gift cards and bundles keep their quantity
         if (item) item.qty = qty;
       }
       return saveCart(items).then(function () { return items; });
+    });
+  }
+
+  // Adds several lines at once (a bundle, js/bundles.js).
+  function addLines(lines) {
+    var user = getCurrentUser();
+    if (!user) {
+      return waitForUser(1500).then(function (u) {
+        if (u) { currentUser = u; return addLines(lines); }
+        return sendToLogin(lines[0], 1);
+      });
+    }
+    var ref = getCartRef(user.uid);
+    return ensureDb().runTransaction(function (t) {
+      return t.get(ref).then(function (doc) {
+        var items = (doc.exists && doc.data().items) ? doc.data().items : [];
+        t.set(ref, { items: items.concat(lines), updatedAt: new Date().toISOString() });
+      });
     });
   }
 
@@ -222,6 +243,7 @@ var Cart = (function () {
     removeItem: removeItem,
     clearCart: clearCart,
     lineKey: lineKey,
+    addLines: addLines,
     getItemCount: getItemCount
   };
 })();
