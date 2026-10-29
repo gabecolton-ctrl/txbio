@@ -6,6 +6,7 @@ Disallow: /account.html
 Disallow: /orders.html
 Disallow: /referrals.html
 Disallow: /favorites.html
+Disallow: /gift.html
 Disallow: /functions/
 Disallow: /tools/
 Disallow: /data/

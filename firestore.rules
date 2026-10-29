@@ -26,6 +26,19 @@ service cloud.firestore {
       return isAdmin() || isManager();
     }
 
+    // Gift cards (js/gift-cards.js). True when this same write redeems gift
+    // card `code` for the signed-in buyer: unused and not void before, theirs after.
+    function redeemingGift(code) {
+      return code is string && code.size() > 0
+        && exists(/databases/$(database)/documents/giftCards/$(code))
+        && get(/databases/$(database)/documents/giftCards/$(code)).data.get('redeemedBy', '') == ''
+        && get(/databases/$(database)/documents/giftCards/$(code)).data.get('void', false) == false
+        && getAfter(/databases/$(database)/documents/giftCards/$(code)).data.get('redeemedBy', '') == myEmail();
+    }
+    function giftAmount(code) {
+      return get(/databases/$(database)/documents/giftCards/$(code)).data.amountCents;
+    }
+
     // Each user's cart — only they can read/write it.
     match /carts/{userId} {
       allow read, write: if signedIn() && request.auth.uid == userId;
@@ -111,9 +124,25 @@ service cloud.firestore {
     // up, never below zero. Only the admin can add, reverse, or refund.
     match /credits/{email} {
       allow read: if isStaff() || myEmail() == email;
-      allow create: if isStaff();
+      // The owner can create their credit record only by redeeming a gift card.
+      allow create: if isStaff() || (
+        myEmail() == email
+        && request.resource.data.keys().hasOnly(['balanceCents', 'earnedCents', 'spentCents', 'giftCents', 'lastGiftCard', 'updatedAt'])
+        && request.resource.data.get('earnedCents', 0) == 0
+        && request.resource.data.get('spentCents', 0) == 0
+        && redeemingGift(request.resource.data.lastGiftCard)
+        && request.resource.data.balanceCents == giftAmount(request.resource.data.lastGiftCard)
+        && request.resource.data.giftCents == giftAmount(request.resource.data.lastGiftCard)
+      );
       allow delete: if isAdmin();
       allow update: if isStaff() || (
+        // Redeeming a gift card: balance goes up by exactly the card's amount.
+        myEmail() == email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balanceCents', 'giftCents', 'lastGiftCard', 'updatedAt'])
+        && redeemingGift(request.resource.data.lastGiftCard)
+        && request.resource.data.balanceCents == resource.data.balanceCents + giftAmount(request.resource.data.lastGiftCard)
+        && request.resource.data.giftCents == resource.data.get('giftCents', 0) + giftAmount(request.resource.data.lastGiftCard)
+      ) || (
         myEmail() == email
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balanceCents', 'spentCents', 'updatedAt'])
         && request.resource.data.balanceCents is int
@@ -127,7 +156,10 @@ service cloud.firestore {
       // (written together with an order); everything else is admin-only.
       match /entries/{entryId} {
         allow read: if isStaff() || myEmail() == email;
-        allow create: if isStaff() || (myEmail() == email && request.resource.data.type == 'spent');
+        allow create: if isStaff() || (myEmail() == email && request.resource.data.type == 'spent')
+          || (myEmail() == email && request.resource.data.type == 'gift'
+              && redeemingGift(request.resource.data.code)
+              && request.resource.data.amountCents == giftAmount(request.resource.data.code));
         allow update, delete: if isAdmin();
       }
     }
@@ -193,6 +225,25 @@ service cloud.firestore {
     match /localMembers/{email} {
       allow read: if isAdmin() || myEmail() == email;
       allow write: if isAdmin();
+    }
+
+    // Gift cards. Knowing the code is what lets someone redeem it, so a single
+    // card can be read by code but the list is admin-only. Redeeming (once,
+    // by the signed-in buyer, together with their store credit) is the only
+    // change anyone but the admin can make.
+    match /giftCards/{code} {
+      allow get: if signedIn();
+      allow list: if isAdmin();
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin() || (
+        signedIn()
+        && resource.data.get('redeemedBy', '') == ''
+        && resource.data.get('void', false) == false
+        && (resource.data.get('forEmail', '') == '' || resource.data.forEmail == myEmail())
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemedBy', 'redeemedAt'])
+        && request.resource.data.redeemedBy == myEmail()
+        && getAfter(/databases/$(database)/documents/credits/$(myEmail())).data.get('lastGiftCard', '') == code
+      );
     }
 
     // Roles (Admin → Roles). Only the admin assigns them.
