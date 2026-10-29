@@ -1406,3 +1406,11 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .gift-box { margin: 10px 0 14px; }
 .gift-box summary { cursor: pointer; color: var(--mint); font-size: 0.92rem; font-weight: 600; }
 .gift-box #gift-code-input { font-family: ui-monospace, Menlo, Consolas, monospace; text-transform: uppercase; margin-bottom: 0; }
+.gc-buy { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 28px; align-items: start; }
+.gc-buy-preview { position: sticky; top: 96px; }
+.gc-amounts .is-on { border-color: var(--mint); color: var(--mint); background: var(--mint-wash); }
+@media (max-width: 860px) { .gc-buy { grid-template-columns: 1fr; } .gc-buy-preview { position: static; order: -1; } }
+.gift-panel { border: 1px solid var(--line-soft); border-radius: var(--radius); padding: 12px 14px; margin: 0 0 12px; background: var(--mint-wash); }
+.gift-panel ul { margin: 0; padding-left: 18px; }
+.gift-panel li { margin: 4px 0; }
+.order-gift-note { color: var(--muted); font-size: 0.85rem; }

@@ -23,7 +23,8 @@ var Loyalty = (function () {
 
   function spendOf(o) {
     if (!o || o.atCostCode) return 0;
-    return Math.max(0, Number(o.subtotal || 0) - Number(o.discount || 0) - Number(o.bogoDiscount || 0));
+    // Gift cards bought don't count (what the friend spends with them does).
+    return Math.max(0, Number(o.subtotal || 0) - Number(o.discount || 0) - Number(o.bogoDiscount || 0) - Number(o.giftCardTotal || 0));
   }
   function counts(o) { return o && COUNTED.indexOf(o.status) !== -1 && !o.atCostCode; }
   function lifetime(orders, exceptId) {

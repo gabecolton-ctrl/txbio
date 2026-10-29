@@ -96,7 +96,7 @@ var Cart = (function () {
     return ensureDb().runTransaction(function (transaction) {
       return transaction.get(ref).then(function (doc) {
         var items = (doc.exists && doc.data().items) ? doc.data().items : [];
-        var existing = items.find(function (i) { return i.slug === product.slug && !i.quoteId; }); // quoted lines stay separate
+        var existing = product.giftCard ? null : items.find(function (i) { return i.slug === product.slug && !i.quoteId && !i.giftId; }); // quotes and gift cards stay separate
         if (existing) {
           existing.qty += qty;
         } else {
@@ -113,6 +113,12 @@ var Cart = (function () {
             line.caseOf = product.caseOf;
             line.unitSlug = product.unitSlug;
           }
+          // Gift card for a friend (js/gift-cards.js): one line per card.
+          if (product.giftCard) {
+            line.giftId = product.giftId;
+            line.giftCard = product.giftCard;
+            line.qty = 1;
+          }
           items.push(line);
         }
         transaction.set(ref, { items: items, updatedAt: new Date().toISOString() });
@@ -121,7 +127,7 @@ var Cart = (function () {
   }
 
   // A line's key: its slug, or slug#quoteId for a line from an admin quote.
-  function lineKey(i) { return i.quoteId ? i.slug + '#' + i.quoteId : i.slug; }
+  function lineKey(i) { return i.giftId ? i.slug + '#' + i.giftId : i.quoteId ? i.slug + '#' + i.quoteId : i.slug; }
 
   // Cart edits run one at a time, so a quantity change and a Remove tapped
   // right after it can't overwrite each other.
@@ -141,7 +147,7 @@ var Cart = (function () {
         items = items.filter(function (i) { return !matches(i); });
         if (items.length === before) return items; // nothing to remove
       } else {
-        var item = items.find(function (i) { return lineKey(i) === key && !(i.quoteId && i.caseOf); }); // quoted cases keep their quantity
+        var item = items.find(function (i) { return lineKey(i) === key && !(i.quoteId && i.caseOf) && !i.giftId; }); // quoted cases and gift cards keep their quantity
         if (item) item.qty = qty;
       }
       return saveCart(items).then(function () { return items; });

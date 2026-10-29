@@ -16,7 +16,8 @@ var OrderEmails = (function () {
     serviceId: 'service_l76oqmw',              // Email Services → your Private Email service → Service ID
     confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
     shippedTemplateId: 'template_r6zmcve',    // Email Templates → "Order shipped" → Template ID
-    cancelledTemplateId: ''                   // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
+    cancelledTemplateId: '',                  // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
+    giftCardTemplateId: ''                    // Email Templates → "Gift card" → Template ID (emails a bought gift card to the friend)
   };
 
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
@@ -169,12 +170,31 @@ var OrderEmails = (function () {
     }).then(function () { return true; });
   }
 
+  // Gift card bought for a friend: emailed to them when the order's payment
+  // is confirmed (js/gift-cards.js). Needs the "Gift card" template.
+  function sendGiftCard(card, code) {
+    if (!CONFIG.publicKey || !CONFIG.serviceId || !CONFIG.giftCardTemplateId || !card.toEmail) return Promise.resolve(false);
+    return loadSdk().then(function (emailjs) {
+      var amount = '$' + ((card.amountCents || 0) / 100).toFixed((card.amountCents || 0) % 100 ? 2 : 0);
+      return emailjs.send(CONFIG.serviceId, CONFIG.giftCardTemplateId, {
+        to_email: card.toEmail,
+        to_name: card.toName || 'there',
+        from_name: card.from || 'A friend',
+        amount: amount,
+        message: card.message || '',
+        gift_code: code,
+        redeem_url: SITE_URL + '/gift.html?code=' + encodeURIComponent(code)
+      });
+    }).then(function () { return true; });
+  }
+
   return {
     isConfigured: isConfigured,
     canSendCancelled: canSendCancelled,
     sendCancelled: sendCancelled,
     sendConfirmation: sendConfirmation,
     sendShipped: sendShipped,
+    sendGiftCard: sendGiftCard,
     shippedParams: shippedParams,
     CONFIG: CONFIG
   };

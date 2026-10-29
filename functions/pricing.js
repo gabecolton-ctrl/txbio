@@ -69,6 +69,20 @@ function priceCart(catalog, cartItems, quotes, uid, now) {
   const bySlug = new Map();
   const quoted = [];
   for (const item of cartItems) {
+    if (item && item.giftCard) {
+      // Gift card for a friend (js/gift-cards.js): $10–$1,000, one per line.
+      const amount = Math.round(Number(item.price));
+      const g = item.giftCard || {};
+      const toEmail = cleanText(g.toEmail, 120).toLowerCase();
+      if (!(amount >= 10 && amount <= 1000) || amount !== Number(item.price)) throw new PricingError('Gift cards are $10 to $1,000 in whole dollars.');
+      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(toEmail)) throw new PricingError('A gift card is missing your friend’s email. Remove it and add it again.');
+      quoted.push({
+        slug: 'gift-card', name: 'Gift card', packSize: '$' + amount + ' for ' + (cleanText(g.toName, 60) || toEmail), price: amount, qty: 1,
+        giftId: cleanText(item.giftId, 20), noTax: true,
+        giftCard: { toName: cleanText(g.toName, 60), toEmail, from: cleanText(g.from, 60), message: cleanText(g.message, 140) }
+      });
+      continue;
+    }
     if (item && item.quoteId) {
       const check = Quotes.checkLine(item, (quotes || {})[item.quoteId], uid, now);
       if (!check.ok) throw new PricingError(check.reason);
@@ -77,7 +91,7 @@ function priceCart(catalog, cartItems, quotes, uid, now) {
       line.qty = check.qty;
       line.quoteId = item.quoteId;
       if (!check.taxable) line.noTax = true;
-      if (!quoted.some((l) => l.slug === line.slug && l.quoteId === line.quoteId)) quoted.push(line);
+      if (!quoted.some((l) => l.slug === line.slug && l.quoteId && l.quoteId === line.quoteId)) quoted.push(line);
       continue;
     }
     const qty = Number(item && item.qty);
@@ -134,7 +148,7 @@ function checkPromo(promo, code, isFirstOrder, now, roles, usedCodes) {
 
 // A single-vial line of a product with BOGO on (cases never get BOGO).
 function isBogoLine(line, eligibleSlugs) {
-  if (line.caseOf || line.quoteId) return false;
+  if (line.caseOf || line.quoteId || line.giftCard) return false;
   return (eligibleSlugs || []).some((base) => line.slug === base || line.slug.indexOf(base + '-') === 0);
 }
 
@@ -146,17 +160,20 @@ function isBogoLine(line, eligibleSlugs) {
 // shippingValue + family: free standard shipping at FreeShipping.MIN (js/free-shipping.js).
 function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, platinum, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
-  const promoBase = lines.reduce((n, l) => n + (l.quoteId ? 0 : l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty)), 0);
+  const promoBase = lines.reduce((n, l) => n + (l.quoteId || l.giftCard ? 0 : l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty)), 0);
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
-  if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal, !!family, !!platinum);
+  // Gift cards: no shipping on their own, and they don't count toward free shipping.
+  const giftSubtotal = lines.reduce((n, l) => n + (l.giftCard ? l.price * l.qty : 0), 0);
+  if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal - giftSubtotal, !!family, !!platinum);
+  if (lines.length && lines.every((l) => l.giftCard)) shippingPrice = 0;
   // Quoted items marked "no tax" (admin quotes, js/quotes.js) aren't taxed.
   const quotedSubtotal = lines.reduce((n, l) => n + (l.noTax ? l.price * l.qty : 0), 0);
   const tax = round2(Math.max(0, discountedSubtotal - quotedSubtotal) * taxRate);
   const totalBeforeCredit = discountedSubtotal + shippingPrice + tax;
   const creditUsedCents = useCredit ? Math.max(0, Math.min(creditBalanceCents || 0, Math.round(totalBeforeCredit * 100))) : 0;
   const total = round2(totalBeforeCredit - creditUsedCents / 100);
-  return { subtotal, discount, bogoDiscount: bogo, tax, shipping: shippingPrice, totalBeforeCredit, creditUsedCents, creditUsed: creditUsedCents / 100, total };
+  return { subtotal, discount, bogoDiscount: bogo, tax, shipping: shippingPrice, totalBeforeCredit, creditUsedCents, creditUsed: creditUsedCents / 100, total, giftCardTotal: round2(giftSubtotal) };
 }
 
 // How many units each stock record gives up for these lines (cases count as
@@ -164,6 +181,7 @@ function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs,
 function stockNeeds(lines) {
   const needs = new Map();
   for (const l of lines) {
+    if (l.giftCard) continue; // nothing to take from stock
     const slug = l.caseOf ? l.unitSlug : l.slug;
     needs.set(slug, (needs.get(slug) || 0) + (l.caseOf ? l.qty * l.caseOf : l.qty));
   }

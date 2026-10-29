@@ -295,6 +295,21 @@ test('quote with tax on: quoted items are taxed', async () => {
   assert.strictEqual(order.tax, Math.round(140 * 0.0825 * 100) / 100);
 });
 
+test('gift cards: no tax, shipping or promo on them; gift-only needs no address; bad ones refused', async () => {
+  const gift = { slug: 'gift-card', price: 50, qty: 3, giftId: 'g1', giftCard: { toName: 'Jo', toEmail: 'Jo@Example.com', from: 'Bea', message: 'Hi' } };
+  let r = await run(Object.assign(cart([gift]), { 'promoCodes/TEN': { discountPercent: 10, type: 'always', active: true } }), { promoCode: 'TEN', shippingAddress: {} });
+  assert.deepStrictEqual([r.order.subtotal, r.order.discount, r.order.tax, r.order.shipping, r.order.total, r.order.giftCardTotal], [50, 0, 0, 0, 50, 50]);
+  assert.strictEqual(r.order.items[0].qty, 1);
+  assert.strictEqual(r.order.items[0].giftCard.toEmail, 'jo@example.com');
+  // With a $218 vial order: gift card doesn't push it over free shipping, and isn't taxed.
+  r = await run(cart([{ slug: 'semaglutide-10mg', qty: 2 }, Object.assign({}, gift, { price: 100 })]));
+  assert.strictEqual(r.order.shipping, 15);
+  assert.strictEqual(r.order.tax, Math.round(218 * 0.0825 * 100) / 100);
+  await rejects(run(cart([Object.assign({}, gift, { price: 5 })]), { shippingAddress: {} }), 'failed-precondition', 'Gift cards are');
+  await rejects(run(cart([Object.assign({}, gift, { giftCard: { toEmail: 'nope' } })]), { shippingAddress: {} }), 'failed-precondition', 'email');
+  await rejects(run(cart([{ slug: 'cagrilintide', qty: 1 }]), { shippingAddress: {} }), 'invalid-argument', 'address');
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');

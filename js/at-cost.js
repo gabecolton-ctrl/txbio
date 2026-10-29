@@ -51,8 +51,8 @@ var AtCost = (function () {
       var vials = vialsOf(item);
       var cost = costs ? costs[slug] : undefined;
       var line = { slug: item.slug, unitSlug: slug, vials: vials, listPrice: listPrice };
-      if (item.quoteId) {
-        // Quoted lines (js/quotes.js) keep the price the admin set.
+      if (item.quoteId || item.giftCard) {
+        // Quoted lines (js/quotes.js) and gift cards keep their price.
         line.atCostPrice = listPrice;
         if (typeof cost === 'number' && cost >= 0) line.unitCost = cost;
       } else if (typeof cost === 'number' && cost >= 0) {
