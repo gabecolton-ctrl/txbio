@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610282158">
+<link rel="stylesheet" href="css/style.css?v=202610282216">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610282158"></script>
+<script src="js/splash.js?v=202610282216"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -182,6 +182,7 @@
       <div class="footer-links">
         <a href="services.html">Catalog</a>
         <a href="calculator.html">Reconstitution calculator</a>
+        <a href="gift-cards.html">Gift cards</a>
         <a href="about.html">About</a>
         <a href="contact.html">Contact</a>
         <a href="login.html" class="signed-out-only">Researcher login</a>
@@ -201,22 +202,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610282158"></script>
-<script src="js/analytics.js?v=202610282158"></script>
-<script src="js/referral.js?v=202610282158"></script>
-<script src="js/cart.js?v=202610282158"></script>
-<script src="js/quotes.js?v=202610282158"></script>
-<script src="js/at-cost.js?v=202610282158"></script>
-<script src="js/family-pricing.js?v=202610282158"></script>
-<script src="js/free-shipping.js?v=202610282158"></script>
-<script src="js/loyalty.js?v=202610282158"></script>
-<script src="js/pairings.js?v=202610282158"></script>
-<script src="js/staff.js?v=202610282158"></script>
-<script src="js/nav-auth.js?v=202610282158"></script>
-<script src="js/profile-gate.js?v=202610282158"></script>
-<script src="js/auth-guard.js?v=202610282158"></script>
-<script src="js/main.js?v=202610282158"></script>
-<script src="js/nav-toggle.js?v=202610282158"></script>
+<script src="js/firebase-config.js?v=202610282216"></script>
+<script src="js/analytics.js?v=202610282216"></script>
+<script src="js/referral.js?v=202610282216"></script>
+<script src="js/cart.js?v=202610282216"></script>
+<script src="js/quotes.js?v=202610282216"></script>
+<script src="js/at-cost.js?v=202610282216"></script>
+<script src="js/family-pricing.js?v=202610282216"></script>
+<script src="js/free-shipping.js?v=202610282216"></script>
+<script src="js/loyalty.js?v=202610282216"></script>
+<script src="js/pairings.js?v=202610282216"></script>
+<script src="js/staff.js?v=202610282216"></script>
+<script src="js/nav-auth.js?v=202610282216"></script>
+<script src="js/profile-gate.js?v=202610282216"></script>
+<script src="js/auth-guard.js?v=202610282216"></script>
+<script src="js/main.js?v=202610282216"></script>
+<script src="js/nav-toggle.js?v=202610282216"></script>
 <script>
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
@@ -307,6 +308,7 @@
     }
     // Lines from a quote we sent (js/quotes.js): fixed price and quantity.
     function quoteTag(item) {
+      if (item.giftCard) return ' <span class="quote-tag">Gift card · emailed to ' + String(item.giftCard.toEmail || '').replace(/[&<>"]/g, '') + '</span>';
       if (!item.quoteId) return '';
       var ended = window.Quotes && item.quoteExpiresOn && Quotes.isExpired({ expiresOn: item.quoteExpiresOn });
       return ' <span class="quote-tag' + (ended ? ' is-ended' : '') + '">' + (ended ? 'Quote ended' : 'Quote' + (item.quoteExpiresOn ? ' · through ' + item.quoteExpiresOn : '')) + '</span>';
@@ -335,7 +337,7 @@
           '<td data-label="Product">' + item.name + quoteTag(item) + '</td>' +
           '<td data-label="Pack Size">' + item.packSize + '</td>' +
           '<td data-label="Price">' + (fam ? FamilyPricing.money(each) : '$' + item.price) + '</td>' +
-          '<td class="cart-qty" data-label="Qty">' + (item.quoteId && item.caseOf ? '<span class="quote-qty">' + item.qty + '</span>'
+          '<td class="cart-qty" data-label="Qty">' + ((item.quoteId && item.caseOf) || item.giftId ? '<span class="quote-qty">' + item.qty + '</span>'
             : '<input type="number" min="1" value="' + item.qty + '" data-slug="' + Cart.lineKey(item) + '">') + '</td>' +
           '<td data-label="Subtotal">' + (fam ? FamilyPricing.money(subtotal) : '$' + (Math.round(subtotal * 100) / 100)) + '</td>' +
           '<td class="cart-remove" data-label=""><a href="#" data-remove-slug="' + Cart.lineKey(item) + '">Remove</a></td>';
@@ -344,17 +346,20 @@
       totalEl.textContent = fam ? FamilyPricing.money(Math.round(total * 100) / 100) : '$' + (Math.round(total * 100) / 100);
       // Free shipping progress (js/free-shipping.js); family orders have their own shipping.
       var bar = document.getElementById('free-ship-bar');
+      var giftOnlyCart = items.every(function (i) { return i.giftCard; });
+      if (giftOnlyCart && bar) { bar.hidden = true; } else
       if (window.FreeShipping && !famShip && cartPlatinum) {
         document.getElementById('free-ship-text').innerHTML = '<strong>Platinum member:</strong> free 2nd Day shipping on every order.';
         document.getElementById('free-ship-fill').style.width = '100%';
         document.getElementById('free-ship-more').textContent = 'Keep shopping';
         bar.classList.add('is-free'); bar.hidden = false;
       } else if (window.FreeShipping && !famShip) {
-        var left = FreeShipping.remaining(total);
+        var shipTotal = total - items.reduce(function (n, i) { return n + (i.giftCard ? i.price * i.qty : 0); }, 0); // gift cards don't count
+        var left = FreeShipping.remaining(shipTotal);
         document.getElementById('free-ship-text').innerHTML = left > 0
           ? 'You\u2019re <strong>$' + left.toFixed(2) + '</strong> away from free 2nd Day shipping.'
           : '<strong>You\u2019ve got free shipping!</strong> 2nd Day shipping is free at checkout (orders $250+ after discounts).';
-        document.getElementById('free-ship-fill').style.width = Math.min(100, total / FreeShipping.MIN * 100) + '%';
+        document.getElementById('free-ship-fill').style.width = Math.min(100, shipTotal / FreeShipping.MIN * 100) + '%';
         bar.classList.toggle('is-free', left <= 0);
         document.getElementById('free-ship-more').textContent = left > 0 ? 'Add more items' : 'Keep shopping';
         bar.hidden = false;

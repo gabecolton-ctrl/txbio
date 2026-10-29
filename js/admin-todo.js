@@ -53,7 +53,8 @@
       }), ['Orders', 'admin-orders.html?q=pending']);
 
     // 2. Ready to ship
-    var toShip = orders.filter(function (o) { return o.status === 'confirmed' || o.status === 'processing'; }).sort(oldest);
+    var giftOnly = function (o) { return (o.items || []).length > 0 && o.items.every(function (i) { return i.giftCard; }); };
+    var toShip = orders.filter(function (o) { return (o.status === 'confirmed' || o.status === 'processing') && !giftOnly(o); }).sort(oldest);
     add('ship', 'Paid, ready to ship', 'Make the label (Pirate Ship), add the tracking number, and mark Shipped.',
       toShip.map(function (o) {
         var a = o.shippingAddress || {};

@@ -35,6 +35,7 @@ PUBLIC_PAGES = {
                         'Free peptide reconstitution calculator: enter the vial amount and diluent volume to get concentration in mg/mL and mcg/mL, the volume for a target amount, and aliquots per vial. For laboratory research use only.'),
     'about.html': ('About Texas Advanced BioResearch | TXBioResearch',
                    'Texas Advanced BioResearch supplies research-use peptides and reagents to laboratories and researchers from Dallas, TX.'),
+    'gift-cards.html': ('Gift Cards | TXBioResearch', 'Send a TXBioResearch gift card. Your friend gets it by email and redeems it as store credit.'),
     'contact.html': ('Contact Us | TXBioResearch',
                      'Questions about a product, an order, or bulk pricing? Contact Texas Advanced BioResearch in Dallas, TX.'),
     'shipping.html': ('Shipping & Returns | TXBioResearch',

@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202610282158">
+<link rel="stylesheet" href="css/style.css?v=202610282216">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202610282158"></script>
+<script src="js/splash.js?v=202610282216"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -151,6 +151,7 @@
       <div class="footer-links">
         <a href="services.html">Catalog</a>
         <a href="calculator.html">Reconstitution calculator</a>
+        <a href="gift-cards.html">Gift cards</a>
         <a href="about.html">About</a>
         <a href="contact.html">Contact</a>
         <a href="login.html" class="signed-out-only">Researcher login</a>
@@ -170,23 +171,24 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202610282158"></script>
-<script src="js/cart.js?v=202610282158"></script>
-<script src="js/site-config.js?v=202610282158"></script>
-<script src="js/payment-apps.js?v=202610282158"></script>
-<script src="js/account.js?v=202610282158"></script>
-<script src="js/inventory.js?v=202610282158"></script>
-<script src="js/promos.js?v=202610282158"></script>
-<script src="js/credits.js?v=202610282158"></script>
-<script src="js/loyalty.js?v=202610282158"></script>
-<script src="js/lots.js?v=202610282158"></script>
-<script src="js/order-emails.js?v=202610282158"></script>
-<script src="js/staff.js?v=202610282158"></script>
-<script src="js/nav-auth.js?v=202610282158"></script>
-<script src="js/profile-gate.js?v=202610282158"></script>
-<script src="js/auth-guard.js?v=202610282158"></script>
-<script src="js/main.js?v=202610282158"></script>
-<script src="js/nav-toggle.js?v=202610282158"></script>
+<script src="js/firebase-config.js?v=202610282216"></script>
+<script src="js/cart.js?v=202610282216"></script>
+<script src="js/site-config.js?v=202610282216"></script>
+<script src="js/payment-apps.js?v=202610282216"></script>
+<script src="js/account.js?v=202610282216"></script>
+<script src="js/inventory.js?v=202610282216"></script>
+<script src="js/promos.js?v=202610282216"></script>
+<script src="js/credits.js?v=202610282216"></script>
+<script src="js/loyalty.js?v=202610282216"></script>
+<script src="js/lots.js?v=202610282216"></script>
+<script src="js/order-emails.js?v=202610282216"></script>
+<script src="js/gift-cards.js?v=202610282216"></script>
+<script src="js/staff.js?v=202610282216"></script>
+<script src="js/nav-auth.js?v=202610282216"></script>
+<script src="js/profile-gate.js?v=202610282216"></script>
+<script src="js/auth-guard.js?v=202610282216"></script>
+<script src="js/main.js?v=202610282216"></script>
+<script src="js/nav-toggle.js?v=202610282216"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -507,6 +509,42 @@
     });
   }
 
+  var myRole = null, myEmail = '';
+  var PAID_STATUSES = ['confirmed', 'processing', 'label-created', 'shipped', 'delivered'];
+
+  // Gift cards bought on an order (js/gift-cards.js): issued and emailed to
+  // the friend once payment is confirmed.
+  function giftPanel(order) {
+    var gifts = (order.items || []).filter(function (i) { return i.giftCard; });
+    if (!gifts.length) return '';
+    var paid = PAID_STATUSES.indexOf(order.status || 'pending') !== -1;
+    var rows = gifts.map(function (i) {
+      var g = i.giftCard, who = escapeAttr(g.toName || '') + ' &lt;' + escapeAttr(g.toEmail || '') + '&gt;';
+      var state;
+      if (i.giftCode) {
+        state = '<code class="gc-code">' + escapeAttr(i.giftCode) + '</code> · ' + (i.giftEmailedAt ? '&#10003; emailed ' + new Date(i.giftEmailedAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })
+          : '<strong>not emailed</strong> <a href="mailto:' + encodeURIComponent(g.toEmail || '') + '?subject=' + encodeURIComponent('A TXBioResearch gift card for you') + '&body=' + encodeURIComponent(GiftCards.shareText({ toName: g.toName, from: g.from, amountCents: Math.round(i.price * 100) }, i.giftCode)) + '">Email it yourself</a>');
+      } else if (order.status === 'cancelled') {
+        state = 'Not issued (order cancelled)';
+      } else if (paid && myRole === 'admin') {
+        state = '<button type="button" class="btn-outline-light todo-btn" data-issue-gift="' + order.id + '">Issue &amp; email now</button>';
+      } else {
+        state = paid ? 'Waiting for the admin to issue it' : 'Issued and emailed when you mark the order Confirmed';
+      }
+      return '<li><strong>$' + Number(i.price).toFixed(0) + ' gift card</strong> for ' + who + (g.from ? ' · from ' + escapeAttr(g.from) : '') + '<br><span class="tracking-status">' + state + '</span></li>';
+    }).join('');
+    return '<div class="gift-panel"><p style="margin:0 0 6px; font-weight:600;">Gift cards on this order</p><ul>' + rows + '</ul></div>';
+  }
+  function issueGifts(order) {
+    if (myRole !== 'admin' || !window.GiftCards) return Promise.resolve();
+    if (!(order.items || []).some(function (i) { return i.giftCard && !i.giftCode; })) return Promise.resolve();
+    return GiftCards.issueForOrder(firebase.firestore(), order, myEmail).then(function (made) {
+      if (made.length) renderOrders(allOrders);
+      var notSent = made.filter(function (m) { return !m.emailed; }).length;
+      if (notSent) alert(notSent + ' gift card' + (notSent === 1 ? ' was' : 's were') + ' issued but not emailed (the gift card email template isn’t set up yet). Use “Email it yourself” on the order.');
+    }).catch(function (err) { alert('Could not issue the gift card: ' + err.message); });
+  }
+
   var STATUS_OPTIONS = ['pending', 'confirmed', 'processing', 'label-created', 'shipped', 'delivered', 'cancelled'];
   var STATUS_NAMES = { pending: 'Pending / Awaiting Payment', 'label-created': 'Label created' };
 
@@ -516,6 +554,7 @@
         document.getElementById('admin-denied').style.display = 'block';
         return;
       }
+      myRole = r; myEmail = String(e.detail.user.email || '').toLowerCase();
       document.getElementById('admin-content').style.display = 'block';
       loadOrders();
     });
@@ -618,7 +657,7 @@
             '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
             '<tbody>' + itemsHtml + '</tbody>' +
           '</table>' +
-        '</div>' +
+        '</div>' + giftPanel(order) +
         '<table class="spec-table" style="max-width:320px; margin-left:auto; margin-bottom:0;">' +
           '<tr><td>Subtotal</td><td>$' + (order.subtotal || 0).toFixed(2) + '</td></tr>' +
           '<tr><td>Shipping</td><td>$' + (order.shipping || 0).toFixed(2) + '</td></tr>' +
@@ -630,6 +669,8 @@
         '</table>';
 
       listEl.appendChild(box);
+      var issueBtn = box.querySelector('[data-issue-gift]');
+      if (issueBtn) issueBtn.addEventListener('click', function () { issueBtn.disabled = true; issueGifts(order); });
       var attestLink = box.querySelector('[data-attest-for]');
       if (attestLink) attestLink.addEventListener('click', function (ev) {
         ev.preventDefault();
@@ -704,6 +745,8 @@
           select.disabled = false;
           if (order) order.status = newStatus;
           if (order && newStatus === 'shipped') { sendShippedEmail(order); creditAffiliate(order); creditLoyalty(order); allocateLots(order); }
+          if (order && PAID_STATUSES.indexOf(newStatus) !== -1) issueGifts(order);
+          if (order && newStatus === 'cancelled' && window.GiftCards) GiftCards.voidForOrder(firebase.firestore(), order).catch(function () {});
           if (order && newStatus === 'cancelled') {
             setCancelStatus(orderId, 'Cancelling\u2026');
             cancelOrder(order).catch(function (err) {

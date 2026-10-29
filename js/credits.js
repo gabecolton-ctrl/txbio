@@ -82,7 +82,8 @@ var Credits = (function () {
 
   // Commission an affiliate earns on an order, in cents.
   function commissionCents(order) {
-    var base = Number(order.subtotal || 0) - Number(order.discount || 0) - Number(order.bogoDiscount || 0);
+    // Gift cards bought on the order don't earn commission (the spend does, later).
+    var base = Number(order.subtotal || 0) - Number(order.discount || 0) - Number(order.bogoDiscount || 0) - Number(order.giftCardTotal || 0);
     return Math.max(0, Math.round(base * COMMISSION_RATE * 100));
   }
 

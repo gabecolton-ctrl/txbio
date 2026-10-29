@@ -99,7 +99,7 @@ var GiftCards = (function () {
     if (line) lines.push(line);
     return lines;
   }
-  // card: { code, amountCents, toName, from, message }. Resolves the canvas.
+  // card: { code, amountCents, toName, from, message, noQr }. Resolves the canvas.
   function drawCard(canvas, card, logoSrc) {
     var W = 1500, H = 945;
     canvas.width = W; canvas.height = H;
@@ -149,7 +149,7 @@ var GiftCards = (function () {
       ctx.fillText('Redeem at txbioresearch.com/gift  ·  added to your store credit', 82, 872);
 
       // QR to the redeem page, on a light panel so every phone can scan it.
-      if (window.qrcode) {
+      if (window.qrcode && !card.noQr) {
         var qr = window.qrcode(0, 'M'); qr.addData(redeemUrl(card.code)); qr.make();
         var n = qr.getModuleCount(), size = 300, cell = Math.floor(size / (n + 4)), qs = cell * (n + 4);
         var qx = W - 80 - qs, qy = H - 80 - qs;
@@ -163,5 +163,82 @@ var GiftCards = (function () {
     });
   }
 
-  return { makeCode: makeCode, normalize: normalize, redeemUrl: redeemUrl, money: money, redeem: redeem, drawCard: drawCard, CODE_RE: CODE_RE };
+  // ---------- Buying a gift card for a friend (gift-cards.html → cart) ----------
+  // A cart line: { slug: 'gift-card', name, packSize, price, qty: 1, giftId,
+  //   giftCard: { toName, toEmail, from, message } }. When the admin confirms
+  // the order's payment, issueForOrder() creates the card and emails the friend.
+  var SLUG = 'gift-card', MIN = 10, MAX = 1000;
+  function isGiftLine(item) { return !!(item && item.giftCard); }
+  function lineFor(amount, giftCard) {
+    var id = makeCode().replace(/-/g, '').slice(3, 11).toLowerCase();
+    return {
+      slug: SLUG, name: 'Gift card', price: Math.round(Number(amount) * 100) / 100, qty: 1,
+      packSize: money(Math.round(Number(amount) * 100)) + ' for ' + (giftCard.toName || giftCard.toEmail),
+      giftId: id, giftCard: giftCard
+    };
+  }
+
+  // ADMIN. Creates the cards for an order's gift lines that don't have one yet,
+  // saves the codes on the order, and emails each friend (js/order-emails.js).
+  // Resolves the list of { code, line, emailed }.
+  function issueForOrder(db, order, by) {
+    var items = (order.items || []).map(function (i) { return Object.assign({}, i); });
+    var todo = items.filter(function (i) { return isGiftLine(i) && !i.giftCode; });
+    if (!todo.length) return Promise.resolve([]);
+    var now = new Date().toISOString();
+    var made = [];
+    return Promise.all(todo.map(function (line) {
+      var code = makeCode();
+      var g = line.giftCard || {};
+      var card = {
+        amountCents: Math.round(Number(line.price) * 100), toName: g.toName || '', toEmail: String(g.toEmail || '').toLowerCase(), forEmail: '',
+        from: g.from || '', message: g.message || '', paidCents: Math.round(Number(line.price) * 100), paidMethod: order.paymentMethod || '',
+        orderId: order.id || '', orderNumber: order.orderNumber || '', buyerEmail: order.userEmail || '',
+        createdAt: now, createdBy: by || '', void: false, redeemedBy: ''
+      };
+      return db.collection('giftCards').doc(code).set(card).then(function () {
+        line.giftCode = code; line.giftIssuedAt = now;
+        made.push({ code: code, line: line, card: card });
+      });
+    })).then(function () {
+      return db.collection('orders').doc(order.id).update({ items: items });
+    }).then(function () {
+      order.items = items;
+      return Promise.all(made.map(function (m) {
+        if (!window.OrderEmails || !OrderEmails.sendGiftCard || !m.card.toEmail) return Promise.resolve(false);
+        return OrderEmails.sendGiftCard(m.card, m.code).then(function (sent) {
+          if (!sent) return false;
+          m.line.giftEmailedAt = new Date().toISOString();
+          return true;
+        }).catch(function () { return false; });
+      }));
+    }).then(function (sent) {
+      made.forEach(function (m, i) { m.emailed = !!sent[i]; });
+      if (!made.some(function (m) { return m.emailed; })) return made;
+      return db.collection('orders').doc(order.id).update({ items: order.items }).then(function () { return made; });
+    });
+  }
+
+  // ADMIN. Voids an order's unredeemed gift cards (when the order is cancelled).
+  function voidForOrder(db, order) {
+    var codes = (order.items || []).filter(function (i) { return isGiftLine(i) && i.giftCode; }).map(function (i) { return i.giftCode; });
+    return Promise.all(codes.map(function (code) {
+      var ref = db.collection('giftCards').doc(code);
+      return ref.get().then(function (d) {
+        if (!d.exists || d.data().redeemedBy || d.data().void) return false;
+        return ref.update({ void: true, voidedAt: new Date().toISOString() }).then(function () { return true; });
+      });
+    }));
+  }
+
+  // The text a buyer or the admin can send by hand.
+  function shareText(card, code) {
+    return (card.toName ? 'Hi ' + String(card.toName).split(' ')[0] + '! ' : '') + 'Here’s a ' + money(card.amountCents) + ' TXBioResearch gift card' +
+      (card.from ? ' from ' + card.from : '') + '. Redeem it here (it goes into your store credit): ' + redeemUrl(code) + '  Code: ' + code;
+  }
+
+  return {
+    makeCode: makeCode, normalize: normalize, redeemUrl: redeemUrl, money: money, redeem: redeem, drawCard: drawCard, CODE_RE: CODE_RE,
+    SLUG: SLUG, MIN: MIN, MAX: MAX, isGiftLine: isGiftLine, lineFor: lineFor, issueForOrder: issueForOrder, voidForOrder: voidForOrder, shareText: shareText
+  };
 })();

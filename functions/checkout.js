@@ -40,9 +40,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   const paymentMethod = PAYMENT_METHODS.indexOf(data.paymentMethod) !== -1 ? data.paymentMethod : null;
   if (!paymentMethod) throw new HttpsError('invalid-argument', 'Please choose a payment method.');
   const address = P.cleanAddress(data.shippingAddress);
-  if (!(address.addressLine1 || address.city || address.state || address.zip)) {
-    throw new HttpsError('invalid-argument', 'Please add a shipping address before submitting your order.');
-  }
+  const hasAddress = !!(address.addressLine1 || address.city || address.state || address.zip);
   const notes = P.cleanText(data.notes, 2000);
   if (data.attested !== true) throw new HttpsError('failed-precondition', 'Please confirm you are 21 or older and that this order is for research use only.');
   // Venmo / Cash App: the handle comes from settings, never from the browser.
@@ -89,6 +87,10 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       if (!localShipping) shippingOpt = { price: check.shipping.price, label: check.shipping.label };
     }
   }
+  // Gift-card-only orders need no address (the cards are emailed).
+  const giftOnly = lines.length > 0 && lines.every((l) => l.giftCard);
+  if (!hasAddress && !giftOnly) throw new HttpsError('invalid-argument', 'Please add a shipping address before submitting your order.');
+  if (giftOnly) shippingOpt = { price: 0, label: 'No shipping (gift card by email)' };
   // The family shipping option exists only with a valid family code.
   if (!shippingOpt) throw new HttpsError('invalid-argument', 'Please choose a shipping option.');
 
@@ -173,15 +175,16 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     const items = lines.map((l, i) => {
       const slug = l.caseOf ? l.unitSlug : l.slug;
       const units = l.caseOf ? l.qty * l.caseOf : l.qty;
-      const left = remaining.get(slug);
+      const left = l.giftCard ? null : remaining.get(slug);
       let fulfilled = units;
-      if (left !== null) {
+      if (left !== null && left !== undefined) {
         fulfilled = Math.min(left, units);
         remaining.set(slug, left - fulfilled);
       }
       const item = { slug: l.slug, name: l.name, packSize: l.packSize, price: l.price, qty: l.qty, fulfilled, backordered: units - fulfilled };
       if (l.caseOf) { item.caseOf = l.caseOf; item.unitSlug = l.unitSlug; }
       if (l.quoteId) item.quoteId = l.quoteId;
+      if (l.giftCard) { item.giftCard = l.giftCard; item.giftId = l.giftId; }
       if (atCost) {
         const ac = atCost.result.lines[i];
         if (typeof ac.unitCost === 'number') item.unitCost = ac.unitCost;
@@ -205,6 +208,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       creditUsed: totals.creditUsed,
       creditUsedCents: totals.creditUsedCents,
       paymentFee: totals.paymentFee,
+      giftCardTotal: totals.giftCardTotal || 0,
       affiliateCode,
       total: totals.total,
       shippingAddress: address,
