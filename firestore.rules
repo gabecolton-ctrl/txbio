@@ -105,6 +105,12 @@ service cloud.firestore {
         && request.resource.data.totalDiscounted >= resource.data.get('totalDiscounted', 0);
     }
 
+    // Research panels (js/bundles.js) — public, like the catalog; admin edits.
+    match /bundles/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // BOGO eligibility per product — public (the catalog shows BOGO badges to
     // signed-out visitors too); only the admin edits it.
     match /bogoProducts/{productSlug} {

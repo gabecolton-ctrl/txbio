@@ -310,6 +310,20 @@ test('gift cards: no tax, shipping or promo on them; gift-only needs no address;
   await rejects(run(cart([{ slug: 'cagrilintide', qty: 1 }]), { shippingAddress: {} }), 'invalid-argument', 'address');
 });
 
+test('bundle: catalog price less the bundle discount, no promo on it; changed or incomplete refused', async () => {
+  const bundle = { name: 'Repair Research Panel', discountPercent: 15, active: true, items: [{ slug: 'bpc-157-10mg', qty: 1 }, { slug: 'tb500-thymosin-beta-4-10mg', qty: 1 }] };
+  const lines = [{ slug: 'bpc-157-10mg', qty: 1, price: 1, bundleId: 'b1', bundleKey: 'k1' }, { slug: 'tb500-thymosin-beta-4-10mg', qty: 1, price: 1, bundleId: 'b1', bundleKey: 'k1' }];
+  const seed = Object.assign({ 'carts/u1': { items: lines.concat([{ slug: 'cagrilintide', qty: 1 }]) }, 'bundles/b1': bundle, 'promoCodes/TEN': { discountPercent: 10, type: 'always', active: true } });
+  const { order } = await run(seed, { promoCode: 'TEN' });
+  const bpc = P.resolveLine(catalog, 'bpc-157-10mg').price, tb = P.resolveLine(catalog, 'tb500-thymosin-beta-4-10mg').price, cag = P.resolveLine(catalog, 'cagrilintide').price;
+  const b = order.items.filter((i) => i.bundleKey === 'k1');
+  assert.deepStrictEqual(b.map((i) => i.price), [P.round2(bpc * 0.85), P.round2(tb * 0.85)]);
+  assert.strictEqual(order.discount, P.round2(cag * 0.1));
+  assert.strictEqual(b[0].bundleName, 'Repair Research Panel');
+  await rejects(run(Object.assign({}, seed, { 'carts/u1': { items: [lines[0]] } }), {}), 'failed-precondition', 'changed');
+  await rejects(run(Object.assign({}, seed, { 'bundles/b1': Object.assign({}, bundle, { active: false }) }), {}), 'failed-precondition', 'no longer available');
+});
+
 test('rejects bad carts and inputs', async () => {
   await rejects(run(cart([])), 'failed-precondition', 'empty');
   await rejects(run(cart([{ slug: 'botulinum-toxin', qty: 1 }])), 'failed-precondition', 'no longer in the catalog');

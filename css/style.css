@@ -1414,3 +1414,16 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .gift-panel ul { margin: 0; padding-left: 18px; }
 .gift-panel li { margin: 4px 0; }
 .order-gift-note { color: var(--muted); font-size: 0.85rem; }
+
+/* Research panels */
+.panel-ruo { color: var(--muted); font-size: 0.9rem; max-width: 70ch; border-left: 3px solid var(--line); padding-left: 12px; margin-top: 14px; }
+.panel-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.panel-card h2 { margin: 0 0 6px; font-size: 1.35rem; }
+.panel-desc { color: var(--muted); margin: 0 0 14px; }
+.panel-items { list-style: none; padding: 0; margin: 0 0 16px; border-top: 1px solid var(--line-soft); }
+.panel-items li { display: flex; justify-content: space-between; gap: 12px; padding: 8px 0; border-bottom: 1px solid var(--line-soft); }
+.panel-price { margin-bottom: 14px; font-size: 1.25rem; }
+.panel-was { color: var(--faint); text-decoration: line-through; font-size: 1rem; }
+.panel-save { color: var(--mint); font-size: 0.9rem; font-weight: 600; }
+.panel-msg { margin-top: 10px; }
+.bd-form { max-width: 760px; }

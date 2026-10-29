@@ -4,6 +4,7 @@
 
 const FreeShipping = require('./free-shipping');
 const Quotes = require('./quotes');
+const Bundles = require('./bundles');
 
 const MAX_QTY_PER_LINE = 500;
 
@@ -64,11 +65,18 @@ function resolveLine(catalog, slug) {
 // Cart items → priced lines. Merges duplicate slugs and validates quantities.
 // Lines from an admin quote (item.quoteId, js/quotes.js) are priced from the
 // quote document (quotes: { id: doc }), not the catalog, and kept separate.
-function priceCart(catalog, cartItems, quotes, uid, now) {
+function priceCart(catalog, cartItems, quotes, uid, now, bundles) {
   if (!Array.isArray(cartItems) || !cartItems.length) throw new PricingError('Your cart is empty.');
   const bySlug = new Map();
   const quoted = [];
+  const groups = new Map(); // bundleKey -> cart lines (research panels, js/bundles.js)
   for (const item of cartItems) {
+    if (item && item.bundleKey) {
+      const k = String(item.bundleKey);
+      if (!groups.has(k)) groups.set(k, []);
+      groups.get(k).push(item);
+      continue;
+    }
     if (item && item.giftCard) {
       // Gift card for a friend (js/gift-cards.js): $10–$1,000, one per line.
       const amount = Math.round(Number(item.price));
@@ -106,6 +114,24 @@ function priceCart(catalog, cartItems, quotes, uid, now) {
     const line = resolveLine(catalog, slug);
     line.qty = Math.min(qty, MAX_QTY_PER_LINE);
     lines.push(line);
+  }
+  for (const [key, group] of groups) {
+    const bundleId = String(group[0].bundleId || '');
+    const bundle = (bundles || {})[bundleId];
+    const check = Bundles.checkGroup(group, bundle, (slug) => {
+      try { return /-case$/.test(slug) ? 0 : resolveLine(catalog, slug).price; } catch (e) { return 0; }
+    });
+    if (!check.ok) throw new PricingError(check.reason);
+    const seen = new Set();
+    for (const item of group) {
+      if (seen.has(item.slug)) continue;
+      seen.add(item.slug);
+      const line = resolveLine(catalog, item.slug);
+      line.price = check.prices[item.slug];
+      line.qty = group.filter((g) => g.slug === item.slug).reduce((n, g) => n + Number(g.qty), 0);
+      line.bundleId = bundleId; line.bundleKey = key; line.bundleName = String(bundle.name || '').slice(0, 80);
+      quoted.push(line);
+    }
   }
   return lines.concat(quoted);
 }
@@ -148,7 +174,7 @@ function checkPromo(promo, code, isFirstOrder, now, roles, usedCodes) {
 
 // A single-vial line of a product with BOGO on (cases never get BOGO).
 function isBogoLine(line, eligibleSlugs) {
-  if (line.caseOf || line.quoteId || line.giftCard) return false;
+  if (line.caseOf || line.quoteId || line.giftCard || line.bundleKey) return false;
   return (eligibleSlugs || []).some((base) => line.slug === base || line.slug.indexOf(base + '-') === 0);
 }
 
@@ -160,7 +186,7 @@ function isBogoLine(line, eligibleSlugs) {
 // shippingValue + family: free standard shipping at FreeShipping.MIN (js/free-shipping.js).
 function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, platinum, taxRate, creditBalanceCents, useCredit }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
-  const promoBase = lines.reduce((n, l) => n + (l.quoteId || l.giftCard ? 0 : l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty)), 0);
+  const promoBase = lines.reduce((n, l) => n + (l.quoteId || l.giftCard || l.bundleKey ? 0 : l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty)), 0);
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   // Gift cards: no shipping on their own, and they don't count toward free shipping.

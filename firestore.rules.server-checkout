@@ -94,6 +94,12 @@ service cloud.firestore {
       allow delete: if isManager() && !('roleOnly' in resource.data);
     }
 
+    // Research panels (js/bundles.js) — public, like the catalog; admin edits.
+    match /bundles/{id} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
     // BOGO eligibility per product — public (the catalog shows BOGO badges to
     // signed-out visitors too); only the admin edits it.
     match /bogoProducts/{productSlug} {

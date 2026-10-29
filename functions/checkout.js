@@ -61,9 +61,13 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   const quoteSnaps = await Promise.all(quoteIds.map((id) => db.collection('quotes').doc(id).get()));
   const quotes = {};
   quoteSnaps.forEach((s, i) => { if (s.exists) quotes[quoteIds[i]] = s.data(); });
+  const bundleIds = [...new Set(cartItems.filter((i) => i && i.bundleKey).map((i) => String(i.bundleId || '')))].filter(Boolean);
+  const bundleSnaps = await Promise.all(bundleIds.map((id) => db.collection('bundles').doc(id).get()));
+  const bundles = {};
+  bundleSnaps.forEach((s, i) => { if (s.exists) bundles[bundleIds[i]] = s.data(); });
   let lines;
   try {
-    lines = P.priceCart(catalog, cartItems, quotes, uid, now || new Date());
+    lines = P.priceCart(catalog, cartItems, quotes, uid, now || new Date(), bundles);
   } catch (e) {
     if (e instanceof P.PricingError) throw new HttpsError('failed-precondition', e.message);
     throw e;
@@ -184,6 +188,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       const item = { slug: l.slug, name: l.name, packSize: l.packSize, price: l.price, qty: l.qty, fulfilled, backordered: units - fulfilled };
       if (l.caseOf) { item.caseOf = l.caseOf; item.unitSlug = l.unitSlug; }
       if (l.quoteId) item.quoteId = l.quoteId;
+      if (l.bundleKey) { item.bundleId = l.bundleId; item.bundleKey = l.bundleKey; item.bundleName = l.bundleName; }
       if (l.giftCard) { item.giftCard = l.giftCard; item.giftId = l.giftId; }
       if (atCost) {
         const ac = atCost.result.lines[i];
