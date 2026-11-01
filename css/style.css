@@ -1427,3 +1427,30 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .panel-save { color: var(--mint); font-size: 0.9rem; font-weight: 600; }
 .panel-msg { margin-top: 10px; }
 .bd-form { max-width: 760px; }
+
+/* ---------- Autumn: Thanksgiving Nov 22–26, Black Friday–Cyber Monday Nov 27–30
+   (html.season-autumn; preview ?season=thanksgiving or ?season=blackfriday) ---------- */
+html.season-autumn { --amber: #e8a23a; --rust: #c4512a; --cranberry: #b8391f; }
+html.season-autumn .hero-mark .bond, html.season-autumn .entry-mark .bond { stroke: #f2c14e; opacity: 0.55; }
+html.season-autumn .hero-mark .node, html.season-autumn .entry-mark .node { fill: var(--amber); }
+html.season-autumn .hero-mark .node:nth-of-type(3n), html.season-autumn .entry-mark .node:nth-of-type(3n) { fill: var(--rust); }
+html.season-autumn .hero-mark .node:nth-of-type(3n+1), html.season-autumn .entry-mark .node:nth-of-type(3n+1) { fill: var(--cranberry); }
+html.season-autumn .hero-mark .ring, html.season-autumn .entry-mark .ring { stroke: var(--amber); }
+html.season-autumn .hero-mark .halo, html.season-autumn .entry-mark .halo { fill: #e8892a; }
+html.season-autumn .hero-mark > svg, html.season-autumn .entry-mark svg { filter: drop-shadow(0 0 24px rgba(232, 150, 50, 0.3)); }
+html.season-autumn header .logo-icon { filter: hue-rotate(-150deg) saturate(1.3) brightness(1.02); }
+html.season-blackfriday .hero-mark .halo { fill: #f2c14e; }
+.hero-mark.has-leaves { position: relative; }
+.leaf { position: absolute; left: 0; top: 0; pointer-events: none; z-index: 1; will-change: transform; opacity: 0; }
+.leaf svg { width: 100%; height: 100%; overflow: visible; }
+.leaf svg path { fill: currentColor; }
+.leaf svg .leaf-stem { fill: none; stroke: currentColor; stroke-width: 1.2; stroke-linecap: round; }
+.leaf-gold { z-index: 2; filter: drop-shadow(0 0 10px rgba(246, 197, 68, 0.8)); }
+.hero-mark > svg.egg-shake { animation: egg-shake 0.7s ease-in-out; }
+@keyframes egg-shake { 0%, 100% { transform: rotate(0); } 15% { transform: rotate(-9deg); } 30% { transform: rotate(8deg); } 45% { transform: rotate(-6deg); } 60% { transform: rotate(4deg); } 75% { transform: rotate(-2deg); } }
+html.season-autumn .egg-hint { color: #f2c14e; }
+#egg-prize.egg-autumn .egg-card { background: linear-gradient(180deg, #221710, var(--surface)); border-color: rgba(232, 162, 58, 0.6); box-shadow: 0 0 60px rgba(232, 140, 40, 0.25); }
+#egg-prize.egg-autumn .egg-card p strong, #egg-prize.egg-autumn .egg-code span { color: #f2c14e; }
+#egg-prize.egg-autumn .egg-code span { border-color: rgba(242, 193, 78, 0.7); }
+#egg-prize.egg-autumn .egg-actions .btn { background: #e8a23a; border-color: #e8a23a; color: #1a1006; }
+@media (prefers-reduced-motion: reduce) { .leaf { display: none; } }
