@@ -45,9 +45,10 @@ document.addEventListener('DOMContentLoaded', function () {
     var key = 'txbio_affiliate_' + user.uid, cached = null;
     try { cached = sessionStorage.getItem(key); } catch (e) {}
     if (cached === '1') return show();
-    if (cached === '0') return;
+    // A "no" is rechecked after 5 minutes, so a code you just gave someone shows up soon.
+    if (cached && cached.indexOf('0:') === 0 && Date.now() - Number(cached.slice(2)) < 5 * 60 * 1000) return;
     firebase.firestore().collection('promoCodes').where('affiliateEmail', '==', email).limit(1).get().then(function (snap) {
-      try { sessionStorage.setItem(key, snap.empty ? '0' : '1'); } catch (e) {}
+      try { sessionStorage.setItem(key, snap.empty ? '0:' + Date.now() : '1'); } catch (e) {}
       if (!snap.empty) show();
     }).catch(function () {});
   }
