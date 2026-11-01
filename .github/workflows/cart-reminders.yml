@@ -1,0 +1,41 @@
+# Emails customers whose cart has sat untouched for a day (once a week at
+# most; they can turn it off on their Account page). Uses the same secrets as
+# the shipment tracker. Code: tools/shipment-tracker/cart-reminders*.js
+name: Cart reminders
+
+on:
+  schedule:
+    - cron: '23 * * * *'     # hourly (GitHub may run it late when busy)
+  workflow_dispatch: {}      # "Run workflow" button for a manual run
+
+permissions:
+  contents: read
+  actions: write             # lets the keep-alive step re-enable this workflow
+
+concurrency:
+  group: cart-reminders
+  cancel-in-progress: false
+
+jobs:
+  remind:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tools/shipment-tracker/package-lock.json
+      - run: npm ci --omit=dev
+        working-directory: tools/shipment-tracker
+      - run: node cart-reminders-test.js && node cart-reminders.js
+        working-directory: tools/shipment-tracker
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          EMAILJS_PRIVATE_KEY: ${{ secrets.EMAILJS_PRIVATE_KEY }}
+      - name: Keep this schedule active
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/cart-reminders.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}

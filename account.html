@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611011601">
+<link rel="stylesheet" href="css/style.css?v=202611011611">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611011601"></script>
+<script src="js/splash.js?v=202611011611"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -222,6 +222,15 @@
     </form>
     <p class="auth-aside" style="margin-top:14px; text-align:left;">Forgot your current password? <a href="#" id="password-reset-link">Email me a reset link</a></p>
   </section>
+
+  <section id="email-prefs">
+    <h2>Email preferences</h2>
+    <div class="card" style="max-width:520px;">
+      <label class="checkbox-row" style="margin:0;"><input type="checkbox" id="pref-cart" checked> <span>Remind me about items left in my cart <span class="field-note">(at most once a week)</span></span></label>
+      <p id="pref-msg" class="form-message" style="display:none; margin:10px 0 0;"></p>
+      <p class="field-note" style="margin:10px 0 0;">Order confirmations and shipping updates are always sent.</p>
+    </div>
+  </section>
 </main>
 
 <footer>
@@ -258,19 +267,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611011601"></script>
-<script src="js/analytics.js?v=202611011601"></script>
-<script src="js/referral.js?v=202611011601"></script>
-<script src="js/cart.js?v=202611011601"></script>
-<script src="js/account.js?v=202611011601"></script>
-<script src="js/credits.js?v=202611011601"></script>
-<script src="js/loyalty.js?v=202611011601"></script>
-<script src="js/staff.js?v=202611011601"></script>
-<script src="js/nav-auth.js?v=202611011601"></script>
-<script src="js/profile-gate.js?v=202611011601"></script>
-<script src="js/auth-guard.js?v=202611011601"></script>
-<script src="js/main.js?v=202611011601"></script>
-<script src="js/nav-toggle.js?v=202611011601"></script>
+<script src="js/firebase-config.js?v=202611011611"></script>
+<script src="js/analytics.js?v=202611011611"></script>
+<script src="js/referral.js?v=202611011611"></script>
+<script src="js/cart.js?v=202611011611"></script>
+<script src="js/account.js?v=202611011611"></script>
+<script src="js/credits.js?v=202611011611"></script>
+<script src="js/loyalty.js?v=202611011611"></script>
+<script src="js/staff.js?v=202611011611"></script>
+<script src="js/nav-auth.js?v=202611011611"></script>
+<script src="js/profile-gate.js?v=202611011611"></script>
+<script src="js/auth-guard.js?v=202611011611"></script>
+<script src="js/main.js?v=202611011611"></script>
+<script src="js/nav-toggle.js?v=202611011611"></script>
 <script>
   var currentProfile = {};
 
@@ -529,6 +538,29 @@
           throw err;
         })
         .catch(function (err) { show(friendly(err), false); });
+    });
+  })();
+</script>
+<script>
+  // Cart reminder emails (tools/shipment-tracker/cart-reminders.js): users/{uid}.cartReminders.
+  (function () {
+    var box = document.getElementById('pref-cart'), msg = document.getElementById('pref-msg'), uid = null;
+    document.addEventListener('userReady', function (e) {
+      uid = e.detail.user.uid;
+      firebase.firestore().collection('users').doc(uid).get().then(function (d) {
+        box.checked = !(d.exists && d.data().cartReminders === false);
+      }).catch(function () {});
+    });
+    box.addEventListener('change', function () {
+      if (!uid) return;
+      var on = box.checked;
+      firebase.firestore().collection('users').doc(uid).set({ cartReminders: on }, { merge: true }).then(function () {
+        msg.textContent = on ? 'Cart reminders are on.' : 'You won\u2019t get cart reminders.';
+        msg.style.color = 'var(--mint-dark)'; msg.style.display = 'block';
+      }).catch(function (err) {
+        box.checked = !on;
+        msg.textContent = 'Could not save: ' + err.message; msg.style.color = 'var(--danger)'; msg.style.display = 'block';
+      });
     });
   })();
 </script>

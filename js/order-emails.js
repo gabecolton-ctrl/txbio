@@ -17,7 +17,8 @@ var OrderEmails = (function () {
     confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
     shippedTemplateId: 'template_r6zmcve',    // Email Templates → "Order shipped" → Template ID
     cancelledTemplateId: '',                  // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
-    giftCardTemplateId: ''                    // Email Templates → "Gift card" → Template ID (emails a bought gift card to the friend)
+    giftCardTemplateId: '',                   // Email Templates → "Gift card" → Template ID (emails a bought gift card to the friend)
+    cartReminderTemplateId: ''                // Email Templates → "Cart reminder" → Template ID (hourly job, tools/shipment-tracker/cart-reminders.js)
   };
 
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
