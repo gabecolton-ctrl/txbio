@@ -114,26 +114,54 @@
   }
   // Research-area groupings from the catalog (GLP-1s left out on purpose).
   var SUGGESTED = [
-    ['Tissue Repair Research Panel', 'Peptides studied in connective tissue and wound-repair research models.', ['bpc-157-10mg', 'tb500-thymosin-beta-4-10mg', 'kpv-10mg']],
-    ['GH Secretagogue Research Panel', 'A GHRH analog and a ghrelin-receptor agonist used in growth hormone secretion research.', ['cjc-1295-without-dac-10mg', 'ipamorelin-10mg']],
-    ['Copper Peptide Research Panel', 'Copper peptide complexes studied in dermal and extracellular matrix research.', ['ghk-cu-100mg', 'ahk-cu']],
-    ['Mitochondrial Research Panel', 'Compounds studied in mitochondrial function and cellular energy research.', ['mots-c-human-10mg', 'ss-31-10mg', 'nad-plus-500mg']],
-    ['Neuropeptide Research Panel', 'Synthetic neuropeptides studied in neuroscience research models.', ['semax-10mg', 'selank', 'pinealon']],
-    ['Thymic Peptide Research Panel', 'Thymic peptides and fragments studied in immunology research.', ['thymosin-alpha-1', 'thymalin-thymulin', 'kpv-10mg']],
-    ['Bioregulator Research Panel', 'Short peptide bioregulators studied in cellular regulation and aging research.', ['epithalon', 'pinealon', 'cartalax']]
+    ['Tissue Repair Research Panel', 'BPC-157, TB-500 (Thymosin Beta-4 fragment) and KPV, three synthetic peptides frequently cited in preclinical research on connective tissue, cell migration and inflammatory signaling models.', ['bpc-157-10mg', 'tb500-thymosin-beta-4-10mg', 'kpv-10mg']],
+    ['GH Secretagogue Research Panel', 'CJC-1295 (without DAC), a GHRH analog, paired with Ipamorelin, a selective ghrelin-receptor agonist. Both are widely referenced in research on growth hormone secretion pathways.', ['cjc-1295-without-dac-10mg', 'ipamorelin-10mg']],
+    ['Copper Peptide Research Panel', 'GHK-Cu and AHK-Cu, copper-binding tripeptide complexes studied in dermal, collagen and extracellular matrix research models.', ['ghk-cu-100mg', 'ahk-cu']],
+    ['Mitochondrial Research Panel', 'MOTS-c, a mitochondrial-derived peptide, SS-31 (Elamipretide), a mitochondria-targeting tetrapeptide, and NAD+, a central coenzyme in cellular metabolism. Used in research on mitochondrial function and cellular energy pathways.', ['mots-c-human-10mg', 'ss-31-10mg', 'nad-plus-500mg']],
+    ['Neuropeptide Research Panel', 'Semax and Selank, synthetic analogs of naturally occurring regulatory peptides, with Pinealon, a short tripeptide. Commonly referenced in neuroscience and neuropeptide signaling research.', ['semax-10mg', 'selank', 'pinealon']],
+    ['Thymic Peptide Research Panel', 'Thymosin Alpha-1 and Thymalin, peptides originally characterized from thymic tissue, with KPV, a tripeptide fragment of alpha-MSH. Studied in immunology and inflammatory signaling research.', ['thymosin-alpha-1', 'thymalin-thymulin', 'kpv-10mg']],
+    ['Bioregulator Research Panel', 'Epithalon, Pinealon and Cartalax, short synthetic peptides from the Khavinson bioregulator research tradition. Studied in research on gene expression and cellular regulation in aging models.', ['epithalon', 'pinealon', 'cartalax']],
+    ['Sermorelin Secretagogue Research Panel', 'Sermorelin, a GHRH(1-29) analog, paired with Ipamorelin, a selective ghrelin-receptor agonist, for comparative research on growth hormone secretion pathways.', ['sermorelin-acetate-10mg', 'ipamorelin-10mg']],
+    ['GH / IGF Axis Research Panel', 'Tesamorelin, a stabilized GHRH analog, with IGF-1 LR3, a long-acting IGF-1 variant. Referenced in research spanning the growth hormone and IGF-1 signaling axis.', ['tesamorelin-10mg', 'igf-1-lr3']],
+    ['Neurotrophic Research Panel', 'Cerebrolysin, a neuropeptide preparation; Dihexa, an angiotensin IV-derived compound; and Semax, an ACTH(4-10) analog. Studied in neurotrophic signaling research models.', ['cerebrolysin', 'dihexa', 'semax-10mg']],
+    ['Mitochondrial-Derived Peptide Research Panel', 'Humanin and MOTS-c, two peptides encoded in mitochondrial DNA, studied in research on mitochondrial-nuclear signaling and cellular stress responses.', ['humanin', 'mots-c-human-10mg']],
+    ['Cellular Metabolism Research Panel', '5-Amino-1MQ, an NNMT inhibitor; NAD+, a central metabolic coenzyme; and L-Carnitine, a fatty-acid transport cofactor. Used in research on cellular energy metabolism.', ['5-amino-1mq-10mg', 'nad-plus-100mg', 'l-carnitine-600mg']],
+    ['Redox Research Panel', 'Glutathione, the primary cellular thiol antioxidant; SS-31, a mitochondria-targeting peptide; and NAD+. Studied in oxidative stress and redox balance research.', ['glutathione-600mg', 'ss-31-10mg', 'nad-plus-100mg']],
+    ['Host Defense Peptide Research Panel', 'LL-37, a human cathelicidin antimicrobial peptide; KPV, an alpha-MSH tripeptide fragment; and Thymosin Alpha-1, a thymic peptide. Studied in innate immunity research.', ['ll37', 'kpv-10mg', 'thymosin-alpha-1']],
+    ['HPG Axis Research Panel', 'Kisspeptin-10, an upstream regulator of GnRH signaling, with HCG, a glycoprotein hormone that acts at the LH receptor. Used in hypothalamic-pituitary-gonadal axis research.', ['kisspeptin-10', 'hcg-5000iu']],
+    ['Tissue Protection Research Panel', 'ARA-290, a non-erythropoietic EPO-derived peptide; BPC-157; and KPV. Referenced in preclinical research on tissue-protective and inflammatory signaling pathways.', ['ara290-cibinetide', 'bpc-157-10mg', 'kpv-10mg']]
+  ];
+  // The first version's one-line descriptions; panels still using them get the longer text.
+  var OLD_DESC = [
+    'Peptides studied in connective tissue and wound-repair research models.',
+    'A GHRH analog and a ghrelin-receptor agonist used in growth hormone secretion research.',
+    'Copper peptide complexes studied in dermal and extracellular matrix research.',
+    'Compounds studied in mitochondrial function and cellular energy research.',
+    'Synthetic neuropeptides studied in neuroscience research models.',
+    'Thymic peptides and fragments studied in immunology research.',
+    'Short peptide bioregulators studied in cellular regulation and aging research.'
   ];
   function addSuggested() {
-    var have = bundles.map(function (b) { return slugify(b.name); });
-    var batch = db.batch(), n = 0, now = new Date().toISOString();
+    var byId = {};
+    bundles.forEach(function (b) { byId[b.id] = b; });
+    var batch = db.batch(), added = 0, updated = 0, now = new Date().toISOString();
     SUGGESTED.forEach(function (s, i) {
-      var id = slugify(s[0]);
-      if (have.indexOf(id) !== -1 || !s[2].every(function (x) { return units[x]; })) return;
+      var id = slugify(s[0]), have = byId[id];
+      if (have) {
+        var sameItems = (have.items || []).map(function (x) { return x.slug; }).sort().join() === s[2].slice().sort().join();
+        if (OLD_DESC.indexOf(have.description) !== -1 && sameItems) { batch.update(db.collection('bundles').doc(id), { description: s[1], updatedAt: now }); updated++; }
+        return;
+      }
+      if (!s[2].every(function (x) { return units[x]; })) return;
       batch.set(db.collection('bundles').doc(id), { name: s[0], description: s[1], discountPercent: 15, items: s[2].map(function (x) { return { slug: x, qty: 1 }; }), active: false, sort: i + 1, updatedAt: now });
-      n++;
+      added++;
     });
-    if (!n) return say('All the suggested panels are already here.', true);
-    batch.commit().then(function () { say(n + ' suggested panel' + (n === 1 ? '' : 's') + ' added, hidden. Edit each one and tick “Show on site” when you’re happy with it.', true); load(); })
-      .catch(function (err) { say('Could not add: ' + esc(err.message) + (/permission/i.test(err.message) ? ' Publish the updated Firestore rules first.' : '')); });
+    if (!added && !updated) return say('All the suggested panels are already here.', true);
+    batch.commit().then(function () {
+      say((added ? added + ' suggested panel' + (added === 1 ? '' : 's') + ' added, hidden. ' : '') + (updated ? updated + ' existing panel' + (updated === 1 ? '' : 's') + ' got the longer description. ' : '') +
+        (added ? 'Edit each new one and tick “Show on site” when you’re happy with it.' : ''), true);
+      load();
+    }).catch(function (err) { say('Could not add: ' + esc(err.message) + (/permission/i.test(err.message) ? ' Publish the updated Firestore rules first.' : '')); });
   }
   function slugify(s) { return String(s).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 50) || 'panel'; }
 
