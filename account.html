@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611011526">
+<link rel="stylesheet" href="css/style.css?v=202611011532">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611011526"></script>
+<script src="js/splash.js?v=202611011532"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -192,7 +192,9 @@
       <p style="margin-bottom:4px; color:var(--text-light);">Available balance</p>
       <p id="credit-balance" style="font-family:var(--serif); font-size:2rem; margin:0; color:var(--text);">$0.00</p>
       <p style="margin:8px 0 0; font-size:0.88rem; color:var(--text-light);">Applied at checkout when you choose &ldquo;Use my store credit.&rdquo;</p>
+      <p style="margin:10px 0 0; font-size:0.88rem;"><a href="gift.html">Redeem a gift card</a></p>
     </div>
+    <p id="credit-none" class="section-note" style="display:none;">No credit yet. You earn it from rewards when orders ship, from referrals if you have a referral code, and from gift cards.</p>
     <div id="credit-history-wrap" style="overflow-x:auto; display:none;">
       <table class="cart-table">
         <thead><tr><th>Date</th><th>Activity</th><th>Order</th><th>Amount</th></tr></thead>
@@ -256,19 +258,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611011526"></script>
-<script src="js/analytics.js?v=202611011526"></script>
-<script src="js/referral.js?v=202611011526"></script>
-<script src="js/cart.js?v=202611011526"></script>
-<script src="js/account.js?v=202611011526"></script>
-<script src="js/credits.js?v=202611011526"></script>
-<script src="js/loyalty.js?v=202611011526"></script>
-<script src="js/staff.js?v=202611011526"></script>
-<script src="js/nav-auth.js?v=202611011526"></script>
-<script src="js/profile-gate.js?v=202611011526"></script>
-<script src="js/auth-guard.js?v=202611011526"></script>
-<script src="js/main.js?v=202611011526"></script>
-<script src="js/nav-toggle.js?v=202611011526"></script>
+<script src="js/firebase-config.js?v=202611011532"></script>
+<script src="js/analytics.js?v=202611011532"></script>
+<script src="js/referral.js?v=202611011532"></script>
+<script src="js/cart.js?v=202611011532"></script>
+<script src="js/account.js?v=202611011532"></script>
+<script src="js/credits.js?v=202611011532"></script>
+<script src="js/loyalty.js?v=202611011532"></script>
+<script src="js/staff.js?v=202611011532"></script>
+<script src="js/nav-auth.js?v=202611011532"></script>
+<script src="js/profile-gate.js?v=202611011532"></script>
+<script src="js/auth-guard.js?v=202611011532"></script>
+<script src="js/main.js?v=202611011532"></script>
+<script src="js/nav-toggle.js?v=202611011532"></script>
 <script>
   var currentProfile = {};
 
@@ -385,7 +387,7 @@
 
 </script>
 <script>
-  // Store credit: shown only to accounts that have a credit record.
+  // Store credit: balance and history (an empty balance for accounts without credit yet).
   (function () {
     var LABELS = {
       earned: 'Earned from a referral',
@@ -401,9 +403,10 @@
       var user = e.detail.user;
       if (!window.Credits || !user.email) return;
       Credits.getAccount(user.email).then(function (account) {
-        if (!account.exists) return;
+        // Always shown, so everyone can see their balance (even $0) and redeem a gift card.
         document.getElementById('credit-section').style.display = '';
         document.getElementById('credit-balance').textContent = Credits.formatCents(account.balanceCents);
+        if (!account.exists) { document.getElementById('credit-none').style.display = ''; return; }
         return Credits.getEntries(user.email, 50).then(function (entries) {
           if (!entries.length) return;
           var rows = entries.map(function (en) {
