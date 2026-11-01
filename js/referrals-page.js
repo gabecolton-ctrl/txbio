@@ -103,12 +103,36 @@
     });
   }
 
+  // Partner tier (js/affiliate-tiers.js) from referred sales in their history.
+  function renderTier(entries) {
+    if (!window.AffiliateTiers) return;
+    var money = function (n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+    var whole = function (n) { return '$' + Number(n).toLocaleString('en-US'); };
+    var sales = AffiliateTiers.salesFromEntries(entries);
+    var tier = AffiliateTiers.tierFor(sales), next = AffiliateTiers.nextTier(sales);
+    var pct = Math.round(tier.rate * 100);
+    $('ref-earn-rate').textContent = 'You earn ' + pct + '%';
+    $('aff-badge').textContent = tier.name;
+    $('aff-badge').className = 'loyalty-badge aff-' + tier.name.toLowerCase().replace(/\s+/g, '-');
+    $('aff-rate').textContent = pct + '% back on every referred order';
+    $('aff-sales').textContent = money(sales);
+    $('aff-fill').style.width = next ? Math.min(100, (sales - tier.min) / (next.min - tier.min) * 100) + '%' : '100%';
+    $('aff-next').textContent = next
+      ? money(next.min - sales) + ' more in referred sales to reach ' + next.name + ' (' + Math.round(next.rate * 100) + '%).'
+      : 'You’re at the top tier. Thank you!';
+    $('aff-tiers').innerHTML = AffiliateTiers.TIERS.map(function (t) {
+      var on = t === tier;
+      return '<li class="tier-step aff-' + t.name.toLowerCase().replace(/\s+/g, '-') + (on ? ' is-on' : '') + '">' + (on ? '<span class="tier-here">You’re here</span>' : '') +
+        '<strong>' + esc(t.name) + '</strong><span class="tier-min">' + whole(t.min) + '+</span><span class="tier-pct">' + Math.round(t.rate * 100) + '%</span></li>';
+    }).join('');
+  }
+
   function render(email, codes, account, entries, traffic) {
     $('ref-loading').style.display = 'none';
     if (!codes.length) { $('ref-none').style.display = ''; return; }
     $('ref-body').style.display = '';
     $('ref-links').innerHTML = codes.map(linkCard).join('');
-    if (window.Credits) $('ref-earn-rate').textContent = 'You earn ' + Math.round(Credits.COMMISSION_RATE * 100) + '%';
+    renderTier(entries);
 
     var myCodes = codes.map(function (c) { return c.code; });
     var placed = codes.reduce(function (n, c) { return n + (Number(c.timesUsed) || 0); }, 0);
@@ -129,10 +153,10 @@
       return '<div class="pnl-tile"><span class="pnl-label">' + r[0] + '</span><span class="pnl-value">' + r[1] + '</span>' + (r[2] ? '<span class="pnl-sub">' + r[2] + '</span>' : '') + '</div>';
     }).join('');
 
-    var LABELS = { earned: 'Referral credit', reversed: 'Referral reversed (order cancelled)', spent: 'Used at checkout', refunded: 'Returned (order cancelled)', adjusted: 'Adjustment', loyalty: 'Rewards credit', 'loyalty-reversed': 'Rewards credit taken back' };
+    var LABELS = { earned: 'Referral credit', reversed: 'Referral reversed (order cancelled)', spent: 'Used at checkout', refunded: 'Returned (order cancelled)', adjusted: 'Adjustment', loyalty: 'Rewards credit', 'loyalty-reversed': 'Rewards credit taken back', gift: 'Gift card redeemed' };
     var rows = entries.map(function (en) {
       var amt = en.amountCents || 0;
-      var activity = (LABELS[en.type] || en.type) + (en.type === 'earned' && en.code && myCodes.length > 1 ? ' (' + esc(en.code) + ')' : '');
+      var activity = (LABELS[en.type] || en.type) + (en.type === 'earned' && typeof en.rate === 'number' ? ' · ' + Math.round(en.rate * 100) + '%' : '') + (en.type === 'earned' && en.code && myCodes.length > 1 ? ' (' + esc(en.code) + ')' : '');
       return '<tr><td>' + esc(en.createdAt ? new Date(en.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '') + '</td>' +
         '<td>' + activity + '</td><td>' + esc(en.orderNumber ? '#' + en.orderNumber : '') + '</td>' +
         '<td class="' + (amt < 0 ? 'ref-neg' : 'ref-pos') + '">' + (amt < 0 ? '-' : '+') + fmt(Math.abs(amt)) + '</td></tr>';
@@ -173,7 +197,7 @@
       if (!codes.length || !window.Credits) return render(email, codes, null, []);
       return Promise.all([
         Credits.getAccount(email).catch(function () { return null; }),
-        Credits.getEntries(email, 100).catch(function () { return []; }),
+        Credits.getEntries(email, 1000).catch(function () { return []; }),
         Promise.all(codes.map(function (c) {
           return db.collection('refTraffic').doc(c.code).get().then(function (d) { return d.exists ? d.data() : null; }).catch(function () { return null; });
         })).then(function (list) { return list.filter(Boolean); })

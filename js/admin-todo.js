@@ -91,9 +91,9 @@
     add('credit', 'Referral credit not given', 'These shipped orders used an affiliate’s code, but the affiliate wasn’t credited (for example, the order was marked shipped another way).',
       owed.map(function (o) {
         var code = String(o.affiliateCode || o.promoCode).toUpperCase(), p = promos[code];
-        var cents = window.Credits ? Credits.commissionCents(o) : 0;
-        return row([orderLink(o), 'code ' + esc(code), esc(p.affiliateEmail), (window.Credits ? Credits.formatCents(cents) : '') + ' owed'], false,
-          cents > 0 ? '<button type="button" class="btn-outline-light todo-btn" data-credit="' + esc(o.id) + '">Give credit</button>' : '');
+        var sale = window.AffiliateTiers ? AffiliateTiers.saleCentsOf(o) : 0;
+        return row([orderLink(o), 'code ' + esc(code), esc(p.affiliateEmail), 'on a ' + (window.Credits ? Credits.formatCents(sale) : '') + ' sale (rate by their tier)'], false,
+          sale > 0 ? '<button type="button" class="btn-outline-light todo-btn" data-credit="' + esc(o.id) + '">Give credit</button>' : '');
       }));
 
     // 6b. Incoming supplier shipments: delivered but not in stock yet, or late
@@ -151,10 +151,13 @@
     if (!order) return;
     var code = String(order.affiliateCode || order.promoCode).toUpperCase();
     var email = data.promos[code].affiliateEmail;
-    var cents = Credits.commissionCents(order);
     btn.disabled = true; btn.textContent = 'Crediting…';
-    Credits.adminAdjust(email, cents, { type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: '' }).then(function () {
-      var fields = { affiliateEmail: email, affiliateCreditCents: cents, affiliateCreditedAt: new Date().toISOString(), affiliateReversedAt: null };
+    var c;
+    Credits.getEntries(email, 1000).catch(function () { return []; }).then(function (entries) {
+      c = AffiliateTiers.commissionFor(order, entries);
+      return Credits.adminAdjust(email, c.cents, { type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: c.tier.name + ' · ' + Math.round(c.rate * 100) + '%', saleCents: c.saleCents, rate: c.rate });
+    }).then(function () {
+      var fields = { affiliateEmail: email, affiliateCreditCents: c.cents, affiliateRate: c.rate, affiliateTier: c.tier.name, affiliateSaleCents: c.saleCents, affiliateCreditedAt: new Date().toISOString(), affiliateReversedAt: null };
       Object.assign(order, fields);
       return firebase.firestore().collection('orders').doc(order.id).update(fields);
     }).then(function () { build(); }).catch(function (err) {

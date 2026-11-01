@@ -13,7 +13,8 @@
 //   - Only the admin can add credit (affiliate earnings, refunds) or take it
 //     back (reversals).
 //
-// Affiliates earn COMMISSION_RATE of an order's subtotal after promo and
+// Affiliates earn a rate set by their tier (js/affiliate-tiers.js; 10% to start)
+// of an order's subtotal after promo and
 // BOGO discounts (before shipping and tax), credited by the admin's Orders
 // page when the order is marked shipped.
 

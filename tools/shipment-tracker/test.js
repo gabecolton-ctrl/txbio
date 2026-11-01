@@ -16,6 +16,7 @@ function fakeDb(seed) {
   const snap = (p) => ({ id: p.split('/').pop(), ref: ref(p), exists: !!data[p], data: () => (data[p] ? JSON.parse(JSON.stringify(data[p])) : undefined) });
   const col = (c) => ({
     doc: (id) => ref(c + '/' + (id || 'auto' + n++)),
+    get: async () => ({ docs: Object.keys(data).filter((k) => k.startsWith(c + '/') && k.split('/').length === c.split('/').length + 1).map(snap) }),
     where: (field, op, val) => ({
       get: async () => ({
         docs: Object.keys(data).filter((k) => k.startsWith(c + '/') && k.split('/').length === c.split('/').length + 1 && data[k][field] === val).map(snap)
@@ -111,6 +112,23 @@ test('first scan: shipped, emailed once with tracking + order link, affiliate cr
   assert.strictEqual(db.data['credits/aff@example.com'].balanceCents, 2300);
   const entries = Object.keys(db.data).filter((k) => k.startsWith('credits/aff@example.com/entries/'));
   assert.strictEqual(entries.length, 1);
+});
+
+test('affiliate tier: past $1,500 in referred sales earns 15%; old entries count at 10%', async () => {
+  const seed = {
+    'orders/a': ORDER({ promoCode: 'BOOP12' }),
+    'promoCodes/BOOP12': { affiliateEmail: 'aff@example.com', active: true },
+    'credits/aff@example.com': { balanceCents: 0, earnedCents: 0, spentCents: 0 },
+    'credits/aff@example.com/entries/e1': { type: 'earned', amountCents: 10000 },                    // old: $1,000 sale at 10%
+    'credits/aff@example.com/entries/e2': { type: 'earned', amountCents: 9000, saleCents: 60000 },   // $600
+    'credits/aff@example.com/entries/e3': { type: 'reversed', amountCents: -500, saleCents: -5000 }  // -$50 → $1,550 total
+  };
+  const { db } = await scenario(seed, { [T('0123456784')]: DROPPED });
+  const o = db.data['orders/a'];
+  assert.strictEqual(o.affiliateTier, 'Pro Partner');
+  assert.strictEqual(o.affiliateCreditCents, 2700); // 15% of 180
+  const e = Object.keys(db.data).filter((k) => k.startsWith('credits/aff@example.com/entries/auto')).map((k) => db.data[k])[0];
+  assert.deepStrictEqual([e.saleCents, e.rate], [18000, 0.15]);
 });
 
 test('running again does not email or credit twice', async () => {

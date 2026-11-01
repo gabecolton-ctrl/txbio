@@ -1454,3 +1454,11 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 #egg-prize.egg-autumn .egg-code span { border-color: rgba(242, 193, 78, 0.7); }
 #egg-prize.egg-autumn .egg-actions .btn { background: #e8a23a; border-color: #e8a23a; color: #1a1006; }
 @media (prefers-reduced-motion: reduce) { .leaf { display: none; } }
+/* Affiliate partner tiers (referrals.html, js/affiliate-tiers.js) */
+.aff-card { margin-bottom: 28px; }
+.aff-tiers { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 560px) { .aff-tiers { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+.loyalty-badge.aff-pro-partner { color: #d5dedc; border-color: #b8c4c2; background: rgba(184, 196, 194, 0.12); }
+.loyalty-badge.aff-elite-partner { color: #f3d27a; border-color: #d9b44a; background: rgba(217, 180, 74, 0.12); }
+.tier-step.aff-pro-partner strong { color: #d5dedc; }
+.tier-step.aff-elite-partner strong { color: #f3d27a; }
