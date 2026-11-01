@@ -39,6 +39,7 @@
         rows.push({
           uid: d.id, items: items, updatedAt: d.data().updatedAt || '',
           email: u.email || '', name: u.name || dn[0] || '', institution: u.institution || dn[1] || '',
+          remindedAt: u.cartReminderAt || '', optedOut: u.cartReminders === false,
           value: items.reduce(function (s, i) { return s + Number(i.price) * Number(i.qty); }, 0),
           units: items.reduce(function (s, i) { return s + Number(i.qty) * (Number(i.caseOf) || 1); }, 0)
         });
@@ -75,7 +76,7 @@
         '<td data-label="Customer"><strong>' + esc(c.name || '(no name yet)') + '</strong><br><span class="cart-sub">' + esc(c.email || c.uid) + '</span></td>' +
         '<td data-label="Items">' + items + '</td>' +
         '<td data-label="Value"><strong>' + money(c.value) + '</strong><br><span class="cart-sub">' + c.units + ' unit' + (c.units === 1 ? '' : 's') + '</span></td>' +
-        '<td data-label="Last change">' + esc(age(c.updatedAt)) + '</td>' +
+        '<td data-label="Last change">' + esc(age(c.updatedAt)) + (c.optedOut ? '<br><span class="cart-sub">reminders off</span>' : c.remindedAt && c.remindedAt >= c.updatedAt ? '<br><span class="cart-sub">&#10003; reminder emailed ' + esc(age(c.remindedAt)) + '</span>' : '') + '</td>' +
         '<td>' + mail + '</td></tr>';
     }).join('') || '<tr><td colspan="5">' + (all ? 'No carts match.' : 'No one has anything in their cart right now.') + '</td></tr>';
   }
