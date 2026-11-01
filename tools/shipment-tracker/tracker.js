@@ -9,6 +9,7 @@
 const path = require('path');
 const OrderEmails = require(path.join(__dirname, '../../js/order-emails.js'));
 const Credits = require(path.join(__dirname, '../../js/credits.js'));
+const AffiliateTiers = require(path.join(__dirname, '../../js/affiliate-tiers.js'));
 const Incoming = require(path.join(__dirname, '../../js/incoming.js'));
 const Loyalty = require(path.join(__dirname, '../../js/loyalty.js'));
 const Lots = require(path.join(__dirname, '../../js/lots.js'));
@@ -43,9 +44,12 @@ async function creditAffiliate({ db, orderRef, log }) {
       t.update(orderRef, { affiliateSkipped: 'no credit, the affiliate placed this order themselves.' });
       return;
     }
-    const cents = Credits.commissionCents(order);
-    if (cents <= 0) return;
+    // Rate by the affiliate's tier (js/affiliate-tiers.js), from their history so far.
     const creditRef = db.collection('credits').doc(affiliate);
+    const history = await creditRef.collection('entries').get();
+    const tierPick = AffiliateTiers.commissionFor(order, history.docs.map((d) => d.data()));
+    const cents = tierPick.cents;
+    if (cents <= 0) return;
     const creditSnap = await t.get(creditRef);
     const c = creditSnap.exists ? creditSnap.data() : {};
     const at = nowIso();
@@ -56,10 +60,10 @@ async function creditAffiliate({ db, orderRef, log }) {
       updatedAt: at
     });
     t.set(creditRef.collection('entries').doc(), {
-      type: 'earned', orderId: orderRef.id, orderNumber: order.orderNumber || '', code, note: 'Auto: UPS first scan',
-      amountCents: cents, createdAt: at
+      type: 'earned', orderId: orderRef.id, orderNumber: order.orderNumber || '', code, note: 'Auto: UPS first scan · ' + tierPick.tier.name + ' ' + Math.round(tierPick.rate * 100) + '%',
+      amountCents: cents, saleCents: tierPick.saleCents, rate: tierPick.rate, createdAt: at
     });
-    t.update(orderRef, { affiliateEmail: affiliate, affiliateCreditCents: cents, affiliateCreditedAt: at, affiliateReversedAt: null });
+    t.update(orderRef, { affiliateEmail: affiliate, affiliateCreditCents: cents, affiliateRate: tierPick.rate, affiliateTier: tierPick.tier.name, affiliateSaleCents: tierPick.saleCents, affiliateCreditedAt: at, affiliateReversedAt: null });
     log('  credited ' + affiliate + ' ' + Credits.formatCents(cents));
   });
 }
