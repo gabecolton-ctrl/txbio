@@ -1428,7 +1428,7 @@ html.season-halloween header .logo-icon { filter: hue-rotate(-140deg) saturate(1
 .panel-msg { margin-top: 10px; }
 .bd-form { max-width: 760px; }
 
-/* ---------- Autumn: Thanksgiving Nov 22–26, Black Friday–Cyber Monday Nov 27–30
+/* ---------- Autumn: Thanksgiving Nov 1–26, Black Friday–Cyber Monday Nov 27–30
    (html.season-autumn; preview ?season=thanksgiving or ?season=blackfriday) ---------- */
 html.season-autumn { --amber: #e8a23a; --rust: #c4512a; --cranberry: #b8391f; }
 html.season-autumn .hero-mark .bond, html.season-autumn .entry-mark .bond { stroke: #f2c14e; opacity: 0.55; }
