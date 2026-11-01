@@ -8,7 +8,7 @@
   // Seasonal look, by date in Dallas (preview any time with ?season=halloween,
   // ?season=thanksgiving, ?season=blackfriday, ?season=off, or ?season=auto to
   // go back to the date). Sets a class on <html> before anything paints.
-  //   Halloween Oct 24–31 · Thanksgiving Nov 22–26 · Black Friday–Cyber Monday Nov 27–30
+  //   Halloween Oct 24–31 · Thanksgiving Nov 1–26 · Black Friday–Cyber Monday Nov 27–30
   try {
     var q = (location.search.match(/[?&]season=([a-z]+)/) || [])[1];
     if (q) sessionStorage.setItem('txbio_season', q);
@@ -16,7 +16,7 @@
     var md = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', month: '2-digit', day: '2-digit' }).format(new Date()).replace('/', '-');
     var season = forced && forced !== 'auto' ? forced
       : md >= '10-24' && md <= '10-31' ? 'halloween'
-      : md >= '11-22' && md <= '11-26' ? 'thanksgiving'
+      : md >= '11-01' && md <= '11-26' ? 'thanksgiving'
       : md >= '11-27' && md <= '11-30' ? 'blackfriday' : '';
     if (season && season !== 'off') document.documentElement.classList.add('season-' + season);
     // Black Friday keeps the autumn look (leaves), with its own code.
