@@ -1,7 +1,8 @@
 // star-fx.js — makes the home page star (.hero-mark svg) a live molecule:
 // its nodes drift away from the cursor (or a tap) and spring back, with a
-// faint idle wobble. Seasonal looks (e.g. Halloween) are set by splash.js
-// as an html class; this adds their extras (bats). Off with reduced motion.
+// faint idle wobble. Seasonal looks (Halloween, Thanksgiving, Black Friday)
+// are set by splash.js as an html class; this adds their extras (bats,
+// falling leaves) and the tap-three-times easter egg. Off with reduced motion.
 (function () {
   var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
@@ -76,55 +77,73 @@
     svg.style.webkitTapHighlightColor = 'transparent';
     wake();
 
-    if (document.documentElement.classList.contains('season-halloween')) {
-      if (!svg.parentNode.classList.contains('has-bats')) addBats(svg.parentNode);
-      halloweenEgg(svg, verts, wake);
-    }
+    var season = seasonNow();
+    if (season === 'halloween' && !svg.parentNode.classList.contains('has-bats')) addBats(svg.parentNode);
+    if (EGGS[season]) seasonEgg(svg, verts, wake, EGGS[season], season);
   }
 
-  // ---------- Halloween easter egg: tap the star 3 times quickly ----------
-  // The code must exist on Admin → Promo codes (31%, Any Order, last day Oct 31).
-  var EGG = { code: 'SPOOKY31', pct: 31, through: 'October 31' };
-  function halloweenEgg(svg, verts, wake) {
+  function seasonNow() {
+    var c = document.documentElement.classList;
+    return c.contains('season-halloween') ? 'halloween' : c.contains('season-blackfriday') ? 'blackfriday' : c.contains('season-thanksgiving') ? 'thanksgiving' : '';
+  }
+
+  // ---------- Seasonal easter eggs: tap the star 3 times quickly ----------
+  // Each code must exist on Admin → Promo codes (Any Order, Once per customer,
+  // last day as below), or checkout quietly drops it.
+  var EGGS = {
+    halloween: { code: 'SPOOKY31', pct: 31, through: 'October 31', icon: '🎃', title: 'You found the secret!',
+      hint: '🎃 Something\u2019s hiding in this star\u2026 <em>knock three times.</em>', found: '🎃 You found it!', key: 'txbio_egg_spooky' },
+    thanksgiving: { code: 'THANKS20', pct: 20, through: 'Thanksgiving (November 26)', icon: '🍂', title: 'You shook one loose!',
+      hint: '🍂 This star\u2019s still holding on to a leaf\u2026 <em>give it a little shake.</em>', found: '🍂 Thanks for shaking!', key: 'txbio_egg_thanks', autumn: true },
+    blackfriday: { code: 'FRIDAY25', pct: 25, through: 'Cyber Monday (November 30)', icon: '🍁', title: 'Turned over a new leaf!',
+      hint: '🍁 Black Friday\u2026 <em>shake the star again.</em>', found: '🍁 There it is!', key: 'txbio_egg_friday', autumn: true }
+  };
+  function seasonEgg(svg, verts, wake, EGG, season) {
     var host = svg.parentNode;
     var hint = document.createElement('p');
     hint.className = 'egg-hint';
-    hint.innerHTML = '🎃 Something\u2019s hiding in this star\u2026 <em>knock three times.</em>';
+    hint.innerHTML = EGG.hint;
     host.appendChild(hint);
     var taps = [];
     svg.addEventListener('pointerdown', function () {
       var now = Date.now();
       taps = taps.filter(function (t) { return now - t < 1400; });
       taps.push(now);
+      if (EGG.autumn && window.__txbioLeafBurst) window.__txbioLeafBurst(3);
       if (taps.length >= 3) { taps = []; reveal(); }
     });
     function reveal() {
-      // Big burst + spin, more bats, then the prize.
       verts.forEach(function (v) { var a = Math.random() * 6.28; v.vx += Math.cos(a) * 30; v.vy += Math.sin(a) * 30; });
       wake();
-      svg.classList.remove('egg-spin'); void svg.getBoundingClientRect(); svg.classList.add('egg-spin');
-      for (var i = 0; i < 6; i++) {
-        var b = host.querySelector('.bat-1').cloneNode(true);
-        b.className = 'bat bat-swarm'; b.style.setProperty('--a', (i * 60 + Math.random() * 30) + 'deg'); b.style.animationDelay = (i * 0.05) + 's';
-        host.appendChild(b);
-        (function (el) { setTimeout(function () { el.remove(); }, 1800); })(b);
+      if (EGG.autumn) {
+        svg.classList.remove('egg-shake'); void svg.getBoundingClientRect(); svg.classList.add('egg-shake');
+        if (window.__txbioLeafBurst) window.__txbioLeafBurst(14);
+        if (window.__txbioGoldLeaf) window.__txbioGoldLeaf();
+      } else {
+        svg.classList.remove('egg-spin'); void svg.getBoundingClientRect(); svg.classList.add('egg-spin');
+        for (var i = 0; i < 6; i++) {
+          var b = host.querySelector('.bat-1').cloneNode(true);
+          b.className = 'bat bat-swarm'; b.style.setProperty('--a', (i * 60 + Math.random() * 30) + 'deg'); b.style.animationDelay = (i * 0.05) + 's';
+          host.appendChild(b);
+          (function (el) { setTimeout(function () { el.remove(); }, 1800); })(b);
+        }
       }
-      try { localStorage.setItem('txbio_egg_spooky', '1'); } catch (e) {}
-      hint.innerHTML = '🎃 You found it!';
-      setTimeout(showPrize, 700);
+      try { localStorage.setItem(EGG.key, '1'); } catch (e) {}
+      hint.innerHTML = EGG.found;
+      setTimeout(showPrize, EGG.autumn ? 1300 : 700);
     }
     function showPrize() {
       if (document.getElementById('egg-prize')) return;
-      var base = '';
       var box = document.createElement('div');
       box.id = 'egg-prize'; box.setAttribute('role', 'dialog'); box.setAttribute('aria-modal', 'true'); box.setAttribute('aria-labelledby', 'egg-title');
+      if (EGG.autumn) box.className = 'egg-autumn';
       box.innerHTML = '<div class="egg-card">' +
-        '<div class="egg-pumpkin" aria-hidden="true">🎃</div>' +
-        '<h2 id="egg-title">You found the secret!</h2>' +
+        '<div class="egg-pumpkin" aria-hidden="true">' + EGG.icon + '</div>' +
+        '<h2 id="egg-title">' + EGG.title + '</h2>' +
         '<p>Take <strong>' + EGG.pct + '% off everything</strong>, through ' + EGG.through + '.</p>' +
         '<div class="egg-code"><span>' + EGG.code + '</span><button type="button" class="btn-outline-light" id="egg-copy">Copy</button></div>' +
-        '<div class="egg-actions"><a href="' + base + 'services.html" class="btn" id="egg-use">Shop with ' + EGG.code + '</a><button type="button" class="egg-close" id="egg-close">Maybe later</button></div>' +
-        '<p class="egg-fine">Applied automatically at checkout. Doesn\u2019t combine with other codes or buy-one-get-one.</p>' +
+        '<div class="egg-actions"><a href="services.html" class="btn" id="egg-use">Shop with ' + EGG.code + '</a><button type="button" class="egg-close" id="egg-close">Maybe later</button></div>' +
+        '<p class="egg-fine">Applied automatically at checkout. One use per customer; doesn\u2019t combine with other codes or buy-one-get-one.</p>' +
       '</div>';
       document.body.appendChild(box);
       requestAnimationFrame(function () { box.classList.add('is-open'); });
@@ -142,6 +161,73 @@
       document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
       box.querySelector('#egg-use').focus();
     }
+  }
+
+  // ---------- Autumn: leaves drifting down around the star ----------
+  // They sway as they fall, scatter away from the cursor, and a tap on the star
+  // shakes more loose. Drawn with a small physics loop (no images).
+  var LEAF = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 1 L13.6 5.2 L16.8 3.6 L16 8 L20.5 7 L18.6 10.8 L22 12 L17.6 14.2 L18.6 17.4 L13.4 15.8 L12.8 20.5 L11.2 20.5 L10.6 15.8 L5.4 17.4 L6.4 14.2 L2 12 L5.4 10.8 L3.5 7 L8 8 L7.2 3.6 L10.4 5.2 Z"/><path class="leaf-stem" d="M12 15 L12 23.5"/></svg>';
+  var LEAF_COLORS = ['#d9622b', '#e8a23a', '#b8391f', '#f2c14e', '#c4512a', '#a8471c'];
+  function addLeaves(host) {
+    if (host.classList.contains('has-leaves')) return;
+    host.classList.add('has-leaves');
+    var leaves = [], pointer = null, last = performance.now();
+    function W() { return host.clientWidth || 300; }
+    function H() { return host.clientHeight || 300; }
+    function make(opts) {
+      var el = document.createElement('span');
+      el.className = 'leaf' + (opts.gold ? ' leaf-gold' : '');
+      el.innerHTML = LEAF;
+      el.style.color = opts.gold ? '#f6c544' : LEAF_COLORS[Math.floor(Math.random() * LEAF_COLORS.length)];
+      var size = opts.gold ? 40 : 14 + Math.random() * 14;
+      el.style.width = el.style.height = size + 'px';
+      host.appendChild(el);
+      var l = { el: el, size: size, x: opts.x, y: opts.y, vx: opts.vx || 0, vy: opts.vy || 0, rot: Math.random() * 360, vr: (Math.random() - 0.5) * 2,
+        phase: Math.random() * 6.28, fall: 0.35 + Math.random() * 0.45, temp: !!opts.temp, gold: !!opts.gold, born: performance.now() };
+      leaves.push(l);
+      return l;
+    }
+    for (var i = 0; i < 9; i++) make({ x: Math.random() * W(), y: -40 - Math.random() * H() });
+    window.addEventListener('pointermove', function (e) {
+      if (e.pointerType === 'touch') return;
+      var r = host.getBoundingClientRect();
+      pointer = { x: e.clientX - r.left, y: e.clientY - r.top };
+    }, { passive: true });
+    document.addEventListener('pointerleave', function () { pointer = null; });
+    // A shake: leaves pop out from the star and flutter down.
+    window.__txbioLeafBurst = function (n) {
+      for (var k = 0; k < n; k++) {
+        var a = -Math.PI / 2 + (Math.random() - 0.5) * 2.6, sp = 2.5 + Math.random() * 3.5;
+        make({ x: W() / 2, y: H() * 0.45, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, temp: true });
+      }
+    };
+    // The golden leaf with the code drifts down the middle.
+    window.__txbioGoldLeaf = function () { make({ x: W() / 2 - 20, y: -50, vy: 1.2, temp: true, gold: true }); };
+    function step(now) {
+      var dt = Math.min(3, (now - last) / 16.7); last = now;
+      var w = W(), h = H(), t = now / 1000;
+      for (var j = leaves.length - 1; j >= 0; j--) {
+        var l = leaves[j];
+        if (l.temp) { l.vy += 0.06 * dt; if (l.vy > l.fall * 2.4) l.vy = l.fall * 2.4; }
+        else l.vy += (l.fall - l.vy) * 0.05 * dt;
+        var sway = Math.sin(t * 1.3 + l.phase) * 0.7;
+        if (pointer) {
+          var dx = l.x - pointer.x, dy = l.y - pointer.y, d = Math.sqrt(dx * dx + dy * dy) || 1;
+          if (d < 110) { var f = (1 - d / 110) * 1.4; l.vx += dx / d * f * dt; l.vy += dy / d * f * 0.6 * dt; l.vr += (dx > 0 ? 1 : -1) * f; }
+        }
+        l.vx *= Math.pow(0.94, dt); l.vr *= Math.pow(0.97, dt);
+        l.x += (l.vx + sway) * dt; l.y += l.vy * dt; l.rot += (l.vr + sway * 1.5) * dt;
+        var fade = l.y > h - 40 ? Math.max(0, (h + 10 - l.y) / 50) : 1;
+        l.el.style.opacity = (l.gold ? 1 : 0.85) * fade;
+        l.el.style.transform = 'translate(' + l.x.toFixed(1) + 'px,' + l.y.toFixed(1) + 'px) rotate(' + l.rot.toFixed(1) + 'deg)';
+        if (l.y > h + 20 || l.x < -60 || l.x > w + 60) {
+          if (l.temp) { l.el.remove(); leaves.splice(j, 1); }
+          else { l.x = Math.random() * w; l.y = -30; l.vx = 0; l.vy = l.fall; }
+        }
+      }
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
   }
 
   // Halloween: a few bats fluttering around the star.
@@ -164,8 +250,12 @@
       if (document.documentElement.classList.contains('hero-paused') && tries++ < 600) return setTimeout(wait, 200);
       // Bats come out right away; the star's physics wait for it to finish drawing in.
       var svg = document.querySelector('.hero-mark > svg');
-      if (svg && document.documentElement.classList.contains('season-halloween') && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      var motionOk = !matchMedia('(prefers-reduced-motion: reduce)').matches;
+      if (svg && document.documentElement.classList.contains('season-halloween') && motionOk) {
         setTimeout(function () { if (!svg.parentNode.classList.contains('has-bats')) addBats(svg.parentNode); }, 500);
+      }
+      if (svg && document.documentElement.classList.contains('season-autumn') && motionOk) {
+        setTimeout(function () { addLeaves(svg.parentNode); }, 400);
       }
       setTimeout(init, document.documentElement.classList.contains('entry-open') ? 2600 : 2400);
     })();
