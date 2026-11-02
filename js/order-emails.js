@@ -76,20 +76,20 @@ var OrderEmails = (function () {
     return SITE_URL + '/orders.html' + (order.orderNumber ? '#order-' + order.orderNumber : '');
   }
 
+  // No dollar amounts, handles, app names or "Bitcoin" here: "send $X on
+  // Cash App to $handle" from a new domain reads like a payment scam to spam
+  // filters and lands the confirmation in junk. The order page (linked) shows
+  // the full payment instructions.
   function nextSteps(paymentMethod, order) {
-    if ((paymentMethod === 'venmo' || paymentMethod === 'cashapp') && order && order.paymentHandle) {
-      var app = paymentMethod === 'venmo' ? 'Venmo' : 'Cash App';
-      var to = (paymentMethod === 'venmo' ? '@' : '$') + order.paymentHandle;
-      return 'Send $' + Number(order.total || 0).toFixed(2) + ' on ' + app + ' to ' + to + ' with "Order ' + (order.orderNumber || '') +
-        '" as the note (nothing else in the note). We ship once it arrives.';
+    if (paymentMethod === 'venmo' || paymentMethod === 'cashapp' || paymentMethod === 'bitcoin' || paymentMethod === 'bank') {
+      return 'Payment instructions for this order are on your order page (link below). We ship as soon as payment arrives.';
     }
-    if (paymentMethod === 'bitcoin') {
-      return 'Send payment to the Bitcoin address shown on your confirmation screen, then reply to this email with your transaction ID.';
-    }
-    if (paymentMethod === 'bank') {
-      return 'Complete your bank transfer using the details shown on your confirmation screen, then reply to this email with your transfer confirmation.';
-    }
-    return 'Our team will email you shortly to confirm details and arrange payment.';
+    return 'We’ll be in touch shortly to confirm the details of your order.';
+  }
+
+  // Neutral wording for the payment method line.
+  function methodText(pm) {
+    return ({ venmo: 'Payment app', cashapp: 'Payment app', bitcoin: 'Digital payment', bank: 'Bank transfer', cash: 'Cash', inquiry: 'We’ll follow up' })[pm] || '';
   }
 
   function discountsText(order) {
@@ -121,8 +121,8 @@ var OrderEmails = (function () {
         tax: money(order.tax),
         total: money(order.total),
         shipping_address: addressText(order.shippingAddress) || 'Not provided',
-        payment_method: order.paymentMethod || '',
-        next_steps: nextSteps(order.paymentMethod, order) + '\n\nView your order anytime: ' + orderUrl(order),
+        payment_method: methodText(order.paymentMethod),
+        next_steps: nextSteps(order.paymentMethod, order) + '\n\nYour order: ' + orderUrl(order),
         order_url: orderUrl(order)
       });
     }).then(function () { return true; });
@@ -164,7 +164,7 @@ var OrderEmails = (function () {
         order_number: order.orderNumber || '',
         items: itemsText(order.items),
         total: money(order.total),
-        payment_method: order.paymentMethod || '',
+        payment_method: methodText(order.paymentMethod),
         reason_line: reason ? 'Reason: ' + reason : 'If you have questions about this cancellation, reply to this email.',
         refund_line: 'If you already sent payment for this order, reply to this email and we\u2019ll arrange your refund.'
       });
