@@ -114,14 +114,16 @@ test('first scan: shipped, emailed once with tracking + order link, affiliate cr
   assert.strictEqual(entries.length, 1);
 });
 
-test('affiliate tier: past $1,500 in referred sales earns 15%; old entries count at 10%', async () => {
+test('affiliate tier: $1,500+ in the last 90 days earns 15%; old entries count at 10%; older than 90 days ignored', async () => {
+  const daysAgo = (n) => new Date(Date.now() - n * 864e5).toISOString();
   const seed = {
     'orders/a': ORDER({ promoCode: 'BOOP12' }),
     'promoCodes/BOOP12': { affiliateEmail: 'aff@example.com', active: true },
     'credits/aff@example.com': { balanceCents: 0, earnedCents: 0, spentCents: 0 },
-    'credits/aff@example.com/entries/e1': { type: 'earned', amountCents: 10000 },                    // old: $1,000 sale at 10%
-    'credits/aff@example.com/entries/e2': { type: 'earned', amountCents: 9000, saleCents: 60000 },   // $600
-    'credits/aff@example.com/entries/e3': { type: 'reversed', amountCents: -500, saleCents: -5000 }  // -$50 → $1,550 total
+    'credits/aff@example.com/entries/e1': { type: 'earned', amountCents: 10000, createdAt: daysAgo(30) },                    // old: $1,000 sale at 10%
+    'credits/aff@example.com/entries/e2': { type: 'earned', amountCents: 9000, saleCents: 60000, createdAt: daysAgo(20) },   // $600
+    'credits/aff@example.com/entries/e3': { type: 'reversed', amountCents: -500, saleCents: -5000, createdAt: daysAgo(10) }, // -$50 → $1,550
+    'credits/aff@example.com/entries/e0': { type: 'earned', amountCents: 50000, saleCents: 500000, createdAt: daysAgo(400) }  // too old to count
   };
   const { db } = await scenario(seed, { [T('0123456784')]: DROPPED });
   const o = db.data['orders/a'];

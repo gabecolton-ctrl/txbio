@@ -108,18 +108,21 @@
     if (!window.AffiliateTiers) return;
     var money = function (n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
     var whole = function (n) { return '$' + Number(n).toLocaleString('en-US'); };
-    var sales = AffiliateTiers.salesFromEntries(entries);
-    var tier = AffiliateTiers.tierFor(sales), next = AffiliateTiers.nextTier(sales);
+    var st = AffiliateTiers.status(entries);
+    var sales = st.sales, tier = st.tier, next = st.next;
     var pct = Math.round(tier.rate * 100);
+    var date = function (ms) { return new Date(ms).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }); };
     $('ref-earn-rate').textContent = 'You earn ' + pct + '%';
     $('aff-badge').textContent = tier.name;
     $('aff-badge').className = 'loyalty-badge aff-' + tier.name.toLowerCase().replace(/\s+/g, '-');
     $('aff-rate').textContent = pct + '% back on every referred order';
     $('aff-sales').textContent = money(sales);
-    $('aff-fill').style.width = next ? Math.min(100, (sales - tier.min) / (next.min - tier.min) * 100) + '%' : '100%';
-    $('aff-next').textContent = next
-      ? money(next.min - sales) + ' more in referred sales to reach ' + next.name + ' (' + Math.round(next.rate * 100) + '%).'
-      : 'You’re at the top tier. Thank you!';
+    $('aff-fill').style.width = next ? Math.min(100, Math.max(0, sales - tier.min) / (next.min - tier.min) * 100) + '%' : '100%';
+    var lines = [];
+    if (next) lines.push(money(st.toNext) + ' more in referred sales (last 90 days) to reach ' + next.name + ' (' + Math.round(next.rate * 100) + '%).');
+    else lines.push('You’re at the top tier. Thank you!');
+    if (st.heldUntil) lines.push('Your ' + pct + '% rate is locked in through ' + date(st.heldUntil) + '. Each sale that keeps you at ' + money(tier.min) + '+ in 90 days extends it.');
+    $('aff-next').textContent = lines.join(' ');
     $('aff-tiers').innerHTML = AffiliateTiers.TIERS.map(function (t) {
       var on = t === tier;
       return '<li class="tier-step aff-' + t.name.toLowerCase().replace(/\s+/g, '-') + (on ? ' is-on' : '') + '">' + (on ? '<span class="tier-here">You’re here</span>' : '') +
