@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611012036">
+<link rel="stylesheet" href="css/style.css?v=202611031626">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611012036"></script>
+<script src="js/splash.js?v=202611031626"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -156,6 +156,36 @@
         </div>
         <table class="spec-table" id="cd-facts" style="max-width:560px;"></table>
 
+        <div id="cd-edit-wrap" style="margin:8px 0 18px;">
+          <button type="button" class="btn-outline-light" id="cd-edit-btn">Edit account</button>
+          <button type="button" class="btn-outline-light" id="cd-reset-btn">Send password reset email</button>
+          <p class="tracking-status" id="cd-reset-status"></p>
+          <form id="cd-edit-form" style="display:none; max-width:560px; margin-top:12px;">
+            <label for="ce-name">Full name</label>
+            <input type="text" id="ce-name" maxlength="120">
+            <label for="ce-institution">Institution / lab name</label>
+            <input type="text" id="ce-institution" maxlength="160">
+            <label for="ce-phone">Phone (optional)</label>
+            <input type="tel" id="ce-phone" maxlength="40">
+            <label for="ce-address1">Street address</label>
+            <input type="text" id="ce-address1" maxlength="160">
+            <label for="ce-address2">Apt, suite, etc. (optional)</label>
+            <input type="text" id="ce-address2" maxlength="160">
+            <div class="tracking-controls" style="gap:10px;">
+              <div style="flex:2 1 160px;"><label for="ce-city">City</label><input type="text" id="ce-city" maxlength="80"></div>
+              <div style="flex:1 1 120px;"><label for="ce-state">State</label><select id="ce-state"></select></div>
+              <div style="flex:1 1 100px;"><label for="ce-zip">ZIP</label><input type="text" id="ce-zip" inputmode="numeric" maxlength="10"></div>
+            </div>
+            <label style="display:flex; gap:8px; align-items:center; margin-top:6px;"><input type="checkbox" id="ce-reminders" style="width:auto; margin:0;"> Send cart reminder emails</label>
+            <p class="field-note" style="margin-top:10px;">The login email and password can’t be changed here. Use “Send password reset email” so they can pick a new password.</p>
+            <div style="display:flex; gap:10px; margin-top:12px;">
+              <button type="submit" class="btn" id="ce-save">Save changes</button>
+              <button type="button" class="btn-outline-light" id="ce-cancel">Cancel</button>
+            </div>
+            <p class="tracking-status" id="ce-status"></p>
+          </form>
+        </div>
+
         <h3 style="margin-top:8px;">Give or remove store credit</h3>
         <form id="credit-form" style="max-width:none;">
           <div class="tracking-controls" style="margin-bottom:10px;">
@@ -215,16 +245,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611012036"></script>
-<script src="js/cart.js?v=202611012036"></script>
-<script src="js/account.js?v=202611012036"></script>
-<script src="js/credits.js?v=202611012036"></script>
-<script src="js/staff.js?v=202611012036"></script>
-<script src="js/nav-auth.js?v=202611012036"></script>
-<script src="js/profile-gate.js?v=202611012036"></script>
-<script src="js/auth-guard.js?v=202611012036"></script>
-<script src="js/main.js?v=202611012036"></script>
-<script src="js/nav-toggle.js?v=202611012036"></script>
+<script src="js/firebase-config.js?v=202611031626"></script>
+<script src="js/cart.js?v=202611031626"></script>
+<script src="js/account.js?v=202611031626"></script>
+<script src="js/credits.js?v=202611031626"></script>
+<script src="js/staff.js?v=202611031626"></script>
+<script src="js/nav-auth.js?v=202611031626"></script>
+<script src="js/profile-gate.js?v=202611031626"></script>
+<script src="js/auth-guard.js?v=202611031626"></script>
+<script src="js/main.js?v=202611031626"></script>
+<script src="js/nav-toggle.js?v=202611031626"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -367,6 +397,8 @@
       ['Last sign-in', fmtDate(c.lastSignInAt) || 'Not recorded yet'],
       ['Signup certification', c.profile && c.profile.signupAttestation ? '✓ 21+ and research use, ' + fmtDate(c.profile.signupAttestation.agreedAt) + ' (Terms ' + c.profile.signupAttestation.termsVersion + ')' : 'Not on record (account made before Oct 28, 2026); each order records its own'],
       ['Shipping address', addr || 'None saved'],
+      ['Phone', p.phone || 'None saved'],
+      ['Cart reminder emails', p.cartReminders === false ? 'Off' : 'On'],
       ['Orders', c.orders.length + ' (' + money(c.spent) + ' not counting cancelled)'],
       ['Credit earned / spent', c.credit ? Credits.formatCents(c.credit.earnedCents || 0) + ' / ' + Credits.formatCents(c.credit.spentCents || 0) : 'None']
     ];
@@ -394,11 +426,91 @@
         }).join('') + '</tbody></table></div>';
     }).catch(function (err) { creditEl.innerHTML = '<p style="color:var(--danger);">Could not load credit history: ' + esc(err.message) + '</p>'; });
 
+    setupEdit(c, keepStatus);
     if (!keepStatus) {
       document.getElementById('credit-status').textContent = '';
       window.scrollTo({ top: 0 });
     }
   }
+
+
+  // ---------- Edit account (admin only) ----------
+  var $ = function (id) { return document.getElementById(id); };
+  function setupEdit(c, keepStatus) {
+    var wrap = $('cd-edit-wrap');
+    var admin = staffRole === 'admin';
+    $('cd-edit-btn').style.display = admin && c.uid && c.profile ? '' : 'none';
+    $('cd-reset-btn').style.display = admin && c.uid ? '' : 'none';
+    wrap.style.display = admin && c.uid ? '' : 'none';
+    if (!keepStatus) { $('cd-edit-form').style.display = 'none'; $('ce-status').textContent = ''; $('cd-reset-status').textContent = ''; }
+  }
+  function fillEdit(c) {
+    var p = c.profile || {};
+    $('ce-name').value = p.name || c.name || '';
+    $('ce-institution').value = p.institution || c.institution || '';
+    $('ce-phone').value = p.phone || '';
+    $('ce-address1').value = p.addressLine1 || '';
+    $('ce-address2').value = p.addressLine2 || '';
+    $('ce-city').value = p.city || '';
+    $('ce-state').innerHTML = ProfileGate.stateOptions(p.state || '');
+    $('ce-zip').value = p.zip || '';
+    $('ce-reminders').checked = p.cartReminders !== false;
+  }
+  $('cd-edit-btn').addEventListener('click', function () {
+    if (!current) return;
+    fillEdit(current);
+    $('cd-edit-form').style.display = '';
+    $('ce-status').textContent = '';
+    $('ce-name').focus();
+  });
+  $('ce-cancel').addEventListener('click', function () { $('cd-edit-form').style.display = 'none'; });
+  $('cd-edit-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!current || !current.uid) return;
+    var st = $('ce-status'); st.textContent = '';
+    var zip = $('ce-zip').value.trim();
+    var fields = {
+      name: $('ce-name').value.trim(),
+      institution: $('ce-institution').value.trim(),
+      phone: $('ce-phone').value.trim(),
+      addressLine1: $('ce-address1').value.trim(),
+      addressLine2: $('ce-address2').value.trim(),
+      city: $('ce-city').value.trim(),
+      state: $('ce-state').value,
+      zip: zip,
+      cartReminders: $('ce-reminders').checked,
+      editedByAdminAt: new Date().toISOString()
+    };
+    if (!fields.name) { st.style.color = 'var(--danger)'; st.textContent = 'Enter their name.'; return; }
+    var anyAddr = fields.addressLine1 || fields.city || fields.state || zip;
+    if (anyAddr && !(fields.addressLine1 && fields.city && fields.state && ProfileGate.validZip(zip))) {
+      st.style.color = 'var(--danger)'; st.textContent = 'Finish the address: street, city, state and a 5-digit ZIP.'; return;
+    }
+    var btn = $('ce-save'); btn.disabled = true;
+    firebase.firestore().collection('users').doc(current.uid).update(fields).then(function () {
+      btn.disabled = false;
+      st.style.color = 'var(--text-light)'; st.textContent = 'Saved.';
+      $('cd-edit-form').style.display = 'none';
+      $('cd-reset-status').style.color = 'var(--text-light)'; $('cd-reset-status').textContent = 'Account updated.';
+      loadCustomers();
+    }).catch(function (err) {
+      btn.disabled = false;
+      st.style.color = 'var(--danger)';
+      st.textContent = 'Could not save: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
+    });
+  });
+  $('cd-reset-btn').addEventListener('click', function () {
+    if (!current) return;
+    var st = $('cd-reset-status'), btn = $('cd-reset-btn');
+    btn.disabled = true;
+    firebase.auth().sendPasswordResetEmail(current.email).then(function () {
+      btn.disabled = false;
+      st.style.color = 'var(--text-light)'; st.textContent = 'Password reset email sent to ' + current.email + '.';
+    }).catch(function (err) {
+      btn.disabled = false;
+      st.style.color = 'var(--danger)'; st.textContent = 'Could not send: ' + err.message;
+    });
+  });
 
   document.getElementById('customer-back').addEventListener('click', function (e) {
     e.preventDefault();
