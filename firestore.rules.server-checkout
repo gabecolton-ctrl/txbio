@@ -53,6 +53,8 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isStaff());
       allow write: if signedIn() && request.auth.uid == userId;
+      // Admin → Customers: the admin can edit a customer's profile (never create or delete).
+      allow update: if isAdmin();
     }
 
     // Orders — placed only by the server checkout (functions/), which is not
