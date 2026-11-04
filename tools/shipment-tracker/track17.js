@@ -46,7 +46,17 @@ function track17Client({ apiKey, fetchImpl = fetch }) {
     await register(num);
     const data = await call('gettrackinfo', [{ number: num }]);
     const hit = (data.accepted || []).find((a) => cleanNumber(a.number) === num);
-    return hit ? (hit.track_info || null) : null;
+    if (hit) {
+      if (!hit.track_info) console.log('  17TRACK ' + num + ': accepted, no track_info yet (keys: ' + Object.keys(hit).join(',') + ')');
+      return hit.track_info || null;
+    }
+    const rej = (data.rejected || []).find((r) => cleanNumber(r.number) === num);
+    // A number registered moments ago is usually "not ready yet"; say what 17TRACK said.
+    if (rej && rej.error) {
+      console.log('  17TRACK ' + num + ': ' + rej.error.code + ' ' + (rej.error.message || ''));
+      return { _pending: String(rej.error.message || 'Waiting for 17TRACK') };
+    }
+    return null;
   }
 
   async function status(trackingNumber) { return summarize17(await track(trackingNumber)); }
@@ -60,6 +70,7 @@ function eventTime(e) { return (e && (e.time_iso || e.time_utc)) || null; }
 //   { state: 'label' | 'moving' | 'delivered' | 'unknown', at, deliveredAt, description }
 function summarize17(info) {
   if (!info) return { state: 'unknown', at: null, deliveredAt: null, description: 'No tracking information yet' };
+  if (info._pending) return { state: 'unknown', at: null, deliveredAt: null, stage: 'NotFound', description: '17TRACK: ' + info._pending };
   const latest = info.latest_status || {};
   const latestEvent = info.latest_event || {};
   const statusName = String(latest.status || '');
