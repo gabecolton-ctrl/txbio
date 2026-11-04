@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611031822">
+<link rel="stylesheet" href="css/style.css?v=202611031847">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611031822"></script>
+<script src="js/splash.js?v=202611031847"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,25 +174,25 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611031822"></script>
-<script src="js/cart.js?v=202611031822"></script>
-<script src="js/site-config.js?v=202611031822"></script>
-<script src="js/payment-apps.js?v=202611031822"></script>
-<script src="js/account.js?v=202611031822"></script>
-<script src="js/inventory.js?v=202611031822"></script>
-<script src="js/promos.js?v=202611031822"></script>
-<script src="js/credits.js?v=202611031822"></script>
-<script src="js/affiliate-tiers.js?v=202611031822"></script>
-<script src="js/loyalty.js?v=202611031822"></script>
-<script src="js/lots.js?v=202611031822"></script>
-<script src="js/order-emails.js?v=202611031822"></script>
-<script src="js/gift-cards.js?v=202611031822"></script>
-<script src="js/staff.js?v=202611031822"></script>
-<script src="js/nav-auth.js?v=202611031822"></script>
-<script src="js/profile-gate.js?v=202611031822"></script>
-<script src="js/auth-guard.js?v=202611031822"></script>
-<script src="js/main.js?v=202611031822"></script>
-<script src="js/nav-toggle.js?v=202611031822"></script>
+<script src="js/firebase-config.js?v=202611031847"></script>
+<script src="js/cart.js?v=202611031847"></script>
+<script src="js/site-config.js?v=202611031847"></script>
+<script src="js/payment-apps.js?v=202611031847"></script>
+<script src="js/account.js?v=202611031847"></script>
+<script src="js/inventory.js?v=202611031847"></script>
+<script src="js/promos.js?v=202611031847"></script>
+<script src="js/credits.js?v=202611031847"></script>
+<script src="js/affiliate-tiers.js?v=202611031847"></script>
+<script src="js/loyalty.js?v=202611031847"></script>
+<script src="js/lots.js?v=202611031847"></script>
+<script src="js/order-emails.js?v=202611031847"></script>
+<script src="js/gift-cards.js?v=202611031847"></script>
+<script src="js/staff.js?v=202611031847"></script>
+<script src="js/nav-auth.js?v=202611031847"></script>
+<script src="js/profile-gate.js?v=202611031847"></script>
+<script src="js/auth-guard.js?v=202611031847"></script>
+<script src="js/main.js?v=202611031847"></script>
+<script src="js/nav-toggle.js?v=202611031847"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -577,6 +577,40 @@
   // customer's email: they show under that customer, and if an account with
   // that email exists (now, or once they sign up) the order joins it, so it
   // appears in their My orders. Admin → Customers links later sign-ups.
+  // Delete: only cancelled orders (cancelling already returned stock, store
+  // credit, affiliate and loyalty credit), and only after a second tap.
+  function deleteBoxHtml(order) {
+    var id = escapeAttr(order.id);
+    return '<div class="tracking-row delete-row" data-delete-row="' + id + '">' +
+      '<button type="button" class="btn-outline-light" data-delete-for="' + id + '" data-step="ask">Delete order</button>' +
+      '<span class="delete-confirm" style="display:none;">' +
+        '<span style="color:var(--danger); font-size:0.88rem;">Delete #' + escapeAttr(order.orderNumber || order.id) + ' for good? This can’t be undone.</span> ' +
+        '<button type="button" class="btn-outline-light" data-delete-for="' + id + '" data-step="yes" style="border-color:var(--danger); color:var(--danger);">Yes, delete</button> ' +
+        '<button type="button" class="btn-outline-light" data-delete-for="' + id + '" data-step="no">Keep it</button>' +
+      '</span>' +
+      '<p class="tracking-status" data-delete-status-for="' + id + '"></p>' +
+    '</div>';
+  }
+
+  function deleteStep(orderId, step) {
+    var row = document.querySelector('[data-delete-row="' + orderId + '"]');
+    if (!row) return;
+    var ask = row.querySelector('[data-step="ask"]'), confirmEl = row.querySelector('.delete-confirm');
+    var st = row.querySelector('[data-delete-status-for]');
+    if (step === 'ask') { ask.style.display = 'none'; confirmEl.style.display = ''; return; }
+    if (step === 'no') { ask.style.display = ''; confirmEl.style.display = 'none'; return; }
+    row.querySelectorAll('button').forEach(function (b) { b.disabled = true; });
+    firebase.firestore().collection('orders').doc(orderId).delete().then(function () {
+      allOrders = allOrders.filter(function (o) { return o.id !== orderId; });
+      var box = row.closest('.order-summary-box') || row.parentNode;
+      box.innerHTML = '<p style="color:var(--text-light); margin:0;">Order deleted.</p>';
+    }).catch(function (err) {
+      row.querySelectorAll('button').forEach(function (b) { b.disabled = false; });
+      st.style.color = 'var(--danger)';
+      st.textContent = 'Could not delete: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
+    });
+  }
+
   function linkBoxHtml(order) {
     var id = escapeAttr(order.id);
     return '<div class="tracking-row">' +
@@ -701,6 +735,7 @@
           '<input type="text" id="cancel-reason-' + order.id + '" data-cancel-reason-for="' + order.id + '" value="' + escapeAttr(order.cancelReason) + '" placeholder="Included in the email if you cancel this order" autocomplete="off">' +
           '<p class="tracking-status" data-cancel-status-for="' + order.id + '">' + cancelStatusText(order) + '</p>' +
         '</div>' +
+        (myRole === 'admin' && order.status === 'cancelled' ? deleteBoxHtml(order) : '') +
         '<div style="overflow-x:auto;">' +
           '<table class="cart-table" style="margin-bottom:10px;">' +
             '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
@@ -729,6 +764,10 @@
         q = document.createElement('q'); q.className = 'attest-text'; q.textContent = order.attestation.text;
         line.appendChild(q); attestLink.textContent = 'Hide wording';
       });
+    });
+
+    listEl.querySelectorAll('[data-delete-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () { deleteStep(btn.getAttribute('data-delete-for'), btn.getAttribute('data-step')); });
     });
 
     listEl.querySelectorAll('button[data-link-email-for]').forEach(function (btn) {

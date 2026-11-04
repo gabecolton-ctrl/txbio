@@ -74,7 +74,7 @@ service cloud.firestore {
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelReason', 'cancelledBy', 'cancelledAt'])
         && request.resource.data.cancelledBy == 'customer'
       );
-      allow delete: if false;
+      allow delete: if isAdmin() && resource.data.status == 'cancelled'; // Admin → Orders: delete a cancelled order
     }
 
     // Stock counts — anyone signed in can read them; only the admin (and the
