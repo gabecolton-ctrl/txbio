@@ -1476,3 +1476,5 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .track-strip.track-warn { border-left-color: #fbbf24; }
 .track-strip.track-bad { border-left-color: var(--danger); background: var(--alert-wash); }
 .track-strip.track-bad .track-pill { color: var(--danger); }
+.track-strip .track-eta { font-weight: 600; color: var(--mint); white-space: nowrap; }
+.order-eta strong { color: var(--mint); }

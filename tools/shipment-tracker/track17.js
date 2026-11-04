@@ -64,6 +64,9 @@ function track17Client({ apiKey, fetchImpl = fetch }) {
   return { name: '17TRACK', track, status, canTrack: canTrack17 };
 }
 
+// '2026-11-06T…' / '2026-11-06' → '2026-11-06'; anything else → ''.
+function dateOnly(v) { const m = /^(\d{4}-\d{2}-\d{2})/.exec(String(v || '')); return m ? m[1] : ''; }
+
 function eventTime(e) { return (e && (e.time_iso || e.time_utc)) || null; }
 
 // Same shape as ups.js summarize():
@@ -78,7 +81,10 @@ function summarize17(info) {
   const milestones = Array.isArray(info.milestone) ? info.milestone : [];
   const stageTime = (key) => { const m = milestones.find((x) => x && x.key_stage === key && eventTime(x)); return m ? eventTime(m) : null; };
 
-  const extra = { stage: statusName, lastEventAt: eventTime(latestEvent), location: String(latestEvent.location || '').trim() };
+  // Expected delivery (time_metrics.estimated_delivery_date: { source, from, to }).
+  const eta = (info.time_metrics && info.time_metrics.estimated_delivery_date) || {};
+  const extra = { stage: statusName, lastEventAt: eventTime(latestEvent), location: String(latestEvent.location || '').trim(),
+    eta: dateOnly(eta.from || eta.to), etaTo: dateOnly(eta.to) };
   const out = (o) => Object.assign(o, extra);
   if (!statusName || statusName === 'NotFound') return out({ state: 'unknown', at: null, deliveredAt: null, description });
   if (statusName === 'InfoReceived') return out({ state: 'label', at: null, deliveredAt: null, description: description || 'Label created' });

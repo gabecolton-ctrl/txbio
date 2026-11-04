@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611032125">
+<link rel="stylesheet" href="css/style.css?v=202611032157">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611032125"></script>
+<script src="js/splash.js?v=202611032157"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,26 +174,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611032125"></script>
-<script src="js/cart.js?v=202611032125"></script>
-<script src="js/site-config.js?v=202611032125"></script>
-<script src="js/payment-apps.js?v=202611032125"></script>
-<script src="js/account.js?v=202611032125"></script>
-<script src="js/inventory.js?v=202611032125"></script>
-<script src="js/promos.js?v=202611032125"></script>
-<script src="js/tabs.js?v=202611032125"></script>
-<script src="js/credits.js?v=202611032125"></script>
-<script src="js/affiliate-tiers.js?v=202611032125"></script>
-<script src="js/loyalty.js?v=202611032125"></script>
-<script src="js/lots.js?v=202611032125"></script>
-<script src="js/order-emails.js?v=202611032125"></script>
-<script src="js/gift-cards.js?v=202611032125"></script>
-<script src="js/staff.js?v=202611032125"></script>
-<script src="js/nav-auth.js?v=202611032125"></script>
-<script src="js/profile-gate.js?v=202611032125"></script>
-<script src="js/auth-guard.js?v=202611032125"></script>
-<script src="js/main.js?v=202611032125"></script>
-<script src="js/nav-toggle.js?v=202611032125"></script>
+<script src="js/firebase-config.js?v=202611032157"></script>
+<script src="js/cart.js?v=202611032157"></script>
+<script src="js/site-config.js?v=202611032157"></script>
+<script src="js/payment-apps.js?v=202611032157"></script>
+<script src="js/account.js?v=202611032157"></script>
+<script src="js/inventory.js?v=202611032157"></script>
+<script src="js/promos.js?v=202611032157"></script>
+<script src="js/tabs.js?v=202611032157"></script>
+<script src="js/credits.js?v=202611032157"></script>
+<script src="js/affiliate-tiers.js?v=202611032157"></script>
+<script src="js/loyalty.js?v=202611032157"></script>
+<script src="js/lots.js?v=202611032157"></script>
+<script src="js/order-emails.js?v=202611032157"></script>
+<script src="js/gift-cards.js?v=202611032157"></script>
+<script src="js/staff.js?v=202611032157"></script>
+<script src="js/nav-auth.js?v=202611032157"></script>
+<script src="js/profile-gate.js?v=202611032157"></script>
+<script src="js/auth-guard.js?v=202611032157"></script>
+<script src="js/main.js?v=202611032157"></script>
+<script src="js/nav-toggle.js?v=202611032157"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -225,6 +225,11 @@
     if (isNaN(d)) return String(iso);
     return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
   }
+  function etaDay(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || ''));
+    var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
   function trackStripHtml(order) {
     if (!order.trackingNumber || order.status === 'cancelled') return '';
     var link = carrierLink(order.trackingNumber);
@@ -236,6 +241,7 @@
     return '<div class="track-strip' + (tone ? ' track-' + tone : '') + '">' +
       '<span class="track-pill">' + escapeAttr(label) + '</span>' +
       '<span class="track-detail">' + (detail || 'Waiting for the first update from the carrier.') + '</span>' +
+      (order.expectedDelivery && order.status !== 'delivered' && stage !== 'Delivered' ? '<span class="track-eta">Expected ' + escapeAttr(etaDay(order.expectedDelivery) + (order.expectedDeliveryTo && order.expectedDeliveryTo !== order.expectedDelivery ? ' – ' + etaDay(order.expectedDeliveryTo) : '')) + '</span>' : '') +
       '<span class="track-meta">' + (link ? '<a href="' + link.url + '" target="_blank" rel="noopener">' + link.carrier + ' ' + escapeAttr(order.trackingNumber) + '</a>' : escapeAttr(order.trackingNumber)) +
         (order.trackingCheckedAt ? ' · checked ' + shortWhen(order.trackingCheckedAt) : '') + '</span>' +
     '</div>';
