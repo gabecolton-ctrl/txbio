@@ -20,6 +20,14 @@ const { summarize, isUpsNumber } = require('./ups');
 function canTrack(carrier, num) { return carrier.canTrack ? carrier.canTrack(num) : isUpsNumber(num); }
 async function statusOf(carrier, num) { return carrier.status ? carrier.status(num) : summarize(await carrier.track(num)); }
 function carrierName(carrier) { return carrier.name || 'UPS'; }
+// What Admin → Orders shows as the latest tracking update.
+function trackFields(s) {
+  const f = { trackingCheckedAt: nowIso(), trackingStatusText: s.description || '' };
+  if (s.stage) f.trackingStage = s.stage;
+  if (s.lastEventAt) f.trackingLastEventAt = s.lastEventAt;
+  f.trackingLocation = s.location || '';
+  return f;
+}
 
 const DELIVERY_WATCH_DAYS = 21; // stop checking for delivery after this long
 const INCOMING_WATCH_DAYS = 60; // supplier shipments: stop checking after this long
@@ -85,21 +93,19 @@ async function checkLabelCreated({ db, carrier, email, doc, log }) {
   }
   const s = await statusOf(carrier, num);
   if (s.state === 'label' || s.state === 'unknown') {
-    await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: s.description });
+    await doc.ref.update(trackFields(s));
     return 'waiting';
   }
   // Claim the order inside a transaction so two runs can't both email.
   const claimed = await db.runTransaction(async (t) => {
     const fresh = await t.get(doc.ref);
     if (!fresh.exists || fresh.data().status !== 'label-created') return false;
-    const fields = {
+    const fields = Object.assign(trackFields(s), {
       status: s.state === 'delivered' ? 'delivered' : 'shipped',
       shippedAt: s.at || nowIso(),
       autoShippedAt: nowIso(),
-      trackingCheckedAt: nowIso(),
-      trackingStatusText: s.description,
       shippedEmailPending: true
-    };
+    });
     if (s.deliveredAt) fields.deliveredAt = s.deliveredAt;
     t.update(doc.ref, fields);
     return true;
@@ -153,7 +159,7 @@ async function checkDelivered({ carrier, doc }) {
   const since = Date.parse(order.shippedAt || order.autoShippedAt || order.shippedEmailSentAt || 0);
   if (!since || Date.now() - since > DELIVERY_WATCH_DAYS * 864e5) return 'skip';
   const s = await statusOf(carrier, order.trackingNumber);
-  const fields = { trackingCheckedAt: nowIso(), trackingStatusText: s.description };
+  const fields = trackFields(s);
   if (s.state === 'delivered') Object.assign(fields, { status: 'delivered', deliveredAt: s.deliveredAt || nowIso() });
   await doc.ref.update(fields);
   return s.state === 'delivered' ? 'delivered' : 'in-transit';
@@ -173,7 +179,7 @@ async function checkIncoming({ db, carrier, doc, log }) {
   const since = Date.parse(ship.createdAt || 0);
   if (since && Date.now() - since > INCOMING_WATCH_DAYS * 864e5) return 'incoming-too-old';
   const s = await statusOf(carrier, num);
-  const fields = { trackingCheckedAt: nowIso(), trackingStatusText: s.description };
+  const fields = trackFields(s);
   if (s.state === 'moving' && ship.status === 'ordered') Object.assign(fields, { status: 'in-transit', shippedAt: s.at || nowIso() });
   if (s.state === 'delivered') Object.assign(fields, { status: 'delivered', deliveredAt: s.deliveredAt || nowIso(), shippedAt: ship.shippedAt || s.at || nowIso() });
   await doc.ref.update(fields);

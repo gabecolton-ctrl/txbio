@@ -1466,3 +1466,13 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 /* Admin → Customers: tab of fronted product */
 .tab-box { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 22px; background: var(--surface); }
 .tab-box .catalog-wrap { margin-top: 8px; }
+
+/* Admin → Orders: latest carrier update */
+.track-strip { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 8px 12px; margin: 0 0 10px; border: 1px solid var(--line); border-left: 3px solid var(--line); border-radius: 10px; background: var(--surface); font-size: 0.86rem; }
+.track-strip .track-pill { font-weight: 700; color: var(--text); }
+.track-strip .track-detail { color: var(--text); flex: 1 1 200px; }
+.track-strip .track-meta { color: var(--text-light); font-size: 0.8rem; flex-basis: 100%; }
+.track-strip.track-good { border-left-color: var(--mint); background: var(--mint-wash); }
+.track-strip.track-warn { border-left-color: #fbbf24; }
+.track-strip.track-bad { border-left-color: var(--danger); background: var(--alert-wash); }
+.track-strip.track-bad .track-pill { color: var(--danger); }

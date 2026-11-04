@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611032119">
+<link rel="stylesheet" href="css/style.css?v=202611032124">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611032119"></script>
+<script src="js/splash.js?v=202611032124"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,26 +174,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611032119"></script>
-<script src="js/cart.js?v=202611032119"></script>
-<script src="js/site-config.js?v=202611032119"></script>
-<script src="js/payment-apps.js?v=202611032119"></script>
-<script src="js/account.js?v=202611032119"></script>
-<script src="js/inventory.js?v=202611032119"></script>
-<script src="js/promos.js?v=202611032119"></script>
-<script src="js/tabs.js?v=202611032119"></script>
-<script src="js/credits.js?v=202611032119"></script>
-<script src="js/affiliate-tiers.js?v=202611032119"></script>
-<script src="js/loyalty.js?v=202611032119"></script>
-<script src="js/lots.js?v=202611032119"></script>
-<script src="js/order-emails.js?v=202611032119"></script>
-<script src="js/gift-cards.js?v=202611032119"></script>
-<script src="js/staff.js?v=202611032119"></script>
-<script src="js/nav-auth.js?v=202611032119"></script>
-<script src="js/profile-gate.js?v=202611032119"></script>
-<script src="js/auth-guard.js?v=202611032119"></script>
-<script src="js/main.js?v=202611032119"></script>
-<script src="js/nav-toggle.js?v=202611032119"></script>
+<script src="js/firebase-config.js?v=202611032124"></script>
+<script src="js/cart.js?v=202611032124"></script>
+<script src="js/site-config.js?v=202611032124"></script>
+<script src="js/payment-apps.js?v=202611032124"></script>
+<script src="js/account.js?v=202611032124"></script>
+<script src="js/inventory.js?v=202611032124"></script>
+<script src="js/promos.js?v=202611032124"></script>
+<script src="js/tabs.js?v=202611032124"></script>
+<script src="js/credits.js?v=202611032124"></script>
+<script src="js/affiliate-tiers.js?v=202611032124"></script>
+<script src="js/loyalty.js?v=202611032124"></script>
+<script src="js/lots.js?v=202611032124"></script>
+<script src="js/order-emails.js?v=202611032124"></script>
+<script src="js/gift-cards.js?v=202611032124"></script>
+<script src="js/staff.js?v=202611032124"></script>
+<script src="js/nav-auth.js?v=202611032124"></script>
+<script src="js/profile-gate.js?v=202611032124"></script>
+<script src="js/auth-guard.js?v=202611032124"></script>
+<script src="js/main.js?v=202611032124"></script>
+<script src="js/nav-toggle.js?v=202611032124"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -204,13 +204,47 @@
     return String(v == null ? '' : v).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
   }
 
+  // Latest carrier update (saved by the tracker every ~30 min), shown at the
+  // top of the order so you don't have to look it up.
+  var STAGE_LABELS = {
+    InfoReceived: 'Label created', InTransit: 'In transit', OutForDelivery: 'Out for delivery',
+    AvailableForPickup: 'Ready for pickup', DeliveryFailure: 'Delivery attempt failed', Exception: 'Problem',
+    Expired: 'No recent updates', Delivered: 'Delivered', NotFound: 'Not scanned yet'
+  };
+  var STAGE_TONE = { Exception: 'bad', DeliveryFailure: 'bad', Expired: 'warn', AvailableForPickup: 'warn', OutForDelivery: 'good', Delivered: 'good' };
+  function carrierLink(num) {
+    var n = String(num || '').replace(/\s+/g, '').toUpperCase();
+    if (/^1Z[0-9A-Z]{16}$/.test(n)) return { carrier: 'UPS', url: 'https://www.ups.com/track?tracknum=' + n };
+    if (/^9\d{19,21}$/.test(n) || /^[A-Z]{2}\d{9}US$/.test(n)) return { carrier: 'USPS', url: 'https://tools.usps.com/go/TrackConfirmAction?tLabels=' + n };
+    if (/^(\d{12}|\d{15})$/.test(n)) return { carrier: 'FedEx', url: 'https://www.fedex.com/fedextrack/?trknbr=' + n };
+    return null;
+  }
+  function shortWhen(iso) {
+    if (!iso) return '';
+    var d = new Date(iso);
+    if (isNaN(d)) return String(iso);
+    return d.toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  }
+  function trackStripHtml(order) {
+    if (!order.trackingNumber || order.status === 'cancelled') return '';
+    var link = carrierLink(order.trackingNumber);
+    var stage = order.status === 'delivered' && !order.trackingStage ? 'Delivered' : order.trackingStage;
+    var label = STAGE_LABELS[stage] || (order.status === 'label-created' ? 'Label created' : order.trackingStatusText ? 'Update' : 'Not checked yet');
+    var tone = STAGE_TONE[stage] || '';
+    var detail = [order.trackingStatusText && order.trackingStatusText !== stage ? order.trackingStatusText : '', order.trackingLocation, shortWhen(order.trackingLastEventAt || (stage === 'Delivered' ? order.deliveredAt : ''))]
+      .filter(Boolean).map(function (x) { return escapeAttr(x); }).join(' · ');
+    return '<div class="track-strip' + (tone ? ' track-' + tone : '') + '">' +
+      '<span class="track-pill">' + escapeAttr(label) + '</span>' +
+      '<span class="track-detail">' + (detail || 'Waiting for the first update from the carrier.') + '</span>' +
+      '<span class="track-meta">' + (link ? '<a href="' + link.url + '" target="_blank" rel="noopener">' + link.carrier + ' ' + escapeAttr(order.trackingNumber) + '</a>' : escapeAttr(order.trackingNumber)) +
+        (order.trackingCheckedAt ? ' · checked ' + shortWhen(order.trackingCheckedAt) : '') + '</span>' +
+    '</div>';
+  }
+
   function shipStatusText(order) {
     var auto = [];
-    if (order.status === 'label-created') auto.push('Waiting for UPS’s first scan; it’s then marked shipped and the buyer is emailed automatically.');
-    if (order.trackingStatusText && order.trackingCheckedAt) {
-      auto.push('UPS: ' + order.trackingStatusText + ' (checked ' + new Date(order.trackingCheckedAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ').');
-    }
-    if (order.autoShippedAt) auto.push('Marked shipped automatically at the first UPS scan.');
+    if (order.status === 'label-created') auto.push('Waiting for the carrier’s first scan; it’s then marked shipped and the buyer is emailed automatically.');
+    if (order.autoShippedAt) auto.push('Marked shipped automatically at the first carrier scan.');
     if (order.shippedEmailPending && order.shippedEmailError) auto.push('Shipped email failed (' + order.shippedEmailError + '); it retries on the next check, or use Resend shipped email.');
     if (!order.shippedEmailSentAt) return auto.join(' ');
     var when = new Date(order.shippedEmailSentAt).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
@@ -722,6 +756,7 @@
             '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
           '</div>' +
         '</div>' +
+        trackStripHtml(order) +
         '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
         '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
         '<p class="tracking-status" data-loyalty-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? loyaltyText(order) : '') + '</p>' +
