@@ -17,6 +17,7 @@ var OrderEmails = (function () {
     confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
     shippedTemplateId: 'template_r6zmcve',    // Email Templates → "Order shipped" → Template ID
     cancelledTemplateId: '',                  // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
+    deliveredTemplateId: '',                  // Email Templates → "Order delivered" → Template ID (sent by the tracker when the carrier delivers)
     giftCardTemplateId: '',                   // Email Templates → "Gift card" → Template ID (emails a bought gift card to the friend)
     cartReminderTemplateId: ''                // Email Templates → "Cart reminder" → Template ID (hourly job, tools/shipment-tracker/cart-reminders.js)
   };
@@ -151,6 +152,27 @@ var OrderEmails = (function () {
     }).then(function () { return true; });
   }
 
+  // Delivered notice: sent once, when the carrier reports delivery (the
+  // tracker) or the admin marks the order Delivered.
+  function canSendDelivered() { return isConfigured() && !!CONFIG.deliveredTemplateId; }
+  function deliveredParams(order) {
+    var d = order.deliveredAt ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(order.deliveredAt) ? order.deliveredAt + 'T12:00:00' : order.deliveredAt) : null;
+    return {
+      to_email: order.userEmail,
+      order_number: order.orderNumber || '',
+      items: itemsText(order.items),
+      delivered_on: d && !isNaN(d) ? d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Chicago' }) : 'today',
+      shipping_address: addressText(order.shippingAddress) || 'the address on your order',
+      order_url: orderUrl(order)
+    };
+  }
+  function sendDelivered(order) {
+    if (!canSendDelivered() || !order.userEmail) return Promise.resolve(false);
+    return loadSdk().then(function (emailjs) {
+      return emailjs.send(CONFIG.serviceId, CONFIG.deliveredTemplateId, deliveredParams(order));
+    }).then(function () { return true; });
+  }
+
   // Cancellation notice, sent when the admin cancels an order.
   function canSendCancelled() {
     return isConfigured() && !!CONFIG.cancelledTemplateId;
@@ -197,6 +219,9 @@ var OrderEmails = (function () {
     sendShipped: sendShipped,
     sendGiftCard: sendGiftCard,
     shippedParams: shippedParams,
+    canSendDelivered: canSendDelivered,
+    deliveredParams: deliveredParams,
+    sendDelivered: sendDelivered,
     CONFIG: CONFIG
   };
 })();

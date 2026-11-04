@@ -371,6 +371,24 @@ test('17track: a just-registered number is re-checked in the same run', async ()
   assert.deepStrictEqual([infoCalls, waits.length], [3, 2]);
 });
 
+test('delivered email: sent once when the carrier delivers, only if the template is set', async () => {
+  const OE = require('../../js/order-emails.js');
+  const mk = () => fakeDb({ 'orders/d': { status: 'shipped', trackingNumber: '1Z999AA10123456784', shippedAt: new Date().toISOString(), userEmail: 'b@x.com', orderNumber: 'TXB-D', items: [], subtotal: 10, total: 10 } });
+  const carrier = { name: '17TRACK', canTrack: () => true, status: async () => summarize17(INFO('Delivered')) };
+  const old = OE.CONFIG.deliveredTemplateId;
+  OE.CONFIG.deliveredTemplateId = '';
+  let db = mk(), sent = [];
+  await run({ db, carrier, email: { send: async (t) => sent.push(t) }, log: () => {} });
+  assert.deepStrictEqual([db.data['orders/d'].status, sent.length], ['delivered', 0]);
+  OE.CONFIG.deliveredTemplateId = 'template_del';
+  db = mk(); sent = [];
+  await run({ db, carrier, email: { send: async (t) => sent.push(t) }, log: () => {} });
+  await run({ db, carrier, email: { send: async (t) => sent.push(t) }, log: () => {} });
+  assert.deepStrictEqual(sent, ['template_del']);
+  assert.ok(db.data['orders/d'].deliveredEmailSentAt);
+  OE.CONFIG.deliveredTemplateId = old;
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {
