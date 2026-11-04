@@ -15,6 +15,12 @@ const Loyalty = require(path.join(__dirname, '../../js/loyalty.js'));
 const Lots = require(path.join(__dirname, '../../js/lots.js'));
 const { summarize, isUpsNumber } = require('./ups');
 
+// The carrier is UPS's API (ups.js) or 17TRACK (track17.js). A carrier may
+// provide canTrack(num) and status(num); otherwise it's the UPS client.
+function canTrack(carrier, num) { return carrier.canTrack ? carrier.canTrack(num) : isUpsNumber(num); }
+async function statusOf(carrier, num) { return carrier.status ? carrier.status(num) : summarize(await carrier.track(num)); }
+function carrierName(carrier) { return carrier.name || 'UPS'; }
+
 const DELIVERY_WATCH_DAYS = 21; // stop checking for delivery after this long
 const INCOMING_WATCH_DAYS = 60; // supplier shipments: stop checking after this long
 
@@ -73,11 +79,11 @@ async function checkLabelCreated({ db, carrier, email, doc, log }) {
   const order = doc.data();
   const num = order.trackingNumber;
   if (!num) return 'no-tracking';
-  if (!isUpsNumber(num)) {
-    await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: 'Not a UPS tracking number, so it isn’t checked automatically. Mark it shipped by hand.' });
+  if (!canTrack(carrier, num)) {
+    await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: carrier.canTrack ? 'That doesn’t look like a tracking number, so it isn’t checked automatically. Mark it shipped by hand.' : 'Not a UPS tracking number, so it isn’t checked automatically. Mark it shipped by hand.' });
     return 'not-ups';
   }
-  const s = summarize(await carrier.track(num));
+  const s = await statusOf(carrier, num);
   if (s.state === 'label' || s.state === 'unknown') {
     await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: s.description });
     return 'waiting';
@@ -99,7 +105,7 @@ async function checkLabelCreated({ db, carrier, email, doc, log }) {
     return true;
   });
   if (!claimed) return 'skipped';
-  log('#' + (order.orderNumber || doc.id) + ' first UPS scan ' + (s.at || '') + ' → ' + (s.state === 'delivered' ? 'delivered' : 'shipped'));
+  log('#' + (order.orderNumber || doc.id) + ' first ' + carrierName(carrier) + ' scan ' + (s.at || '') + ' → ' + (s.state === 'delivered' ? 'delivered' : 'shipped'));
   await emailAndCredit({ db, email, ref: doc.ref, log });
   return s.state === 'delivered' ? 'delivered' : 'shipped';
 }
@@ -143,10 +149,10 @@ async function emailAndCredit({ db, email, ref, log }) {
 // Marks auto-shipped orders delivered when UPS says so (no email).
 async function checkDelivered({ carrier, doc }) {
   const order = doc.data();
-  if (!isUpsNumber(order.trackingNumber) || order.deliveredAt) return 'skip';
+  if (!canTrack(carrier, order.trackingNumber) || order.deliveredAt) return 'skip';
   const since = Date.parse(order.shippedAt || order.autoShippedAt || order.shippedEmailSentAt || 0);
   if (!since || Date.now() - since > DELIVERY_WATCH_DAYS * 864e5) return 'skip';
-  const s = summarize(await carrier.track(order.trackingNumber));
+  const s = await statusOf(carrier, order.trackingNumber);
   const fields = { trackingCheckedAt: nowIso(), trackingStatusText: s.description };
   if (s.state === 'delivered') Object.assign(fields, { status: 'delivered', deliveredAt: s.deliveredAt || nowIso() });
   await doc.ref.update(fields);
@@ -160,13 +166,13 @@ async function checkIncoming({ db, carrier, doc, log }) {
   const ship = doc.data();
   const num = String(ship.trackingNumber || '').replace(/\s+/g, '').toUpperCase();
   if (!num) return 'incoming-no-tracking';
-  if (!isUpsNumber(num)) {
-    if (!ship.trackingCheckedAt) await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: 'Not a UPS number, so it isn’t checked automatically.' });
+  if (!canTrack(carrier, num)) {
+    if (!ship.trackingCheckedAt) await doc.ref.update({ trackingCheckedAt: nowIso(), trackingStatusText: carrier.canTrack ? 'Not a tracking number, so it isn’t checked automatically.' : 'Not a UPS number, so it isn’t checked automatically.' });
     return 'incoming-not-ups';
   }
   const since = Date.parse(ship.createdAt || 0);
   if (since && Date.now() - since > INCOMING_WATCH_DAYS * 864e5) return 'incoming-too-old';
-  const s = summarize(await carrier.track(num));
+  const s = await statusOf(carrier, num);
   const fields = { trackingCheckedAt: nowIso(), trackingStatusText: s.description };
   if (s.state === 'moving' && ship.status === 'ordered') Object.assign(fields, { status: 'in-transit', shippedAt: s.at || nowIso() });
   if (s.state === 'delivered') Object.assign(fields, { status: 'delivered', deliveredAt: s.deliveredAt || nowIso(), shippedAt: ship.shippedAt || s.at || nowIso() });
