@@ -60,16 +60,21 @@ function summarize(resp) {
   const real = acts.filter((a) => String(a.status.type || '').toUpperCase() !== 'M');
   const current = pkg.currentStatus || (acts[0] && acts[0].status) || {};
   const description = current.description || (acts[0] && acts[0].status.description) || '';
-  if (!real.length) return { state: 'label', at: null, description: description || 'Label created' };
+  const dd = (pkg.deliveryDate || []).filter((d) => d && /^\d{8}$/.test(String(d.date || '')));
+  const sched = dd.find((d) => d.type === 'RDD') || dd.find((d) => d.type === 'SDD');
+  const eta = sched ? String(sched.date).replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3') : '';
+  const outForDelivery = /out for delivery/i.test(description);
+  const extra = { eta, stage: outForDelivery ? 'OutForDelivery' : '' };
+  if (!real.length) return Object.assign({ state: 'label', at: null, description: description || 'Label created' }, extra);
   // UPS lists newest first; the first scan is the oldest non-label activity.
   const first = real[real.length - 1];
   const deliveredAct = real.find((a) => String(a.status.type || '').toUpperCase() === 'D');
-  return {
+  return Object.assign({
     state: deliveredAct ? 'delivered' : 'moving',
     at: upsTime(first.date, first.time),
     deliveredAt: deliveredAct ? upsTime(deliveredAct.date, deliveredAct.time) : null,
     description
-  };
+  }, extra, deliveredAct ? { stage: 'Delivered' } : {});
 }
 
 function upsTime(date, time) {

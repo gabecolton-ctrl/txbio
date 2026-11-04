@@ -26,6 +26,7 @@ function trackFields(s) {
   if (s.stage) f.trackingStage = s.stage;
   if (s.lastEventAt) f.trackingLastEventAt = s.lastEventAt;
   f.trackingLocation = s.location || '';
+  if (s.eta) { f.expectedDelivery = s.eta; f.expectedDeliveryTo = s.etaTo && s.etaTo !== s.eta ? s.etaTo : ''; }
   return f;
 }
 

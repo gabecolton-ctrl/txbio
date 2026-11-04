@@ -335,6 +335,15 @@ test('17track: USPS number on an order is tracked and shipped', async () => {
   assert.deepStrictEqual(sent, ['b@x.com']);
 });
 
+test('expected delivery: 17TRACK time_metrics and UPS deliveryDate', async () => {
+  const a = summarize17(INFO('InTransit', { time_metrics: { estimated_delivery_date: { source: 'UPS', from: '2026-11-06T00:00:00-06:00', to: '2026-11-07T23:59:00-06:00' } } }));
+  assert.deepStrictEqual([a.eta, a.etaTo], ['2026-11-06', '2026-11-07']);
+  assert.strictEqual(summarize17(INFO('OutForDelivery')).stage, 'OutForDelivery');
+  const u = summarize({ trackResponse: { shipment: [{ package: [{ deliveryDate: [{ type: 'SDD', date: '20261106' }], currentStatus: { description: 'Out For Delivery Today' },
+    activity: [{ status: { type: 'I', description: 'Out For Delivery Today' }, date: '20261106', time: '080000' }, { status: { type: 'M', description: 'Label' }, date: '20261104', time: '100000' }] }] }] } });
+  assert.deepStrictEqual([u.eta, u.stage, u.state], ['2026-11-06', 'OutForDelivery', 'moving']);
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {

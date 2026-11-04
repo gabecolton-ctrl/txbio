@@ -23,6 +23,16 @@
     if (/^(\d{12}|\d{15})$/.test(n)) return { carrier: 'FedEx', url: 'https://www.fedex.com/fedextrack/?trknbr=' + n };
     return null;
   }
+  // '2026-11-06' → 'Thu, Nov 6' (date only, no time-zone shift).
+  function dayText(v) {
+    var m = /^(\d{4})-(\d{2})-(\d{2})/.exec(String(v || ''));
+    var d = m ? new Date(+m[1], +m[2] - 1, +m[3]) : new Date(v);
+    return isNaN(d) ? '' : d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+  }
+  function etaText(order) {
+    var a = dayText(order.expectedDelivery), b = order.expectedDeliveryTo ? dayText(order.expectedDeliveryTo) : '';
+    return b && b !== a ? a + ' – ' + b : a;
+  }
   function orderStatusHtml(order) {
     var status = order.status || 'pending';
     var html = '<div class="order-status"><span class="status-pill status-' + escHtml(status) + '">' + escHtml(STATUS_LABELS[status] || status) + '</span>';
@@ -36,6 +46,14 @@
       html += '<span class="order-status-detail">We\u2019ll confirm your order and get it ready to ship as soon as your payment arrives.</span>';
     } else if (status === 'confirmed') {
       html += '<span class="order-status-detail">Thanks! We\u2019re getting your order ready to ship.</span>';
+    }
+    // Expected delivery / out for delivery (saved by the shipment tracker).
+    if ((status === 'shipped' || status === 'label-created') && order.trackingStage === 'OutForDelivery') {
+      html += '<span class="order-status-detail order-eta"><strong>Out for delivery</strong></span>';
+    } else if ((status === 'shipped' || status === 'label-created') && order.expectedDelivery) {
+      html += '<span class="order-status-detail order-eta">Expected delivery: <strong>' + escHtml(etaText(order)) + '</strong></span>';
+    } else if (status === 'delivered' && order.deliveredAt) {
+      html += '<span class="order-status-detail">Delivered ' + escHtml(dayText(order.deliveredAt)) + '</span>';
     }
     if (order.shippedEmailSentAt && status !== 'cancelled') {
       html += '<span class="order-status-detail">Shipped ' + new Date(order.shippedEmailSentAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' }) + '</span>';
