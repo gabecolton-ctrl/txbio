@@ -16,10 +16,10 @@ var OrderEmails = (function () {
     serviceId: 'service_l76oqmw',              // Email Services → your Private Email service → Service ID
     confirmationTemplateId: 'template_q8ez627', // Email Templates → "Order confirmation" → Template ID
     shippedTemplateId: 'template_r6zmcve',    // Email Templates → "Order shipped" → Template ID
-    cancelledTemplateId: '',                  // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
-    deliveredTemplateId: '',                  // Email Templates → "Order delivered" → Template ID (sent by the tracker when the carrier delivers)
-    giftCardTemplateId: '',                   // Email Templates → "Gift card" → Template ID (emails a bought gift card to the friend)
-    cartReminderTemplateId: ''                // Email Templates → "Cart reminder" → Template ID (hourly job, tools/shipment-tracker/cart-reminders.js)
+    cancelledTemplateId: 'template_2q0hq2h',                  // Email Templates → "Order cancelled" → Template ID (needs a 3rd template)
+    deliveredTemplateId: 'template_quxy6i6',                  // Email Templates → "Order delivered" → Template ID (sent by the tracker when the carrier delivers)
+    giftCardTemplateId: 'template_wt2nwsn',                   // Email Templates → "Gift card" → Template ID (emails a bought gift card to the friend)
+    cartReminderTemplateId: 'template_pyl2lcv'                // Email Templates → "Cart reminder" → Template ID (hourly job, tools/shipment-tracker/cart-reminders.js)
   };
 
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
