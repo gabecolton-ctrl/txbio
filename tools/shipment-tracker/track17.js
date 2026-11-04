@@ -67,8 +67,10 @@ function summarize17(info) {
   const milestones = Array.isArray(info.milestone) ? info.milestone : [];
   const stageTime = (key) => { const m = milestones.find((x) => x && x.key_stage === key && eventTime(x)); return m ? eventTime(m) : null; };
 
-  if (!statusName || statusName === 'NotFound') return { state: 'unknown', at: null, deliveredAt: null, description };
-  if (statusName === 'InfoReceived') return { state: 'label', at: null, deliveredAt: null, description: description || 'Label created' };
+  const extra = { stage: statusName, lastEventAt: eventTime(latestEvent), location: String(latestEvent.location || '').trim() };
+  const out = (o) => Object.assign(o, extra);
+  if (!statusName || statusName === 'NotFound') return out({ state: 'unknown', at: null, deliveredAt: null, description });
+  if (statusName === 'InfoReceived') return out({ state: 'label', at: null, deliveredAt: null, description: description || 'Label created' });
 
   // First real scan: the "picked up" milestone, else the oldest event that
   // isn't just the label being created.
@@ -81,9 +83,9 @@ function summarize17(info) {
     at = real.length ? eventTime(real[0]) : eventTime(latestEvent);
   }
   if (statusName === 'Delivered') {
-    return { state: 'delivered', at, deliveredAt: stageTime('Delivered') || eventTime(latestEvent), description };
+    return out({ state: 'delivered', at, deliveredAt: stageTime('Delivered') || eventTime(latestEvent), description });
   }
-  return { state: 'moving', at, deliveredAt: null, description };
+  return out({ state: 'moving', at, deliveredAt: null, description });
 }
 
 module.exports = { track17Client, summarize17, canTrack17 };
