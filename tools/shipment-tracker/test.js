@@ -163,18 +163,20 @@ test('email failure: order still shipped, retried next run', async () => {
   assert.ok(o.shippedEmailSentAt);
 });
 
-test('already delivered at first check: delivered + emailed', async () => {
+test('already delivered at first check: delivered + shipped and delivered emails', async () => {
   const { db, sent } = await scenario({ 'orders/a': ORDER() }, { [T('0123456784')]: DELIVERED });
   assert.strictEqual(db.data['orders/a'].status, 'delivered');
   assert.strictEqual(db.data['orders/a'].deliveredAt, '2026-10-27T14:10:00');
-  assert.strictEqual(sent.length, 1);
+  assert.strictEqual(sent.length, 2);
+  assert.ok(db.data['orders/a'].deliveredEmailSentAt);
 });
 
-test('shipped orders move to delivered, no email', async () => {
+test('shipped orders move to delivered with one delivered email (no shipped email again)', async () => {
   const recent = new Date(Date.now() - 2 * 864e5).toISOString();
   const { db, sent } = await scenario({ 'orders/a': ORDER({ status: 'shipped', shippedAt: recent, shippedEmailSentAt: recent }) }, { [T('0123456784')]: DELIVERED });
   assert.strictEqual(db.data['orders/a'].status, 'delivered');
-  assert.strictEqual(sent.length, 0);
+  assert.strictEqual(sent.length, 1);
+  assert.ok(db.data['orders/a'].deliveredEmailSentAt);
 });
 
 test('old shipped orders and non-UPS numbers are not looked up', async () => {
