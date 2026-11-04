@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611031626">
+<link rel="stylesheet" href="css/style.css?v=202611031822">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611031626"></script>
+<script src="js/splash.js?v=202611031822"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,25 +174,25 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611031626"></script>
-<script src="js/cart.js?v=202611031626"></script>
-<script src="js/site-config.js?v=202611031626"></script>
-<script src="js/payment-apps.js?v=202611031626"></script>
-<script src="js/account.js?v=202611031626"></script>
-<script src="js/inventory.js?v=202611031626"></script>
-<script src="js/promos.js?v=202611031626"></script>
-<script src="js/credits.js?v=202611031626"></script>
-<script src="js/affiliate-tiers.js?v=202611031626"></script>
-<script src="js/loyalty.js?v=202611031626"></script>
-<script src="js/lots.js?v=202611031626"></script>
-<script src="js/order-emails.js?v=202611031626"></script>
-<script src="js/gift-cards.js?v=202611031626"></script>
-<script src="js/staff.js?v=202611031626"></script>
-<script src="js/nav-auth.js?v=202611031626"></script>
-<script src="js/profile-gate.js?v=202611031626"></script>
-<script src="js/auth-guard.js?v=202611031626"></script>
-<script src="js/main.js?v=202611031626"></script>
-<script src="js/nav-toggle.js?v=202611031626"></script>
+<script src="js/firebase-config.js?v=202611031822"></script>
+<script src="js/cart.js?v=202611031822"></script>
+<script src="js/site-config.js?v=202611031822"></script>
+<script src="js/payment-apps.js?v=202611031822"></script>
+<script src="js/account.js?v=202611031822"></script>
+<script src="js/inventory.js?v=202611031822"></script>
+<script src="js/promos.js?v=202611031822"></script>
+<script src="js/credits.js?v=202611031822"></script>
+<script src="js/affiliate-tiers.js?v=202611031822"></script>
+<script src="js/loyalty.js?v=202611031822"></script>
+<script src="js/lots.js?v=202611031822"></script>
+<script src="js/order-emails.js?v=202611031822"></script>
+<script src="js/gift-cards.js?v=202611031822"></script>
+<script src="js/staff.js?v=202611031822"></script>
+<script src="js/nav-auth.js?v=202611031822"></script>
+<script src="js/profile-gate.js?v=202611031822"></script>
+<script src="js/auth-guard.js?v=202611031822"></script>
+<script src="js/main.js?v=202611031822"></script>
+<script src="js/nav-toggle.js?v=202611031822"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -573,6 +573,41 @@
     });
   });
 
+  // Orders entered by text/phone have no website account. Give them the
+  // customer's email: they show under that customer, and if an account with
+  // that email exists (now, or once they sign up) the order joins it, so it
+  // appears in their My orders. Admin → Customers links later sign-ups.
+  function linkBoxHtml(order) {
+    var id = escapeAttr(order.id);
+    return '<div class="tracking-row">' +
+      '<label for="link-email-' + id + '">' + (order.userEmail ? 'Customer email (no website account yet)' : 'Customer email (none on this order)') + '</label>' +
+      '<div class="tracking-controls">' +
+        '<input type="email" id="link-email-' + id + '" value="' + escapeAttr(order.userEmail) + '" placeholder="name@example.com" autocomplete="off">' +
+        '<button type="button" class="btn-outline-light" data-link-email-for="' + id + '">Save email</button>' +
+      '</div>' +
+      '<p class="tracking-status" data-link-status-for="' + id + '"></p>' +
+    '</div>';
+  }
+
+  function linkEmail(orderId) {
+    var order = allOrders.find(function (o) { return o.id === orderId; });
+    var input = document.getElementById('link-email-' + orderId);
+    var st = document.querySelector('[data-link-status-for="' + orderId + '"]');
+    var email = String(input.value || '').trim().toLowerCase();
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) { st.style.color = 'var(--danger)'; st.textContent = 'Enter a valid email.'; return; }
+    var db = firebase.firestore();
+    st.style.color = 'var(--text-light)'; st.textContent = 'Saving…';
+    db.collection('users').where('email', '==', email).limit(1).get().then(function (snap) {
+      var fields = { userEmail: email };
+      if (!snap.empty) fields.userId = snap.docs[0].id;
+      return db.collection('orders').doc(orderId).update(fields).then(function () {
+        Object.assign(order, fields);
+        st.textContent = fields.userId
+          ? 'Saved. This order is now on ' + email + '’s account.'
+          : 'Saved. No website account with that email yet; when they sign up with it, this order joins their account.';
+      });
+    }).catch(function (err) { st.style.color = 'var(--danger)'; st.textContent = 'Could not save: ' + err.message; });
+  }
   function loadOrders() {
     var loading = document.getElementById('orders-loading');
     Account.getAllOrders().then(function (orders) {
@@ -651,6 +686,7 @@
           ? '<span style="color:var(--text-light);">Entered by admin (sale by text or phone): the buyer didn’t certify online.</span>'
           : '<span style="color:var(--text-light);">No certification on record (placed before ' + 'Oct 28, 2026).</span>') + '</p>' +
         '<p style="font-size:0.85rem; margin-bottom:10px;"><strong>Ship to:</strong> ' + addressText + '</p>' +
+        (myRole === 'admin' && !order.userId ? linkBoxHtml(order) : '') +
         '<div class="tracking-row">' +
           '<label for="tracking-' + order.id + '">Tracking number</label>' +
           '<div class="tracking-controls">' +
@@ -693,6 +729,10 @@
         q = document.createElement('q'); q.className = 'attest-text'; q.textContent = order.attestation.text;
         line.appendChild(q); attestLink.textContent = 'Hide wording';
       });
+    });
+
+    listEl.querySelectorAll('button[data-link-email-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () { linkEmail(btn.getAttribute('data-link-email-for')); });
     });
 
     listEl.querySelectorAll('button[data-save-tracking-for]').forEach(function (btn) {
