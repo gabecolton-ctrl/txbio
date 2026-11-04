@@ -344,6 +344,15 @@ test('expected delivery: 17TRACK time_metrics and UPS deliveryDate', async () =>
   assert.deepStrictEqual([u.eta, u.stage, u.state], ['2026-11-06', 'OutForDelivery', 'moving']);
 });
 
+test('17track: status worked out when latest_status is missing', async () => {
+  const a = summarize17({ latest_event: { description: 'We have your Package, RFID Confirmed Pickup', time_iso: '2026-11-03T18:00:00-06:00' } });
+  assert.deepStrictEqual([a.state, a.stage], ['moving', 'InTransit']);
+  const b = summarize17({ latest_status: { sub_status: 'Delivered_Other' }, latest_event: { description: 'x', time_iso: '2026-11-03T18:00:00-06:00' } });
+  assert.strictEqual(b.state, 'delivered');
+  const c = summarize17({ latest_event: { stage: 'OutForDelivery', description: 'On the truck' } });
+  assert.strictEqual(c.stage, 'OutForDelivery');
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {
