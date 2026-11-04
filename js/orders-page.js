@@ -213,7 +213,9 @@
         var fam = !!order.atCostCode;
         var itemsHtml = order.items.map(function (item) {
           var qtyDisplay = item.qty;
-          if (typeof item.backordered === 'number' && item.backordered > 0) {
+          // Once it's on its way the backorder is filled, so don't show "0 shipped".
+          var outTheDoor = ['label-created', 'shipped', 'delivered', 'cancelled'].indexOf(order.status) !== -1;
+          if (!outTheDoor && typeof item.backordered === 'number' && item.backordered > 0) {
             qtyDisplay = item.qty + ' (' + item.fulfilled + ' shipped, ' + item.backordered + ' backordered)';
           }
           var giftNote = '';
