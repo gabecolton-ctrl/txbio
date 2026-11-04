@@ -114,7 +114,24 @@ async function checkLabelCreated({ db, carrier, email, doc, log }) {
   if (!claimed) return 'skipped';
   log('#' + (order.orderNumber || doc.id) + ' first ' + carrierName(carrier) + ' scan ' + (s.at || '') + ' → ' + (s.state === 'delivered' ? 'delivered' : 'shipped'));
   await emailAndCredit({ db, email, ref: doc.ref, log });
+  if (s.state === 'delivered') await sendDeliveredEmail({ email, ref: doc.ref, log });
   return s.state === 'delivered' ? 'delivered' : 'shipped';
+}
+
+// Delivered email: once per order, only for orders that become delivered
+// while the template is set up (so turning it on doesn't email old orders).
+async function sendDeliveredEmail({ email, ref, log }) {
+  if (!OrderEmails.CONFIG.deliveredTemplateId) return;
+  const order = (await ref.get()).data();
+  if (!order || order.deliveredEmailSentAt || !order.userEmail || order.status !== 'delivered') return;
+  try {
+    await email.send(OrderEmails.CONFIG.deliveredTemplateId, OrderEmails.deliveredParams(order));
+    await ref.update({ deliveredEmailSentAt: nowIso(), deliveredEmailPending: false, deliveredEmailError: null });
+    log('  delivered email sent to ' + order.userEmail);
+  } catch (err) {
+    await ref.update({ deliveredEmailPending: true, deliveredEmailError: String(err && err.message || err).slice(0, 300) });
+    log('  delivered email FAILED (will retry next run): ' + (err && err.message || err));
+  }
 }
 
 async function emailAndCredit({ db, email, ref, log }) {
@@ -154,7 +171,7 @@ async function emailAndCredit({ db, email, ref, log }) {
 }
 
 // Marks auto-shipped orders delivered when UPS says so (no email).
-async function checkDelivered({ carrier, doc }) {
+async function checkDelivered({ carrier, email, doc, log = () => {} }) {
   const order = doc.data();
   if (!canTrack(carrier, order.trackingNumber) || order.deliveredAt) return 'skip';
   const since = Date.parse(order.shippedAt || order.autoShippedAt || order.shippedEmailSentAt || 0);
@@ -163,6 +180,7 @@ async function checkDelivered({ carrier, doc }) {
   const fields = trackFields(s);
   if (s.state === 'delivered') Object.assign(fields, { status: 'delivered', deliveredAt: s.deliveredAt || nowIso() });
   await doc.ref.update(fields);
+  if (s.state === 'delivered' && email) await sendDeliveredEmail({ email, ref: doc.ref, log });
   return s.state === 'delivered' ? 'delivered' : 'in-transit';
 }
 
@@ -217,8 +235,15 @@ async function run({ db, carrier, email, log = console.log }) {
   for (const doc of shipped.docs) {
     if (handled.has(doc.id)) continue;
     if (!doc.data().autoShippedAt && !doc.data().trackingNumber) continue;
-    try { count(await checkDelivered({ carrier, doc })); }
+    try { count(await checkDelivered({ carrier, email, doc, log })); }
     catch (err) { count('error'); log('#' + (doc.data().orderNumber || doc.id) + ' delivery check error: ' + err.message); }
+  }
+
+  // Retry delivered emails that failed on an earlier run.
+  const dPending = await db.collection('orders').where('deliveredEmailPending', '==', true).get();
+  for (const doc of dPending.docs) {
+    count('delivered-email-retry');
+    await sendDeliveredEmail({ email, ref: doc.ref, log });
   }
 
   for (const st of ['ordered', 'in-transit']) {
