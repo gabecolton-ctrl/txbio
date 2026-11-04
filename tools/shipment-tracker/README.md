@@ -16,6 +16,25 @@ shipped by hand as before.
 It runs on GitHub Actions and is free for this public repository. Firebase's
 Blaze plan isn't needed.
 
+## Tracking provider: 17TRACK (recommended) or UPS
+
+The tracker can read tracking from **17TRACK** or from **UPS's own API**. If
+the `TRACK17_API_KEY` secret exists it uses 17TRACK, which also handles USPS
+and FedEx numbers; otherwise it uses the UPS secrets below.
+
+**17TRACK setup (10 minutes):**
+
+1. Sign up at [api.17track.net](https://api.17track.net) (the API site, not the
+   regular 17track.net). New accounts get free tracking numbers to start; more
+   can be bought there.
+2. In the 17TRACK API dashboard, open **Settings** and copy your **security key**
+   (also called the access key / token).
+3. GitHub → repo → Settings → Secrets and variables → Actions → **New repository
+   secret**: name `TRACK17_API_KEY`, paste the key.
+
+Each tracking number uses one 17TRACK credit when it's first checked; checking
+it again every 30 minutes is free.
+
 ## One-time setup (about 30 minutes)
 
 Add four secrets in GitHub: **repo → Settings → Secrets and variables →
@@ -25,8 +44,8 @@ the public code or logs. Don't paste them into chat or email.
 | Secret | Where to get it |
 | --- | --- |
 | `FIREBASE_SERVICE_ACCOUNT` | Firebase console → ⚙ Project settings → **Service accounts** → **Generate new private key**. Open the downloaded .json file and paste its entire contents. Then delete the file from your computer. |
-| `UPS_CLIENT_ID` | [developer.ups.com](https://developer.ups.com) → sign in or create a free account → **Create Application** → add the **Tracking** API product → copy the Client ID. |
-| `UPS_CLIENT_SECRET` | The same UPS app → Client Secret. |
+| `UPS_CLIENT_ID` (skip if you use 17TRACK) | [developer.ups.com](https://developer.ups.com) → sign in or create a free account → **Create Application** → add the **Tracking** API product → copy the Client ID. |
+| `UPS_CLIENT_SECRET` (skip if you use 17TRACK) | The same UPS app → Client Secret. |
 | `EMAILJS_PRIVATE_KEY` | EmailJS → **Account → API keys** → Private Key. On the **Security** tab, also turn on **Allow EmailJS API for non-browser applications**. |
 
 Then:

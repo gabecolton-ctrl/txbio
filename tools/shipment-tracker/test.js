@@ -283,6 +283,58 @@ test('incoming: received/cancelled/no-tracking/non-UPS are not looked up', async
   assert.ok(/Not a UPS/.test(r.db.data['incoming/d'].trackingStatusText));
 });
 
+
+// ---------- 17TRACK ----------
+const { track17Client, summarize17 } = require('./track17');
+const INFO = (status, extra) => Object.assign({
+  latest_status: { status },
+  latest_event: { time_iso: '2026-11-05T15:00:00-06:00', description: status === 'Delivered' ? 'Delivered' : 'Departed facility' },
+  milestone: [{ key_stage: 'InfoReceived', time_iso: '2026-11-04T10:00:00-06:00' }, { key_stage: 'PickedUp', time_iso: '2026-11-04T17:30:00-06:00' }].concat(status === 'Delivered' ? [{ key_stage: 'Delivered', time_iso: '2026-11-06T11:00:00-06:00' }] : []),
+  tracking: { providers: [{ events: [] }] }
+}, extra || {});
+
+test('17track summarize: label, moving, delivered, not found', async () => {
+  assert.strictEqual(summarize17(null).state, 'unknown');
+  assert.strictEqual(summarize17({ latest_status: { status: 'NotFound' } }).state, 'unknown');
+  assert.strictEqual(summarize17({ latest_status: { status: 'InfoReceived' }, latest_event: { description: 'Label created' } }).state, 'label');
+  const m = summarize17(INFO('InTransit'));
+  assert.deepStrictEqual([m.state, m.at], ['moving', '2026-11-04T17:30:00-06:00']);
+  const d = summarize17(INFO('Delivered'));
+  assert.deepStrictEqual([d.state, d.deliveredAt], ['delivered', '2026-11-06T11:00:00-06:00']);
+  // No PickedUp milestone: oldest non-label event.
+  const e = summarize17({ latest_status: { status: 'InTransit' }, latest_event: {}, milestone: [],
+    tracking: { providers: [{ events: [{ time_iso: '2026-11-05T09:00:00-06:00', stage: 'Departure' }, { time_iso: '2026-11-04T08:00:00-06:00', stage: 'InfoReceived' }, { time_iso: '2026-11-04T18:00:00-06:00', stage: 'PickedUp' }] }] } });
+  assert.strictEqual(e.at, '2026-11-04T18:00:00-06:00');
+});
+
+test('17track client: registers once, tolerates already-registered, reads info', async () => {
+  const calls = [];
+  const fetchImpl = async (url, opts) => {
+    const ep = url.split('/').pop(); const body = JSON.parse(opts.body); calls.push(ep);
+    assert.strictEqual(opts.headers['17token'], 'k');
+    const json = ep === 'register'
+      ? { code: 0, data: { accepted: [], rejected: [{ number: body[0].number, error: { code: -18019901, message: 'already registered' } }] } }
+      : { code: 0, data: { accepted: [{ number: body[0].number, track_info: INFO('InTransit') }], rejected: [] } };
+    return { ok: true, status: 200, json: async () => json };
+  };
+  const c = track17Client({ apiKey: 'k', fetchImpl });
+  const s1 = await c.status('1z 999 aa1 0123456784');
+  await c.status('1Z999AA10123456784');
+  assert.strictEqual(s1.state, 'moving');
+  assert.deepStrictEqual(calls, ['register', 'gettrackinfo', 'gettrackinfo']);
+  assert.ok(c.canTrack('9400111899223344556677') && !c.canTrack('n/a'));
+});
+
+test('17track: USPS number on an order is tracked and shipped', async () => {
+  const db = fakeDb({ 'orders/u': { status: 'label-created', trackingNumber: '9400111899223344556677', userEmail: 'b@x.com', orderNumber: 'TXB-U', items: [], subtotal: 10, total: 10 } });
+  const sent = [];
+  const carrier = { name: '17TRACK', canTrack: () => true, status: async () => summarize17(INFO('InTransit')) };
+  await run({ db, carrier, email: { send: async (t, p) => sent.push(p.to_email) }, log: () => {} });
+  assert.strictEqual(db.data['orders/u'].status, 'shipped');
+  assert.strictEqual(db.data['orders/u'].shippedAt, '2026-11-04T17:30:00-06:00');
+  assert.deepStrictEqual(sent, ['b@x.com']);
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {

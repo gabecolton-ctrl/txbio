@@ -1,4 +1,4 @@
-# Checks UPS for orders with a tracking number and, at the first scan, marks
+# Checks 17TRACK (or UPS) for orders with a tracking number and, at the first scan, marks
 # them shipped and emails the buyer. Setup: tools/shipment-tracker/README.md.
 name: Track shipments
 
@@ -32,6 +32,7 @@ jobs:
         working-directory: tools/shipment-tracker
         env:
           FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          TRACK17_API_KEY: ${{ secrets.TRACK17_API_KEY }}
           UPS_CLIENT_ID: ${{ secrets.UPS_CLIENT_ID }}
           UPS_CLIENT_SECRET: ${{ secrets.UPS_CLIENT_SECRET }}
           EMAILJS_PRIVATE_KEY: ${{ secrets.EMAILJS_PRIVATE_KEY }}
