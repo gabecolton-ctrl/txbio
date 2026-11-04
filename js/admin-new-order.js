@@ -268,6 +268,8 @@
     ['addressLine1', 'addressLine2', 'city', 'state', 'zip'].forEach(function (k) { address[k] = $('no-' + k).value.trim(); });
     if (!(address.addressLine1 && address.city && address.state && address.zip)) return Promise.reject(new Error('Add the shipping address.'));
     address.name = name || (customer && customer.name) || '';
+    var onTab = $('no-pay').value === 'tab';
+    if (onTab && !email) return Promise.reject(new Error('To put it on their tab, pick the customer or enter their email.'));
     var t = totals();
     // Save the order first (so nothing changes if it's refused), then take stock.
     var orderItems = items.map(function (it) {
@@ -284,7 +286,7 @@
       paymentMethod: $('no-pay').value, paymentHandle: '', hasBackorder: false,
       attestation: null, placedBy: 'admin', placedByEmail: me, channel: $('no-channel').value,
       customerName: name, userName: address.name, customerPhone: $('no-phone').value.trim(),
-      status: $('no-status').value,
+      status: onTab ? 'confirmed' : $('no-status').value, // fronted: ready to ship, money owed on their tab
       userId: customer ? customer.uid : '', userEmail: email,
       createdAt: new Date().toISOString(), orderNumber: Account.generateOrderNumber()
     };
@@ -299,7 +301,13 @@
         return back ? ref.update({ items: orderItems, hasBackorder: true }) : null;
       });
     }).then(function () {
-      say('Order <strong>' + order.orderNumber + '</strong> entered for ' + esc(name || email) + ' (' + money(order.total) + '). <a href="admin-orders.html?q=' + encodeURIComponent(order.orderNumber) + '">Open it</a>', true);
+      if (!onTab) return;
+      return Tabs.record(email, 'fronted', Math.round(order.total * 100), { orderId: ref.id, orderNumber: order.orderNumber, note: '' })
+        .then(function () { return ref.update({ tabFrontedAt: new Date().toISOString() }); })
+        .catch(function (err) { order.tabError = err.message; });
+    }).then(function () {
+      say('Order <strong>' + order.orderNumber + '</strong> entered for ' + esc(name || email) + ' (' + money(order.total) + ').' +
+        (onTab ? (order.tabError ? ' <span style="color:var(--danger);">Not added to their tab: ' + esc(order.tabError) + '</span>' : ' Added to their tab.') : '') + ' <a href="admin-orders.html?q=' + encodeURIComponent(order.orderNumber) + '">Open it</a>', true);
       reset();
       loadQuotes();
     });

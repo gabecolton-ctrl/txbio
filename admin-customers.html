@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611031847">
+<link rel="stylesheet" href="css/style.css?v=202611032044">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611031847"></script>
+<script src="js/splash.js?v=202611032044"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -134,7 +134,7 @@
       <div id="customers-empty" class="cart-empty" style="display:none;"><p>No customers yet.</p></div>
       <div id="customers-wrap" class="catalog-wrap" style="display:none;">
         <table class="catalog-table">
-          <thead><tr><th>Customer</th><th>Email</th><th>Joined</th><th>Orders</th><th>Total spent</th><th>Store credit</th></tr></thead>
+          <thead><tr><th>Customer</th><th>Email</th><th>Joined</th><th>Orders</th><th>Total spent</th><th>Store credit</th><th>Owes you</th></tr></thead>
           <tbody id="customer-rows"></tbody>
         </table>
       </div>
@@ -184,6 +184,27 @@
             </div>
             <p class="tracking-status" id="ce-status"></p>
           </form>
+        </div>
+
+        <div id="tab-box" class="tab-box">
+          <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline;">
+            <h3 style="margin:0;">Tab: product fronted</h3>
+            <p style="margin:0;"><span style="color:var(--text-light); font-size:0.88rem;">Owes you</span> <strong id="tab-owed" style="font-family:var(--serif); font-size:1.6rem;">$0.00</strong></p>
+          </div>
+          <p class="field-note" style="margin:4px 0 10px;">Separate from store credit, and never touches checkout. They can see this tab on their account page.</p>
+          <form id="tab-form" style="max-width:none;">
+            <div class="tracking-controls" style="margin-bottom:6px;">
+              <select id="tab-type" style="flex:0 0 190px; margin:0;">
+                <option value="fronted">Fronted (they owe more)</option>
+                <option value="paid">Payment received</option>
+              </select>
+              <input type="number" id="tab-amount" min="0.01" step="0.01" placeholder="Amount in $" style="flex:0 0 150px; margin:0;" required>
+              <input type="text" id="tab-note" placeholder="What for, e.g. 2x R-3 30mg (optional)" style="flex:1 1 220px; margin:0;" maxlength="140">
+              <button type="submit" class="btn" id="tab-submit">Save</button>
+            </div>
+            <p class="tracking-status" id="tab-status"></p>
+          </form>
+          <div id="tab-history"></div>
         </div>
 
         <h3 style="margin-top:8px;">Give or remove store credit</h3>
@@ -245,16 +266,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611031847"></script>
-<script src="js/cart.js?v=202611031847"></script>
-<script src="js/account.js?v=202611031847"></script>
-<script src="js/credits.js?v=202611031847"></script>
-<script src="js/staff.js?v=202611031847"></script>
-<script src="js/nav-auth.js?v=202611031847"></script>
-<script src="js/profile-gate.js?v=202611031847"></script>
-<script src="js/auth-guard.js?v=202611031847"></script>
-<script src="js/main.js?v=202611031847"></script>
-<script src="js/nav-toggle.js?v=202611031847"></script>
+<script src="js/firebase-config.js?v=202611032044"></script>
+<script src="js/cart.js?v=202611032044"></script>
+<script src="js/account.js?v=202611032044"></script>
+<script src="js/tabs.js?v=202611032044"></script>
+<script src="js/credits.js?v=202611032044"></script>
+<script src="js/staff.js?v=202611032044"></script>
+<script src="js/nav-auth.js?v=202611032044"></script>
+<script src="js/profile-gate.js?v=202611032044"></script>
+<script src="js/auth-guard.js?v=202611032044"></script>
+<script src="js/main.js?v=202611032044"></script>
+<script src="js/nav-toggle.js?v=202611032044"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -292,7 +314,8 @@
     Promise.all([
       db.collection('users').get(),
       db.collection('orders').get(),
-      db.collection('credits').get()
+      db.collection('credits').get(),
+      staffRole === 'admin' ? Tabs.getAll().catch(function () { return {}; }) : Promise.resolve({})
     ]).then(function (res) {
       var byEmail = {};
       function get(email) {
@@ -323,6 +346,9 @@
       res[2].forEach(function (d) {
         var c = get(d.id); if (c) c.credit = d.data();
       });
+      Object.keys(res[3] || {}).forEach(function (email) {
+        var c = get(email); if (c) c.tab = res[3][email];
+      });
       toLink.forEach(function (l) { db.collection('orders').doc(l[0]).update({ userId: l[1] }).catch(function () {}); });
       customers = Object.keys(byEmail).map(function (k) {
         var c = byEmail[k];
@@ -330,6 +356,7 @@
         c.spent = c.orders.filter(function (o) { return o.status !== 'cancelled'; })
           .reduce(function (n, o) { return n + Number(o.total || 0); }, 0);
         c.balanceCents = c.credit ? (c.credit.balanceCents || 0) : 0;
+        c.owedCents = c.tab ? (c.tab.owedCents || 0) : 0;
         return c;
       }).filter(function (c) { return c.email !== ADMIN_EMAIL; });
       customers.sort(function (a, b) { return (b.createdAt || '') < (a.createdAt || '') ? -1 : 1; });
@@ -355,6 +382,7 @@
       stat(customers.length.toLocaleString(), 'total customer' + (customers.length === 1 ? '' : 's')) +
       stat(buyers.toLocaleString(), 'have ordered') +
       stat(recent.toLocaleString(), 'new in 30 days') +
+      (staffRole === 'admin' ? stat(Tabs.money(customers.reduce(function (n, c) { return n + Math.max(0, c.owedCents); }, 0)), 'owed to you on tabs') : '') +
       (q ? stat(list.length.toLocaleString(), 'match your search') : '');
     document.getElementById('customers-empty').style.display = customers.length ? 'none' : 'block';
     document.getElementById('customers-wrap').style.display = customers.length ? 'block' : 'none';
@@ -365,8 +393,9 @@
         '<td>' + fmtDate(c.createdAt) + '</td>' +
         '<td>' + c.orders.length + '</td>' +
         '<td>' + money(c.spent) + '</td>' +
-        '<td>' + Credits.formatCents(c.balanceCents) + '</td></tr>';
-    }).join('') || '<tr><td colspan="6" style="color:var(--text-light);">No customers match &ldquo;' + esc(q) + '&rdquo;.</td></tr>';
+        '<td>' + Credits.formatCents(c.balanceCents) + '</td>' +
+        '<td>' + (c.owedCents ? '<strong style="color:' + (c.owedCents > 0 ? 'var(--danger)' : 'var(--text)') + ';">' + Tabs.money(c.owedCents) + '</strong>' : '') + '</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="color:var(--text-light);">No customers match &ldquo;' + esc(q) + '&rdquo;.</td></tr>';
     document.querySelectorAll('.customer-row').forEach(function (tr) {
       var open = function () { openCustomer(tr.getAttribute('data-email')); };
       tr.addEventListener('click', open);
@@ -431,6 +460,7 @@
     }).catch(function (err) { creditEl.innerHTML = '<p style="color:var(--danger);">Could not load credit history: ' + esc(err.message) + '</p>'; });
 
     setupEdit(c, keepStatus);
+    showTab(c, keepStatus);
     if (!keepStatus) {
       document.getElementById('credit-status').textContent = '';
       window.scrollTo({ top: 0 });
@@ -513,6 +543,52 @@
     }).catch(function (err) {
       btn.disabled = false;
       st.style.color = 'var(--danger)'; st.textContent = 'Could not send: ' + err.message;
+    });
+  });
+
+
+  // ---------- Tab: product fronted (admin only) ----------
+  var TAB_LABELS = { fronted: 'Fronted', paid: 'Payment received', cancelled: 'Order cancelled' };
+  function showTab(c, keepStatus) {
+    var box = document.getElementById('tab-box');
+    box.style.display = staffRole === 'admin' ? '' : 'none';
+    if (staffRole !== 'admin') return;
+    var owed = c.owedCents || 0;
+    var el = document.getElementById('tab-owed');
+    el.textContent = owed < 0 ? Tabs.money(-owed) + ' credit' : Tabs.money(owed);
+    el.style.color = owed > 0 ? 'var(--danger)' : 'var(--text)';
+    if (!keepStatus) document.getElementById('tab-status').textContent = '';
+    var hist = document.getElementById('tab-history');
+    hist.innerHTML = '';
+    Tabs.entries(c.email, 100).then(function (list) {
+      if (!list.length) return;
+      hist.innerHTML = '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Date</th><th>Activity</th><th>Amount</th></tr></thead><tbody>' +
+        list.map(function (en) {
+          return '<tr><td>' + fmtDate(en.createdAt) + '</td><td>' + (TAB_LABELS[en.type] || esc(en.type)) +
+            (en.orderNumber ? ' (order #' + esc(en.orderNumber) + ')' : '') + (en.note ? ': ' + esc(en.note) : '') + '</td><td>' +
+            (en.amountCents > 0 ? '+' : '\u2212') + Tabs.money(Math.abs(en.amountCents)) + '</td></tr>';
+        }).join('') + '</tbody></table></div>';
+    }).catch(function (err) { hist.innerHTML = '<p style="color:var(--danger);">Could not load the tab: ' + esc(err.message) + '</p>'; });
+  }
+  document.getElementById('tab-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!current) return;
+    var st = document.getElementById('tab-status'), btn = document.getElementById('tab-submit');
+    var type = document.getElementById('tab-type').value;
+    var cents = Math.round(parseFloat(document.getElementById('tab-amount').value) * 100);
+    var note = document.getElementById('tab-note').value.trim();
+    btn.disabled = true;
+    Tabs.record(current.email, type, cents, { note: note }).then(function (a) {
+      btn.disabled = false;
+      document.getElementById('tab-amount').value = ''; document.getElementById('tab-note').value = '';
+      st.style.color = 'var(--text-light)';
+      st.textContent = (type === 'paid' ? 'Payment of ' : 'Fronted ') + Tabs.money(cents) + ' recorded. ' +
+        (a.owedCents > 0 ? 'They owe ' + Tabs.money(a.owedCents) + '.' : a.owedCents < 0 ? 'They’ve paid ' + Tabs.money(-a.owedCents) + ' ahead.' : 'Paid in full.');
+      loadCustomers();
+    }).catch(function (err) {
+      btn.disabled = false;
+      st.style.color = 'var(--danger)';
+      st.textContent = 'Could not save: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
     });
   });
 

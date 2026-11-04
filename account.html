@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611031847">
+<link rel="stylesheet" href="css/style.css?v=202611032044">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611031847"></script>
+<script src="js/splash.js?v=202611032044"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -203,6 +203,21 @@
     </div>
   </section>
 
+  <section id="tab-section" style="display:none;">
+    <h2>Balance owed</h2>
+    <div class="card" style="max-width:400px; margin-bottom:18px;">
+      <p style="margin-bottom:4px; color:var(--text-light);" id="tab-label">You owe TXBioResearch</p>
+      <p id="tab-owed" style="font-family:var(--serif); font-size:2rem; margin:0; color:var(--text);">$0.00</p>
+      <p style="margin:8px 0 0; font-size:0.88rem; color:var(--text-light);">For product fronted to you. Questions? Just reply to any of our emails.</p>
+    </div>
+    <div id="tab-history-wrap" style="overflow-x:auto; display:none;">
+      <table class="cart-table">
+        <thead><tr><th>Date</th><th>Activity</th><th>Amount</th></tr></thead>
+        <tbody id="tab-history"></tbody>
+      </table>
+    </div>
+  </section>
+
   <section id="password-section">
     <h2>Password</h2>
     <div id="password-message" role="status" style="display:none;" class="form-message"></div>
@@ -267,19 +282,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611031847"></script>
-<script src="js/analytics.js?v=202611031847"></script>
-<script src="js/referral.js?v=202611031847"></script>
-<script src="js/cart.js?v=202611031847"></script>
-<script src="js/account.js?v=202611031847"></script>
-<script src="js/credits.js?v=202611031847"></script>
-<script src="js/loyalty.js?v=202611031847"></script>
-<script src="js/staff.js?v=202611031847"></script>
-<script src="js/nav-auth.js?v=202611031847"></script>
-<script src="js/profile-gate.js?v=202611031847"></script>
-<script src="js/auth-guard.js?v=202611031847"></script>
-<script src="js/main.js?v=202611031847"></script>
-<script src="js/nav-toggle.js?v=202611031847"></script>
+<script src="js/firebase-config.js?v=202611032044"></script>
+<script src="js/analytics.js?v=202611032044"></script>
+<script src="js/referral.js?v=202611032044"></script>
+<script src="js/cart.js?v=202611032044"></script>
+<script src="js/account.js?v=202611032044"></script>
+<script src="js/tabs.js?v=202611032044"></script>
+<script src="js/credits.js?v=202611032044"></script>
+<script src="js/loyalty.js?v=202611032044"></script>
+<script src="js/staff.js?v=202611032044"></script>
+<script src="js/nav-auth.js?v=202611032044"></script>
+<script src="js/profile-gate.js?v=202611032044"></script>
+<script src="js/auth-guard.js?v=202611032044"></script>
+<script src="js/main.js?v=202611032044"></script>
+<script src="js/nav-toggle.js?v=202611032044"></script>
 <script>
   var currentProfile = {};
 
@@ -435,6 +451,29 @@
       }).catch(function (err) { console.error('Could not load store credit:', err); });
     });
   })();
+</script>
+<script>
+  // Tab: product fronted to this customer (js/tabs.js). Hidden unless there is one.
+  document.addEventListener('userReady', function (e) {
+    var user = e.detail.user;
+    if (!window.Tabs || !user.email) return;
+    var esc = function (v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); };
+    Tabs.entries(user.email, 50).then(function (list) {
+      if (!list.length) return;
+      return Tabs.get(user.email).then(function (a) {
+        document.getElementById('tab-section').style.display = '';
+        var owed = a.owedCents;
+        document.getElementById('tab-label').textContent = owed > 0 ? 'You owe TXBioResearch' : owed < 0 ? 'Paid ahead' : 'Balance';
+        document.getElementById('tab-owed').textContent = owed === 0 ? 'Paid in full' : Tabs.money(Math.abs(owed));
+        document.getElementById('tab-history').innerHTML = list.map(function (en) {
+          var date = en.createdAt ? new Date(en.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+          var what = (en.type === 'paid' ? 'Payment received' : en.type === 'cancelled' ? 'Order cancelled' : 'Product fronted') + (en.orderNumber ? ' (order #' + esc(en.orderNumber) + ')' : '') + (en.note ? ': ' + esc(en.note) : '');
+          return '<tr><td data-label="Date">' + date + '</td><td data-label="Activity">' + what + '</td><td data-label="Amount">' + (en.amountCents > 0 ? '+' : '\u2212') + Tabs.money(Math.abs(en.amountCents)) + '</td></tr>';
+        }).join('');
+        document.getElementById('tab-history-wrap').style.display = '';
+      });
+    }).catch(function () {});
+  });
 </script>
 <script>
   // Rewards tier (js/loyalty.js), from the buyer's own shipped orders.
