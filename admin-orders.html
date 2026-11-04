@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611041752">
+<link rel="stylesheet" href="css/style.css?v=202611041753">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611041752"></script>
+<script src="js/splash.js?v=202611041753"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,26 +174,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611041752"></script>
-<script src="js/cart.js?v=202611041752"></script>
-<script src="js/site-config.js?v=202611041752"></script>
-<script src="js/payment-apps.js?v=202611041752"></script>
-<script src="js/account.js?v=202611041752"></script>
-<script src="js/inventory.js?v=202611041752"></script>
-<script src="js/promos.js?v=202611041752"></script>
-<script src="js/tabs.js?v=202611041752"></script>
-<script src="js/credits.js?v=202611041752"></script>
-<script src="js/affiliate-tiers.js?v=202611041752"></script>
-<script src="js/loyalty.js?v=202611041752"></script>
-<script src="js/lots.js?v=202611041752"></script>
-<script src="js/order-emails.js?v=202611041752"></script>
-<script src="js/gift-cards.js?v=202611041752"></script>
-<script src="js/staff.js?v=202611041752"></script>
-<script src="js/nav-auth.js?v=202611041752"></script>
-<script src="js/profile-gate.js?v=202611041752"></script>
-<script src="js/auth-guard.js?v=202611041752"></script>
-<script src="js/main.js?v=202611041752"></script>
-<script src="js/nav-toggle.js?v=202611041752"></script>
+<script src="js/firebase-config.js?v=202611041753"></script>
+<script src="js/cart.js?v=202611041753"></script>
+<script src="js/site-config.js?v=202611041753"></script>
+<script src="js/payment-apps.js?v=202611041753"></script>
+<script src="js/account.js?v=202611041753"></script>
+<script src="js/inventory.js?v=202611041753"></script>
+<script src="js/promos.js?v=202611041753"></script>
+<script src="js/tabs.js?v=202611041753"></script>
+<script src="js/credits.js?v=202611041753"></script>
+<script src="js/affiliate-tiers.js?v=202611041753"></script>
+<script src="js/loyalty.js?v=202611041753"></script>
+<script src="js/lots.js?v=202611041753"></script>
+<script src="js/order-emails.js?v=202611041753"></script>
+<script src="js/gift-cards.js?v=202611041753"></script>
+<script src="js/staff.js?v=202611041753"></script>
+<script src="js/nav-auth.js?v=202611041753"></script>
+<script src="js/profile-gate.js?v=202611041753"></script>
+<script src="js/auth-guard.js?v=202611041753"></script>
+<script src="js/main.js?v=202611041753"></script>
+<script src="js/nav-toggle.js?v=202611041753"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -788,6 +788,7 @@
         '<div class="tracking-row">' +
           '<label for="cancel-reason-' + order.id + '">Cancellation reason (optional)</label>' +
           '<input type="text" id="cancel-reason-' + order.id + '" data-cancel-reason-for="' + order.id + '" value="' + escapeAttr(order.cancelReason) + '" placeholder="Included in the email if you cancel this order" autocomplete="off">' +
+          (order.status === 'cancelled' && order.userEmail ? '<button type="button" class="btn-outline-light" data-resend-cancel-for="' + order.id + '" style="margin-top:6px;">' + (order.cancellationEmailSentAt ? 'Resend cancellation email' : 'Send cancellation email') + '</button>' : '') +
           '<p class="tracking-status" data-cancel-status-for="' + order.id + '">' + cancelStatusText(order) + '</p>' +
         '</div>' +
         (myRole === 'admin' && order.status === 'cancelled' ? deleteBoxHtml(order) : '') +
@@ -818,6 +819,26 @@
         if (q) { q.remove(); attestLink.textContent = 'Show wording'; return; }
         q = document.createElement('q'); q.className = 'attest-text'; q.textContent = order.attestation.text;
         line.appendChild(q); attestLink.textContent = 'Hide wording';
+      });
+    });
+
+    listEl.querySelectorAll('[data-resend-cancel-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-resend-cancel-for');
+        var order = allOrders.find(function (o) { return o.id === id; });
+        if (!order || !window.OrderEmails || !OrderEmails.canSendCancelled()) return;
+        btn.disabled = true;
+        var reason = cancelReasonValue(id) || order.cancelReason || '';
+        OrderEmails.sendCancelled(order, reason).then(function () {
+          order.cancellationEmailSentAt = new Date().toISOString();
+          return firebase.firestore().collection('orders').doc(id).update({ cancellationEmailSentAt: order.cancellationEmailSentAt, cancelReason: reason });
+        }).then(function () {
+          btn.disabled = false; btn.textContent = 'Resend cancellation email';
+          setCancelStatus(id, cancelStatusText(order));
+        }).catch(function (err) {
+          btn.disabled = false;
+          setCancelStatus(id, 'The cancellation email didn’t send: ' + (err && (err.text || err.message) || err) + '.', true);
+        });
       });
     });
 
