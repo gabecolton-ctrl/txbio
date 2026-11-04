@@ -70,6 +70,30 @@ function track17Client({ apiKey, fetchImpl = fetch }) {
   return { name: '17TRACK', track, status, canTrack: canTrack17 };
 }
 
+// The package's status. Normally latest_status.status; if that's missing,
+// worked out from the sub-status, the latest event's stage, or the furthest
+// milestone reached, so an update with text never ends up with no stage.
+const EVENT_STAGE = { InfoReceived: 'InfoReceived', PickedUp: 'InTransit', Departure: 'InTransit', Arrival: 'InTransit',
+  InTransit: 'InTransit', OutForDelivery: 'OutForDelivery', AvailableForPickup: 'AvailableForPickup', DeliveryFailure: 'DeliveryFailure',
+  Delivered: 'Delivered', Returning: 'Exception', Returned: 'Exception', Exception: 'Exception', Expired: 'Expired', NotFound: 'NotFound' };
+function statusNameOf(info, latest, latestEvent, milestones) {
+  const direct = latest.status || info.status || info.package_status;
+  if (direct) return String(direct);
+  const sub = String(latest.sub_status || latestEvent.sub_status || '').split('_')[0];
+  if (EVENT_STAGE[sub]) return EVENT_STAGE[sub];
+  if (EVENT_STAGE[latestEvent.stage]) return EVENT_STAGE[latestEvent.stage];
+  const reached = milestones.filter((m) => m && m.key_stage && eventTime(m));
+  if (reached.length) { const last = reached[reached.length - 1].key_stage; if (EVENT_STAGE[last]) return EVENT_STAGE[last]; }
+  if (latestEvent.description) {
+    const d = String(latestEvent.description).toLowerCase();
+    if (/delivered/.test(d)) return 'Delivered';
+    if (/out for delivery/.test(d)) return 'OutForDelivery';
+    if (/label created|shipper created|order processed|information received/.test(d)) return 'InfoReceived';
+    return 'InTransit';
+  }
+  return '';
+}
+
 // '2026-11-06T…' / '2026-11-06' → '2026-11-06'; anything else → ''.
 function dateOnly(v) { const m = /^(\d{4}-\d{2}-\d{2})/.exec(String(v || '')); return m ? m[1] : ''; }
 
@@ -82,9 +106,9 @@ function summarize17(info) {
   if (info._pending) return { state: 'unknown', at: null, deliveredAt: null, stage: 'NotFound', description: '17TRACK: ' + info._pending };
   const latest = info.latest_status || {};
   const latestEvent = info.latest_event || {};
-  const statusName = String(latest.status || '');
-  const description = latestEvent.description || statusName || 'No tracking information yet';
   const milestones = Array.isArray(info.milestone) ? info.milestone : [];
+  const statusName = statusNameOf(info, latest, latestEvent, milestones);
+  const description = latestEvent.description || statusName || 'No tracking information yet';
   const stageTime = (key) => { const m = milestones.find((x) => x && x.key_stage === key && eventTime(x)); return m ? eventTime(m) : null; };
 
   // Expected delivery (time_metrics.estimated_delivery_date: { source, from, to }).
