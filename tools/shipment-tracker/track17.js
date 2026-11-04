@@ -14,7 +14,12 @@ function cleanNumber(n) { return String(n || '').replace(/\s+/g, '').toUpperCase
 // Anything shaped like a parcel number (letters and digits, 8–40 long).
 function canTrack17(n) { return /^[0-9A-Z]{8,40}$/.test(cleanNumber(n)); }
 
-function track17Client({ apiKey, fetchImpl = fetch }) {
+// A number registered this run usually has no data for a few seconds while
+// 17TRACK fetches it from the carrier, so it's re-checked a few times.
+const FRESH_RETRIES = 3;
+const FRESH_WAIT_MS = 20000;
+
+function track17Client({ apiKey, fetchImpl = fetch, waitMs = FRESH_WAIT_MS, sleep = (ms) => new Promise((r) => setTimeout(r, ms)) }) {
   const registered = new Set();
 
   async function call(endpoint, body) {
@@ -31,19 +36,34 @@ function track17Client({ apiKey, fetchImpl = fetch }) {
   }
 
   async function register(num) {
-    if (registered.has(num)) return;
+    if (registered.has(num)) return false;
     const data = await call('register', [{ number: num }]);
     const rej = (data.rejected || []).find((r) => cleanNumber(r.number) === num);
     if (rej && rej.error && rej.error.code !== ALREADY_REGISTERED && !/already/i.test(String(rej.error.message || ''))) {
       throw new Error('17TRACK could not register ' + num + ': ' + (rej.error.message || rej.error.code));
     }
     registered.add(num);
+    return !rej; // true = newly registered just now
+  }
+
+  function empty(info) {
+    return !info || info._pending || (!(info.latest_status && info.latest_status.status) && !(info.latest_event && info.latest_event.description));
   }
 
   // Raw track_info for a number, or null when 17TRACK has nothing yet.
   async function track(trackingNumber) {
     const num = cleanNumber(trackingNumber);
-    await register(num);
+    const fresh = await register(num);
+    let info = await fetchInfo(num);
+    for (let i = 0; fresh && empty(info) && i < FRESH_RETRIES; i++) {
+      console.log('  17TRACK ' + num + ': just registered, checking again in ' + Math.round(waitMs / 1000) + 's');
+      await sleep(waitMs);
+      info = await fetchInfo(num);
+    }
+    return info;
+  }
+
+  async function fetchInfo(num) {
     const data = await call('gettrackinfo', [{ number: num }]);
     const hit = (data.accepted || []).find((a) => cleanNumber(a.number) === num);
     if (hit) {
