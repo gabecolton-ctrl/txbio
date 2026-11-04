@@ -47,8 +47,12 @@ function track17Client({ apiKey, fetchImpl = fetch }) {
     const data = await call('gettrackinfo', [{ number: num }]);
     const hit = (data.accepted || []).find((a) => cleanNumber(a.number) === num);
     if (hit) {
-      if (!hit.track_info) console.log('  17TRACK ' + num + ': accepted, no track_info yet (keys: ' + Object.keys(hit).join(',') + ')');
-      return hit.track_info || null;
+      const ti = hit.track_info;
+      // Shape only (no addresses), to check against 17TRACK's format in the run log.
+      console.log('  17TRACK ' + num + ': accepted; track_info ' + (ti ? 'keys ' + Object.keys(ti).join(',') + '; status ' +
+        JSON.stringify((ti.latest_status || {}).status || null) + '; eta ' + JSON.stringify(((ti.time_metrics || {}).estimated_delivery_date) || null) : 'missing') +
+        '; entry keys ' + Object.keys(hit).join(','));
+      return ti || null;
     }
     const rej = (data.rejected || []).find((r) => cleanNumber(r.number) === num);
     // A number registered moments ago is usually "not ready yet"; say what 17TRACK said.
@@ -56,6 +60,8 @@ function track17Client({ apiKey, fetchImpl = fetch }) {
       console.log('  17TRACK ' + num + ': ' + rej.error.code + ' ' + (rej.error.message || ''));
       return { _pending: String(rej.error.message || 'Waiting for 17TRACK') };
     }
+    console.log('  17TRACK ' + num + ': not in the reply (data keys ' + Object.keys(data || {}).join(',') +
+      '; accepted ' + JSON.stringify((data.accepted || []).map((a) => a.number)) + '; rejected ' + JSON.stringify((data.rejected || []).map((r) => r.number)) + ')');
     return null;
   }
 
