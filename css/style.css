@@ -1462,3 +1462,7 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .loyalty-badge.aff-elite-partner { color: #f3d27a; border-color: #d9b44a; background: rgba(217, 180, 74, 0.12); }
 .tier-step.aff-pro-partner strong { color: #d5dedc; }
 .tier-step.aff-elite-partner strong { color: #f3d27a; }
+
+/* Admin → Customers: tab of fronted product */
+.tab-box { border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin: 6px 0 22px; background: var(--surface); }
+.tab-box .catalog-wrap { margin-top: 8px; }

@@ -130,6 +130,17 @@ service cloud.firestore {
     // Store credit, keyed by lowercased login email. The owner can read it
     // and can only SPEND it: balance goes down by exactly what spent goes
     // up, never below zero. Only the admin can add, reverse, or refund.
+    // Tabs: what a customer owes for product fronted to them (Admin → Customers).
+    // Admin writes; the customer can read their own.
+    match /tabs/{email} {
+      allow read: if isAdmin() || myEmail() == email;
+      allow write: if isAdmin();
+      match /entries/{entryId} {
+        allow read: if isAdmin() || myEmail() == email;
+        allow write: if isAdmin();
+      }
+    }
+
     match /credits/{email} {
       allow read: if isStaff() || myEmail() == email;
       // The owner can create their credit record only by redeeming a gift card.
