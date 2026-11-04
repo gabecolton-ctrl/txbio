@@ -353,6 +353,24 @@ test('17track: status worked out when latest_status is missing', async () => {
   assert.strictEqual(c.stage, 'OutForDelivery');
 });
 
+test('17track: a just-registered number is re-checked in the same run', async () => {
+  let infoCalls = 0;
+  const fetchImpl = async (url, opts) => {
+    const ep = url.split('/').pop(); const body = JSON.parse(opts.body);
+    if (ep === 'register') return { ok: true, status: 200, json: async () => ({ code: 0, data: { accepted: [{ number: body[0].number }], rejected: [] } }) };
+    infoCalls++;
+    const json = infoCalls < 3
+      ? { code: 0, data: { accepted: [], rejected: [{ number: body[0].number, error: { code: -18019909, message: 'No tracking information at this time.' } }] } }
+      : { code: 0, data: { accepted: [{ number: body[0].number, track_info: INFO('InTransit') }], rejected: [] } };
+    return { ok: true, status: 200, json: async () => json };
+  };
+  const waits = [];
+  const c = track17Client({ apiKey: 'k', fetchImpl, waitMs: 5, sleep: async (ms) => { waits.push(ms); } });
+  const s = await c.status('1Z999AA10123456784');
+  assert.strictEqual(s.state, 'moving');
+  assert.deepStrictEqual([infoCalls, waits.length], [3, 2]);
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {
