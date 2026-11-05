@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611042357">
+<link rel="stylesheet" href="css/style.css?v=202611051059">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611042357"></script>
+<script src="js/splash.js?v=202611051059"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -118,7 +118,7 @@
 <main id="gated-content" style="display:none;">
   <section class="page-head">
     <h1>Inventory management</h1>
-    <p class="lead">Set stock quantities for each product. Leave a product untracked (blank) to treat it as always in stock with no backorder limit.</p>
+    <p class="lead">Set stock quantities for each product, or paste a count list by supplier code. Leave a product untracked (blank) to treat it as always in stock with no backorder limit.</p>
   </section>
 
   <div id="admin-denied" class="notice" style="display:none;">
@@ -130,10 +130,22 @@
     <section>
       <div id="inventory-orphans" class="notice" style="display:none;"></div>
       <div id="inventory-save-msg" style="display:none; color:var(--mint-dark); font-weight:600; margin-bottom:16px;">Saved.</div>
+      <div class="paste-counts">
+        <h3 style="margin-top:0;">Paste counts by supplier code</h3>
+        <p class="section-note">Paste a stock list like <code>RT10: 22</code>, one per line (or straight from a text). Check the preview, then apply. Codes are set in the Code column below.</p>
+        <textarea id="pc-text" rows="5" placeholder="GTT1500: 10&#10;RT10: 22&#10;SM20: 10"></textarea>
+        <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+          <button type="button" class="btn-outline-light" id="pc-preview">Preview</button>
+          <button type="button" class="btn" id="pc-apply" disabled>Apply counts</button>
+          <span class="tracking-status" id="pc-status"></span>
+        </div>
+        <div id="pc-out"></div>
+      </div>
+
       <div class="catalog-wrap">
         <table class="catalog-table" id="inventory-table">
           <thead>
-            <tr><th>Product</th><th>Current Stock</th><th>Set New Qty</th><th></th></tr>
+            <tr><th>Product</th><th>Code</th><th>Current Stock</th><th>Set New Qty</th><th></th></tr>
           </thead>
           <tbody id="inventory-rows"></tbody>
         </table>
@@ -176,15 +188,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611042357"></script>
-<script src="js/cart.js?v=202611042357"></script>
-<script src="js/inventory.js?v=202611042357"></script>
-<script src="js/staff.js?v=202611042357"></script>
-<script src="js/nav-auth.js?v=202611042357"></script>
-<script src="js/profile-gate.js?v=202611042357"></script>
-<script src="js/auth-guard.js?v=202611042357"></script>
-<script src="js/main.js?v=202611042357"></script>
-<script src="js/nav-toggle.js?v=202611042357"></script>
+<script src="js/firebase-config.js?v=202611051059"></script>
+<script src="js/cart.js?v=202611051059"></script>
+<script src="js/supplier-codes.js?v=202611051059"></script>
+<script src="js/inventory.js?v=202611051059"></script>
+<script src="js/staff.js?v=202611051059"></script>
+<script src="js/nav-auth.js?v=202611051059"></script>
+<script src="js/profile-gate.js?v=202611051059"></script>
+<script src="js/auth-guard.js?v=202611051059"></script>
+<script src="js/main.js?v=202611051059"></script>
+<script src="js/nav-toggle.js?v=202611051059"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
     // One row per stock-keeping unit. Products with a dosage dropdown are
@@ -298,11 +311,59 @@
       return;
     }
     document.getElementById('admin-content').style.display = 'block';
-    loadInventoryTable();
+    loadCodes().then(loadInventoryTable);
+  });
+
+  // ---------- Supplier codes (js/supplier-codes.js) ----------
+  var savedCodes = {}, codes = {}, stockNow = {}, pastePlan = [];
+  function loadCodes() {
+    return firebase.firestore().collection('settings').doc('supplierCodes').get().then(function (d) {
+      savedCodes = d.exists ? (d.data().codes || {}) : {};
+      codes = SupplierCodes.merged(savedCodes);
+    }).catch(function () { codes = SupplierCodes.merged({}); });
+  }
+  function saveCode(slug, code) {
+    savedCodes[slug] = String(code || '').trim().toUpperCase();
+    codes = SupplierCodes.merged(savedCodes);
+    var data = {}; data[slug] = savedCodes[slug];
+    return firebase.firestore().collection('settings').doc('supplierCodes').set({ codes: data, updatedAt: new Date().toISOString() }, { merge: true });
+  }
+  function nameOf(slug) { var p = ALL_PRODUCTS.find(function (x) { return x.slug === slug; }); return p ? p.name : slug; }
+  function escH(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+  document.getElementById('pc-preview').addEventListener('click', function () {
+    var idx = SupplierCodes.index(codes);
+    var rows = SupplierCodes.parse(document.getElementById('pc-text').value);
+    pastePlan = [];
+    var unknown = [];
+    var html = rows.map(function (r) {
+      var slug = r.code ? idx[SupplierCodes.norm(r.code)] : null;
+      if (!slug || r.qty === null) { unknown.push(r.line); return ''; }
+      pastePlan.push({ slug: slug, qty: r.qty });
+      var cur = stockNow.hasOwnProperty(slug) ? stockNow[slug] : null;
+      var diff = cur === null ? '' : r.qty - cur;
+      return '<tr><td>' + escH(r.code) + '</td><td>' + escH(nameOf(slug)) + '</td><td>' + (cur === null ? '—' : cur) + '</td><td><strong>' + r.qty + '</strong>' +
+        (diff ? ' <span class="pc-diff">(' + (diff > 0 ? '+' : '') + diff + ')</span>' : '') + '</td></tr>';
+    }).join('');
+    document.getElementById('pc-out').innerHTML = (pastePlan.length
+      ? '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Code</th><th>Product</th><th>Now</th><th>New</th></tr></thead><tbody>' + html + '</tbody></table></div>' : '') +
+      (unknown.length ? '<p class="pc-unknown"><strong>Not matched (skipped):</strong> ' + unknown.map(escH).join(' · ') + '. Add the code to the product in the table below, then preview again.</p>' : '');
+    document.getElementById('pc-apply').disabled = !pastePlan.length;
+    document.getElementById('pc-status').textContent = pastePlan.length ? pastePlan.length + ' product' + (pastePlan.length === 1 ? '' : 's') + ' ready to update.' : '';
+  });
+  document.getElementById('pc-apply').addEventListener('click', function () {
+    var btn = this, st = document.getElementById('pc-status');
+    btn.disabled = true;
+    Promise.all(pastePlan.map(function (x) { return Inventory.setStock(x.slug, x.qty); })).then(function () {
+      st.textContent = 'Updated ' + pastePlan.length + ' product' + (pastePlan.length === 1 ? '' : 's') + '.';
+      pastePlan = [];
+      document.getElementById('pc-out').innerHTML = '';
+      loadInventoryTable();
+    }).catch(function (err) { btn.disabled = false; st.textContent = 'Could not save: ' + err.message; });
   });
 
   function loadInventoryTable() {
     Inventory.getAllStock().then(function (stockMap) {
+      stockNow = stockMap;
       var rowsEl = document.getElementById('inventory-rows');
       rowsEl.innerHTML = '';
       ALL_PRODUCTS.forEach(function (product) {
@@ -311,6 +372,7 @@
         var tr = document.createElement('tr');
         tr.innerHTML =
           '<td>' + product.name + '</td>' +
+          '<td><input type="text" class="code-input" data-code-slug="' + product.slug + '" value="' + escH(codes[product.slug] || '') + '" placeholder="—" maxlength="20" style="margin-bottom:0; width:90px; text-transform:uppercase;"></td>' +
           '<td>' + displayQty + '</td>' +
           '<td><input type="number" min="0" placeholder="Set qty" data-slug="' + product.slug + '" style="margin-bottom:0; width:100px;"></td>' +
           '<td><button type="button" class="btn" data-save-slug="' + product.slug + '" style="padding:8px 16px; font-size:0.85rem;">Save</button></td>';
@@ -332,6 +394,14 @@
         }
       }
 
+      rowsEl.querySelectorAll('input[data-code-slug]').forEach(function (inp) {
+        inp.addEventListener('change', function () {
+          var slug = inp.getAttribute('data-code-slug');
+          inp.value = inp.value.trim().toUpperCase();
+          saveCode(slug, inp.value).then(function () { inp.classList.add('code-saved'); setTimeout(function () { inp.classList.remove('code-saved'); }, 1200); })
+            .catch(function (err) { alert('Could not save the code: ' + err.message); });
+        });
+      });
       rowsEl.querySelectorAll('button[data-save-slug]').forEach(function (btn) {
         btn.addEventListener('click', function () {
           var slug = btn.getAttribute('data-save-slug');
