@@ -10,6 +10,7 @@ const { track17Client } = require('./track17');
 const { combinedCarrier } = require('./carriers');
 const { emailjsClient } = require('./emailjs');
 const { run } = require('./tracker');
+const { updateLeaderboard } = require('./leaderboard-job');
 
 function need(name) {
   const v = process.env[name];
@@ -33,5 +34,8 @@ function need(name) {
   const email = emailjsClient({ privateKey: need('EMAILJS_PRIVATE_KEY') });
   admin.initializeApp({ credential: admin.credential.cert(sa) });
   const tally = await run({ db: admin.firestore(), carrier, email });
+  // Monthly affiliate leaderboard (Admin → Promo codes turns it on).
+  try { const r = await updateLeaderboard({ db: admin.firestore() }); if (r !== 'off') console.log('Leaderboard: ' + r + ' affiliates with sales this month'); }
+  catch (err) { console.log('Leaderboard update failed: ' + err.message); }
   if (tally.error) process.exitCode = 1; // show the run as failed so it's noticed
 })().catch((err) => { console.error(err); process.exit(1); });

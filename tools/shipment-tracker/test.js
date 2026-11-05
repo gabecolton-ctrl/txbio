@@ -11,6 +11,7 @@ function fakeDb(seed) {
     id: p.split('/').pop(), path: p,
     get: async () => snap(p),
     update: async (f) => { if (!data[p]) throw new Error('no doc ' + p); Object.assign(data[p], f); },
+    set: async (d) => { data[p] = JSON.parse(JSON.stringify(d)); },
     collection: (c) => col(p + '/' + c)
   });
   const snap = (p) => ({ id: p.split('/').pop(), ref: ref(p), exists: !!data[p], data: () => (data[p] ? JSON.parse(JSON.stringify(data[p])) : undefined) });
@@ -403,6 +404,74 @@ test('combined carrier: UPS API for 1Z numbers, 17TRACK for others and as fallba
   await c.status('1Z999AA10123456785');
   assert.deepStrictEqual(used, ['ups 1Z999AA10123456784', '17 9400111899223344556677', 'ups 1Z999AA10123456785', '17 1Z999AA10123456785']);
   assert.strictEqual(c.name, 'UPS + 17TRACK');
+});
+
+test('leaderboard: ranks this month, pays last month once (only if on for it)', async () => {
+  const { updateLeaderboard, idOf } = require('./leaderboard-job');
+  const e = (type, saleCents, createdAt) => ({ type, saleCents, amountCents: Math.round(saleCents / 10), createdAt });
+  const db = fakeDb({
+    'settings/leaderboard': { enabled: true, prizes: [10000, 5000], since: '2026-10', showAmounts: true },
+    'promoCodes/AMY': { affiliateEmail: 'amy@x.com' }, 'promoCodes/BOB': { affiliateEmail: 'bob@x.com' }, 'promoCodes/CAT': { affiliateEmail: 'cat@x.com' },
+    'users/a': { email: 'amy@x.com', name: 'Amy Stone' }, 'users/b': { email: 'bob@x.com', name: 'Bob Ray' },
+    'affiliateProfiles/cat@x.com': { nickname: 'CatLab' },
+    'credits/amy@x.com/entries/1': e('earned', 30000, '2026-10-10T15:00:00Z'),
+    'credits/amy@x.com/entries/2': e('earned', 20000, '2026-11-03T15:00:00Z'),
+    'credits/bob@x.com/entries/1': e('earned', 50000, '2026-10-20T15:00:00Z'),
+    'credits/bob@x.com/entries/2': e('reversed', 50000, '2026-10-21T15:00:00Z'),
+    'credits/bob@x.com/entries/3': e('earned', 10000, '2026-10-22T15:00:00Z'),
+    'credits/cat@x.com/entries/1': e('earned', 45000, '2026-11-02T15:00:00Z'),
+    'credits/cat@x.com/entries/2': e('earned', 99999, '2026-11-01T04:30:00Z')
+  });
+  const now = new Date('2026-11-04T18:00:00Z');
+  await updateLeaderboard({ db, log: () => {}, now });
+  const cur = db.data['leaderboard/current'];
+  assert.strictEqual(cur.month, '2026-11');
+  // Cat's 04:30Z Nov 1 entry is Oct 31 in Chicago, so it counts for October.
+  assert.deepStrictEqual(cur.rows.map((r) => [r.name, r.salesCents, r.rank]), [['CatLab', 45000, 1], ['Amy S.', 20000, 2]]);
+  assert.ok(!JSON.stringify(cur).includes('@'));
+  // October: Cat 99999, Amy 30000, Bob 10000 → Cat $100, Amy $50.
+  assert.strictEqual(db.data['credits/cat@x.com'].balanceCents, 10000);
+  assert.strictEqual(db.data['credits/amy@x.com'].balanceCents, 5000);
+  assert.ok(!db.data['credits/bob@x.com']);
+  assert.ok(db.data['leaderboard/2026-10'].paidAt);
+  await updateLeaderboard({ db, log: () => {}, now });
+  assert.strictEqual(db.data['credits/cat@x.com'].balanceCents, 10000);
+  assert.strictEqual(cur.rows[0].id, idOf('cat@x.com'));
+});
+
+test('leaderboard: not paid for a month before it was turned on', async () => {
+  const { updateLeaderboard } = require('./leaderboard-job');
+  const db = fakeDb({
+    'settings/leaderboard': { enabled: true, prizes: [10000], since: '2026-11' },
+    'promoCodes/AMY': { affiliateEmail: 'amy@x.com' },
+    'credits/amy@x.com/entries/1': { type: 'earned', saleCents: 30000, createdAt: '2026-10-10T15:00:00Z' }
+  });
+  await updateLeaderboard({ db, log: () => {}, now: new Date('2026-11-04T18:00:00Z') });
+  assert.ok(!db.data['credits/amy@x.com']);
+});
+
+test('leaderboard: no prizes when too few affiliates or sales too low', async () => {
+  const { updateLeaderboard } = require('./leaderboard-job');
+  const seed = (rules) => fakeDb(Object.assign({
+    'settings/leaderboard': Object.assign({ enabled: true, prizes: [10000], since: '2026-10' }, rules),
+    'promoCodes/AMY': { affiliateEmail: 'amy@x.com' },
+    'credits/amy@x.com/entries/1': { type: 'earned', saleCents: 30000, createdAt: '2026-10-10T15:00:00Z' }
+  }));
+  const now = new Date('2026-11-04T18:00:00Z');
+  let db = seed({ minAffiliates: 2 }); await updateLeaderboard({ db, log: () => {}, now });
+  assert.ok(!db.data['credits/amy@x.com'] && db.data['leaderboard/2026-10']);
+  db = seed({ minSalesCents: 50000 }); await updateLeaderboard({ db, log: () => {}, now });
+  assert.ok(!db.data['credits/amy@x.com']);
+  db = seed({ minAffiliates: 1, minSalesCents: 20000 }); await updateLeaderboard({ db, log: () => {}, now });
+  assert.strictEqual(db.data['credits/amy@x.com'].balanceCents, 10000);
+});
+
+test('leaderboard: turning it off hides the board and pays nothing', async () => {
+  const { updateLeaderboard } = require('./leaderboard-job');
+  const db = fakeDb({ 'settings/leaderboard': { enabled: false, prizes: [10000], since: '2026-10' }, 'leaderboard/current': { enabled: true, month: '2026-11', rows: [{ name: 'x' }] },
+    'promoCodes/AMY': { affiliateEmail: 'amy@x.com' }, 'credits/amy@x.com/entries/1': { type: 'earned', saleCents: 30000, createdAt: '2026-10-10T15:00:00Z' } });
+  assert.strictEqual(await updateLeaderboard({ db, log: () => {}, now: new Date('2026-11-04T18:00:00Z') }), 'off');
+  assert.deepStrictEqual([db.data['leaderboard/current'].enabled, !!db.data['credits/amy@x.com']], [false, false]);
 });
 
 (async () => {

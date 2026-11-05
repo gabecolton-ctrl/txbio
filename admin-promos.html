@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611042234">
+<link rel="stylesheet" href="css/style.css?v=202611042244">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611042234"></script>
+<script src="js/splash.js?v=202611042244"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -180,6 +180,30 @@
         </table>
       </div>
     </section>
+
+    <section id="lb-admin" style="display:none;">
+      <h3>Affiliate leaderboard</h3>
+      <p class="section-note">A monthly contest on every affiliate’s Referrals page, ranked by referred sales that shipped this month (Central time). Prizes are paid as store credit automatically when the month ends. Names show as first name + last initial, or a nickname the affiliate picks; emails are never shown.</p>
+      <div class="lb-admin-form">
+        <label style="display:flex; gap:8px; align-items:center;"><input type="checkbox" id="lb-enabled" style="width:auto; margin:0;"> Leaderboard on</label>
+        <div class="tracking-controls" style="gap:10px; margin-top:8px;">
+          <div style="flex:1 1 110px;"><label for="lb-p1">1st prize ($)</label><input type="number" id="lb-p1" min="0" step="1"></div>
+          <div style="flex:1 1 110px;"><label for="lb-p2">2nd prize ($)</label><input type="number" id="lb-p2" min="0" step="1"></div>
+          <div style="flex:1 1 110px;"><label for="lb-p3">3rd prize ($)</label><input type="number" id="lb-p3" min="0" step="1"></div>
+        </div>
+        <div class="tracking-controls" style="gap:10px; margin-top:8px;">
+          <div style="flex:1 1 160px;"><label for="lb-min-aff">Prizes only if at least this many affiliates made sales</label><input type="number" id="lb-min-aff" min="0" step="1" placeholder="e.g. 3"></div>
+          <div style="flex:1 1 160px;"><label for="lb-min-sales">Winner needs at least ($ in sales that month)</label><input type="number" id="lb-min-sales" min="0" step="1" placeholder="e.g. 1000"></div>
+        </div>
+        <p class="field-note">If the month doesn’t meet these, the board still shows but no prizes are paid. Leave blank for no minimum.</p>
+        <label style="display:flex; gap:8px; align-items:center; margin-top:6px;"><input type="checkbox" id="lb-amounts" style="width:auto; margin:0;"> Show each affiliate’s sales amount (off: show rank only)</label>
+        <div style="display:flex; gap:10px; align-items:center; margin-top:10px;">
+          <button type="button" class="btn" id="lb-save">Save leaderboard</button>
+          <span class="tracking-status" id="lb-status"></span>
+        </div>
+      </div>
+      <div id="lb-standings"></div>
+    </section>
   </div>
 </main>
 
@@ -217,15 +241,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611042234"></script>
-<script src="js/cart.js?v=202611042234"></script>
-<script src="js/promos.js?v=202611042234"></script>
-<script src="js/staff.js?v=202611042234"></script>
-<script src="js/nav-auth.js?v=202611042234"></script>
-<script src="js/profile-gate.js?v=202611042234"></script>
-<script src="js/auth-guard.js?v=202611042234"></script>
-<script src="js/main.js?v=202611042234"></script>
-<script src="js/nav-toggle.js?v=202611042234"></script>
+<script src="js/firebase-config.js?v=202611042244"></script>
+<script src="js/cart.js?v=202611042244"></script>
+<script src="js/leaderboard.js?v=202611042244"></script>
+<script src="js/promos.js?v=202611042244"></script>
+<script src="js/staff.js?v=202611042244"></script>
+<script src="js/nav-auth.js?v=202611042244"></script>
+<script src="js/profile-gate.js?v=202611042244"></script>
+<script src="js/auth-guard.js?v=202611042244"></script>
+<script src="js/main.js?v=202611042244"></script>
+<script src="js/nav-toggle.js?v=202611042244"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var editingCode = null;
@@ -241,6 +266,78 @@
       staffRole = r;
       document.getElementById('admin-content').style.display = 'block';
       loadPromoTable();
+      if (r === 'admin') loadLeaderboardAdmin();
+    });
+  });
+
+
+  // ---------- Affiliate leaderboard (settings/leaderboard, js/leaderboard.js) ----------
+  var lbSettings = {};
+  function money0(c) { return '$' + (Number(c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 }); }
+  function loadLeaderboardAdmin() {
+    var db = firebase.firestore();
+    document.getElementById('lb-admin').style.display = '';
+    var thisMonth = Leaderboard.monthKey(), lastMonth = Leaderboard.prevMonthKey(thisMonth);
+    Promise.all([
+      db.collection('settings').doc('leaderboard').get(),
+      db.collection('leaderboard').doc('current').get().catch(function () { return null; }),
+      db.collection('leaderboard').doc(lastMonth).get().catch(function () { return null; })
+    ]).then(function (r) {
+      lbSettings = r[0].exists ? r[0].data() : {};
+      var pz = lbSettings.prizes || [10000, 5000, 2500];
+      document.getElementById('lb-enabled').checked = !!lbSettings.enabled;
+      document.getElementById('lb-p1').value = pz[0] ? pz[0] / 100 : '';
+      document.getElementById('lb-p2').value = pz[1] ? pz[1] / 100 : '';
+      document.getElementById('lb-p3').value = pz[2] ? pz[2] / 100 : '';
+      document.getElementById('lb-amounts').checked = lbSettings.showAmounts !== false;
+      document.getElementById('lb-min-aff').value = lbSettings.minAffiliates || '';
+      document.getElementById('lb-min-sales').value = lbSettings.minSalesCents ? lbSettings.minSalesCents / 100 : '';
+      var html = '';
+      var cur = r[1] && r[1].exists ? r[1].data() : null;
+      if (cur && cur.month === thisMonth) {
+        html += '<h4 style="margin-top:16px;">' + esc(Leaderboard.monthName(thisMonth)) + ' so far</h4>' + (cur.rows.length
+          ? '<ol class="lb-admin-list">' + cur.rows.slice(0, 10).map(function (row) { return '<li>#' + row.rank + ' ' + esc(row.name) + ' · ' + money0(row.salesCents) + '</li>'; }).join('') + '</ol>'
+          : '<p class="section-note">No referred sales yet this month.</p>');
+      } else if (lbSettings.enabled) {
+        html += '<p class="section-note">Standings appear after the next tracker run (about 10 minutes).</p>';
+      }
+      var last = r[2] && r[2].exists ? r[2].data() : null;
+      if (last && (last.winners || []).length) {
+        html += '<h4>' + esc(Leaderboard.monthName(lastMonth)) + ' winners (paid)</h4><ul class="lb-admin-list">' + last.winners.map(function (w) {
+          var row = (last.rows || []).find(function (x) { return x.id === w.id; }) || {};
+          return '<li>#' + w.rank + ' ' + esc(row.name || '') + ' · ' + money0(w.cents) + ' credit</li>';
+        }).join('') + '</ul>';
+      }
+      document.getElementById('lb-standings').innerHTML = html;
+    }).catch(function (err) {
+      document.getElementById('lb-status').textContent = 'Could not load: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
+    });
+  }
+  document.getElementById('lb-save').addEventListener('click', function () {
+    var st = document.getElementById('lb-status'), btn = document.getElementById('lb-save');
+    var cents = function (id) { var v = parseFloat(document.getElementById(id).value); return v > 0 ? Math.round(v * 100) : 0; };
+    var enabled = document.getElementById('lb-enabled').checked;
+    var data = {
+      enabled: enabled,
+      prizes: [cents('lb-p1'), cents('lb-p2'), cents('lb-p3')],
+      showAmounts: document.getElementById('lb-amounts').checked,
+      minAffiliates: Math.max(0, parseInt(document.getElementById('lb-min-aff').value, 10) || 0),
+      minSalesCents: cents('lb-min-sales'),
+      // Prizes are only paid for months the leaderboard was on from the start.
+      since: lbSettings.enabled && lbSettings.since ? lbSettings.since : (enabled ? Leaderboard.monthKey() : ''),
+      updatedAt: new Date().toISOString()
+    };
+    btn.disabled = true;
+    var db = firebase.firestore();
+    db.collection('settings').doc('leaderboard').set(data).then(function () {
+      // Off: hide it from affiliates right away (the job keeps it hidden).
+      if (!enabled) return db.collection('leaderboard').doc('current').set({ enabled: false, updatedAt: new Date().toISOString() });
+    }).then(function () {
+      btn.disabled = false; lbSettings = data;
+      st.style.color = 'var(--text-light)';
+      st.textContent = enabled ? 'Saved. Affiliates see it on their Referrals page after the next tracker run.' : 'Saved. The leaderboard is off.';
+    }).catch(function (err) {
+      btn.disabled = false; st.style.color = 'var(--danger)'; st.textContent = 'Could not save: ' + err.message;
     });
   });
 

@@ -130,12 +130,77 @@
     }).join('');
   }
 
+  // ---------- Monthly leaderboard (js/leaderboard.js; built by the tracker job) ----------
+  function sha16(text) {
+    if (!window.crypto || !crypto.subtle || !window.TextEncoder) return Promise.resolve('');
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode(text)).then(function (buf) {
+      return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2); }).join('').slice(0, 16);
+    }).catch(function () { return ''; });
+  }
+  function renderLeaderboard(email, entries) {
+    if (!window.Leaderboard) return;
+    var db = firebase.firestore();
+    var key = Leaderboard.monthKey();
+    Promise.all([
+      db.collection('leaderboard').doc('current').get(),
+      db.collection('affiliateProfiles').doc(email).get().catch(function () { return null; }),
+      sha16(email)
+    ]).then(function (r) {
+      var cur = r[0].exists ? r[0].data() : null;
+      if (!cur || cur.enabled === false) return;
+      var myId = r[2];
+      var fmt = function (c) { return '$' + (Number(c || 0) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); };
+      var fmt0 = function (c) { return '$' + (Number(c || 0) / 100).toLocaleString('en-US', { maximumFractionDigits: 0 }); };
+      var rows = cur.month === key ? (cur.rows || []) : [];
+      var left = Leaderboard.daysLeft();
+      $('lb-wrap').style.display = '';
+      $('lb-title').textContent = Leaderboard.monthName(key) + ' leaderboard';
+      $('lb-days').textContent = left === 1 ? 'Last day!' : left + ' days left';
+      var medals = ['🥇', '🥈', '🥉'];
+      $('lb-prizes').innerHTML = (cur.prizes || []).map(function (c, i) { return c > 0 ? medals[i] + ' ' + fmt0(c) : ''; }).filter(Boolean).join(' &nbsp; ');
+      var rules = [];
+      if (cur.minSalesCents > 0) rules.push('winners need ' + fmt0(cur.minSalesCents) + '+ in sales');
+      if (cur.minAffiliates > 1) rules.push('prizes are paid when ' + cur.minAffiliates + '+ partners make sales that month');
+      if (rules.length) $('lb-prizes').innerHTML += '<span class="lb-rules">' + esc(rules.join('; ')) + '</span>';
+      $('lb-list').innerHTML = rows.length ? rows.slice(0, 10).map(function (row) {
+        var me = myId && row.id === myId;
+        return '<li class="lb-row' + (me ? ' lb-me' : '') + (row.rank <= 3 ? ' lb-top' : '') + '">' +
+          '<span class="lb-rank">' + (row.rank <= 3 ? medals[row.rank - 1] : '#' + row.rank) + '</span>' +
+          '<span class="lb-name">' + esc(row.name) + (me ? ' <em>(you)</em>' : '') + '</span>' +
+          (cur.showAmounts !== false || me ? '<span class="lb-amt">' + fmt(row.salesCents) + '</span>' : '') + '</li>';
+      }).join('') : '<li class="lb-row lb-empty">No sales yet this month. The first one takes the top spot.</li>';
+      var mine = Leaderboard.monthSales(entries, key);
+      var myRow = rows.find(function (x) { return x.id === myId; });
+      var top = rows[0];
+      var msg = 'Your referred sales this month: <strong>' + fmt(Math.max(0, mine)) + '</strong>';
+      if (myRow) msg += ' · you’re <strong>#' + myRow.rank + '</strong>';
+      if (myRow && myRow.rank > 1 && top) msg += ' · ' + fmt(top.salesCents - myRow.salesCents) + ' behind #1';
+      else if (!myRow && top && cur.showAmounts !== false) msg += ' · ' + fmt(Math.max(0, top.salesCents - mine)) + ' behind #1';
+      $('lb-you').innerHTML = msg;
+      var prof = r[1] && r[1].exists ? r[1].data() : {};
+      $('lb-nick').value = prof.nickname || '';
+    }).catch(function () {});
+    var form = $('lb-nick-form');
+    if (form && !form.__bound) {
+      form.__bound = true;
+      form.addEventListener('submit', function (ev) {
+        ev.preventDefault();
+        var nick = $('lb-nick').value.trim().slice(0, 24), st = $('lb-nick-status');
+        var ref = firebase.firestore().collection('affiliateProfiles').doc(email);
+        (nick ? ref.set({ nickname: nick, updatedAt: new Date().toISOString() }) : ref.delete()).then(function () {
+          st.style.color = 'var(--text-light)'; st.textContent = 'Saved. The board shows it after the next update (about 10 minutes).';
+        }).catch(function (err) { st.style.color = 'var(--danger)'; st.textContent = 'Could not save: ' + err.message; });
+      });
+    }
+  }
+
   function render(email, codes, account, entries, traffic) {
     $('ref-loading').style.display = 'none';
     if (!codes.length) { $('ref-none').style.display = ''; return; }
     $('ref-body').style.display = '';
     $('ref-links').innerHTML = codes.map(linkCard).join('');
     renderTier(entries);
+    renderLeaderboard(email, entries);
 
     var myCodes = codes.map(function (c) { return c.code; });
     var placed = codes.reduce(function (n, c) { return n + (Number(c.timesUsed) || 0); }, 0);
