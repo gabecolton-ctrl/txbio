@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611051059">
+<link rel="stylesheet" href="css/style.css?v=202611051230">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611051059"></script>
+<script src="js/splash.js?v=202611051230"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,26 +174,27 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611051059"></script>
-<script src="js/cart.js?v=202611051059"></script>
-<script src="js/site-config.js?v=202611051059"></script>
-<script src="js/payment-apps.js?v=202611051059"></script>
-<script src="js/account.js?v=202611051059"></script>
-<script src="js/inventory.js?v=202611051059"></script>
-<script src="js/promos.js?v=202611051059"></script>
-<script src="js/tabs.js?v=202611051059"></script>
-<script src="js/credits.js?v=202611051059"></script>
-<script src="js/affiliate-tiers.js?v=202611051059"></script>
-<script src="js/loyalty.js?v=202611051059"></script>
-<script src="js/lots.js?v=202611051059"></script>
-<script src="js/order-emails.js?v=202611051059"></script>
-<script src="js/gift-cards.js?v=202611051059"></script>
-<script src="js/staff.js?v=202611051059"></script>
-<script src="js/nav-auth.js?v=202611051059"></script>
-<script src="js/profile-gate.js?v=202611051059"></script>
-<script src="js/auth-guard.js?v=202611051059"></script>
-<script src="js/main.js?v=202611051059"></script>
-<script src="js/nav-toggle.js?v=202611051059"></script>
+<script src="js/firebase-config.js?v=202611051230"></script>
+<script src="js/cart.js?v=202611051230"></script>
+<script src="js/site-config.js?v=202611051230"></script>
+<script src="js/payment-apps.js?v=202611051230"></script>
+<script src="js/account.js?v=202611051230"></script>
+<script src="js/inventory.js?v=202611051230"></script>
+<script src="js/promos.js?v=202611051230"></script>
+<script src="js/tabs.js?v=202611051230"></script>
+<script src="js/referral-attribution.js?v=202611051230"></script>
+<script src="js/credits.js?v=202611051230"></script>
+<script src="js/affiliate-tiers.js?v=202611051230"></script>
+<script src="js/loyalty.js?v=202611051230"></script>
+<script src="js/lots.js?v=202611051230"></script>
+<script src="js/order-emails.js?v=202611051230"></script>
+<script src="js/gift-cards.js?v=202611051230"></script>
+<script src="js/staff.js?v=202611051230"></script>
+<script src="js/nav-auth.js?v=202611051230"></script>
+<script src="js/profile-gate.js?v=202611051230"></script>
+<script src="js/auth-guard.js?v=202611051230"></script>
+<script src="js/main.js?v=202611051230"></script>
+<script src="js/nav-toggle.js?v=202611051230"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -450,7 +451,7 @@
       return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + ', then reversed.';
     }
     if (order.affiliateCreditedAt) {
-      return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + '.';
+      return 'Referral ' + code + ': ' + Credits.formatCents(order.affiliateCreditCents) + ' credited to ' + order.affiliateEmail + (order.affiliateVia === 'saved' ? ' (saved referral)' : '') + '.';
     }
     if (order.affiliateSkipped) return 'Referral ' + code + ': ' + order.affiliateSkipped;
     return '';
@@ -470,34 +471,46 @@
 
   function creditAffiliate(order) {
     if (order.affiliateCreditedAt && !order.affiliateReversedAt) return Promise.resolve();
-    var code = affiliateCodeOf(order);
     if (order.atCostCode) return Promise.resolve(); // family at-cost orders never earn referral credit
-    if (!code || !window.Credits || !window.Promos) return Promise.resolve();
-    return Promos.getCode(code).then(function (promo) {
-      var email = promo && promo.affiliateEmail ? promo.affiliateEmail.toLowerCase() : '';
-      if (!email) return;
-      if (email === String(order.userEmail || '').toLowerCase()) {
+    if (!window.Credits || !window.Promos || !window.ReferralAttribution) return Promise.resolve();
+    var code = affiliateCodeOf(order);
+    var db = firebase.firestore();
+    var customer = String(order.userEmail || '').trim().toLowerCase();
+    // The code's affiliate, and the customer's saved referral (18 months from their first credited order).
+    return Promise.all([
+      code ? Promos.getCode(code).catch(function () { return null; }) : Promise.resolve(null),
+      customer ? db.collection('referredCustomers').doc(customer).get().then(function (d) { return d.exists ? d.data() : null; }).catch(function () { return null; }) : Promise.resolve(null)
+    ]).then(function (r) {
+      var codeAffiliate = r[0] && r[0].affiliateEmail ? r[0].affiliateEmail.toLowerCase() : '';
+      var pick = ReferralAttribution.decide(order, code, codeAffiliate, r[1]);
+      if (!pick || pick.skip === 'family') return;
+      if (pick.skip === 'self') {
         return updateOrder(order, { affiliateSkipped: 'no credit, the affiliate placed this order themselves.' })
           .then(function () { setAffiliateText(order); });
       }
+      var email = pick.affiliateEmail;
       // Rate by the affiliate's tier (js/affiliate-tiers.js), from their referred sales so far.
       var c;
       return Credits.getEntries(email, 1000).catch(function () { return []; }).then(function (entries) {
         c = AffiliateTiers.commissionFor(order, entries);
         if (c.cents <= 0) return null;
         return Credits.adminAdjust(email, c.cents, {
-          type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: c.tier.name + ' · ' + Math.round(c.rate * 100) + '%', saleCents: c.saleCents, rate: c.rate
+          type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: pick.code, note: c.tier.name + ' · ' + Math.round(c.rate * 100) + '%' + (pick.source === 'saved' ? ' · saved referral' : ''), saleCents: c.saleCents, rate: c.rate, via: pick.source
         });
       }).then(function (done) {
         if (done === null) return;
-        return updateOrder(order, {
-          affiliateEmail: email,
-          affiliateCreditCents: c.cents,
-          affiliateRate: c.rate,
-          affiliateTier: c.tier.name,
-          affiliateSaleCents: c.saleCents,
-          affiliateCreditedAt: new Date().toISOString(),
-          affiliateReversedAt: null
+        return (pick.newRecord ? db.collection('referredCustomers').doc(customer).set(pick.newRecord) : Promise.resolve()).then(function () {
+          return updateOrder(order, {
+            affiliateEmail: email,
+            affiliateCode: pick.code || order.affiliateCode || '',
+            affiliateVia: pick.source,
+            affiliateCreditCents: c.cents,
+            affiliateRate: c.rate,
+            affiliateTier: c.tier.name,
+            affiliateSaleCents: c.saleCents,
+            affiliateCreditedAt: new Date().toISOString(),
+            affiliateReversedAt: null
+          });
         });
       }).then(function () {
         setAffiliateText(order);
@@ -556,6 +569,12 @@
       type: 'reversed', orderId: order.id, orderNumber: order.orderNumber || '', code: affiliateCodeOf(order), note: '', saleCents: -saleCents
     }).then(function () {
       return updateOrder(order, { affiliateReversedAt: new Date().toISOString() });
+    }).then(function () {
+      // The customer's first credited order was cancelled: undo the saved referral too.
+      var customer = String(order.userEmail || '').trim().toLowerCase();
+      if (!customer) return;
+      var ref = firebase.firestore().collection('referredCustomers').doc(customer);
+      return ref.get().then(function (d) { if (d.exists && d.data().firstOrderId === order.id) return ref.delete(); }).catch(function () {});
     }).then(function () {
       setAffiliateText(order);
       return 'Referral credit reversed.';

@@ -11,6 +11,7 @@ const { combinedCarrier } = require('./carriers');
 const { emailjsClient } = require('./emailjs');
 const { run } = require('./tracker');
 const { updateLeaderboard } = require('./leaderboard-job');
+const { backfillReferrals } = require('./referral-backfill');
 
 function need(name) {
   const v = process.env[name];
@@ -33,6 +34,8 @@ function need(name) {
   console.log('Tracking with ' + (carrier.name || 'UPS'));
   const email = emailjsClient({ privateKey: need('EMAILJS_PRIVATE_KEY') });
   admin.initializeApp({ credential: admin.credential.cert(sa) });
+  // One time: save referrals for customers credited before saved referrals existed.
+  try { await backfillReferrals({ db: admin.firestore() }); } catch (err) { console.log('Referral backfill failed: ' + err.message); }
   const tally = await run({ db: admin.firestore(), carrier, email });
   // Monthly affiliate leaderboard (Admin → Promo codes turns it on).
   try { const r = await updateLeaderboard({ db: admin.firestore() }); if (r !== 'off') console.log('Leaderboard: ' + r + ' affiliates with sales this month'); }

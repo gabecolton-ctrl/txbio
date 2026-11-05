@@ -130,6 +130,13 @@ service cloud.firestore {
     // Store credit, keyed by lowercased login email. The owner can read it
     // and can only SPEND it: balance goes down by exactly what spent goes
     // up, never below zero. Only the admin can add, reverse, or refund.
+    // Saved referrals: which affiliate a customer belongs to, for 18 months
+    // from their first credited order (js/referral-attribution.js).
+    match /referredCustomers/{customerEmail} {
+      allow read: if isStaff() || myEmail() == customerEmail || (signedIn() && resource.data.affiliateEmail == myEmail());
+      allow write: if isAdmin();
+    }
+
     // Monthly affiliate leaderboard (written by the tracker job; Admin → Promo codes).
     match /leaderboard/{docId} {
       allow read: if signedIn();
