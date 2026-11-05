@@ -13,6 +13,7 @@ const AffiliateTiers = require(path.join(__dirname, '../../js/affiliate-tiers.js
 const Incoming = require(path.join(__dirname, '../../js/incoming.js'));
 const Loyalty = require(path.join(__dirname, '../../js/loyalty.js'));
 const Lots = require(path.join(__dirname, '../../js/lots.js'));
+const Attribution = require(path.join(__dirname, '../../js/referral-attribution.js'));
 const { summarize, isUpsNumber } = require('./ups');
 
 // The carrier is UPS's API (ups.js) or 17TRACK (track17.js). A carrier may
@@ -50,15 +51,24 @@ async function creditAffiliate({ db, orderRef, log }) {
     const order = snap.data();
     if (!order || order.atCostCode || (order.affiliateCreditedAt && !order.affiliateReversedAt) || order.affiliateSkipped) return;
     const code = String(order.affiliateCode || order.promoCode || '').trim().toUpperCase();
-    if (!code) return;
-    const promoSnap = await t.get(db.collection('promoCodes').doc(code));
-    const promo = promoSnap.exists ? promoSnap.data() : null;
-    const affiliate = promo && promo.affiliateEmail ? String(promo.affiliateEmail).toLowerCase() : '';
-    if (!affiliate) return;
-    if (affiliate === String(order.userEmail || '').toLowerCase()) {
+    let codeAffiliate = '';
+    if (code) {
+      const promoSnap = await t.get(db.collection('promoCodes').doc(code));
+      const promo = promoSnap.exists ? promoSnap.data() : null;
+      codeAffiliate = promo && promo.affiliateEmail ? String(promo.affiliateEmail).toLowerCase() : '';
+    }
+    // Saved referral (js/referral-attribution.js): 18 months from the first credited order.
+    const customer = String(order.userEmail || '').trim().toLowerCase();
+    const recRef = customer ? db.collection('referredCustomers').doc(customer) : null;
+    const recSnap = recRef ? await t.get(recRef) : null;
+    const pick = Attribution.decide(Object.assign({ id: orderRef.id }, order), code, codeAffiliate, recSnap && recSnap.exists ? recSnap.data() : null);
+    if (!pick) return;
+    if (pick.skip === 'self') {
       t.update(orderRef, { affiliateSkipped: 'no credit, the affiliate placed this order themselves.' });
       return;
     }
+    if (pick.skip) return;
+    const affiliate = pick.affiliateEmail;
     // Rate by the affiliate's tier (js/affiliate-tiers.js), from their history so far.
     const creditRef = db.collection('credits').doc(affiliate);
     const history = await creditRef.collection('entries').get();
@@ -75,11 +85,12 @@ async function creditAffiliate({ db, orderRef, log }) {
       updatedAt: at
     });
     t.set(creditRef.collection('entries').doc(), {
-      type: 'earned', orderId: orderRef.id, orderNumber: order.orderNumber || '', code, note: 'Auto: UPS first scan · ' + tierPick.tier.name + ' ' + Math.round(tierPick.rate * 100) + '%',
-      amountCents: cents, saleCents: tierPick.saleCents, rate: tierPick.rate, createdAt: at
+      type: 'earned', orderId: orderRef.id, orderNumber: order.orderNumber || '', code: pick.code, note: 'Auto: first carrier scan · ' + tierPick.tier.name + ' ' + Math.round(tierPick.rate * 100) + '%' + (pick.source === 'saved' ? ' · saved referral' : ''),
+      amountCents: cents, saleCents: tierPick.saleCents, rate: tierPick.rate, createdAt: at, via: pick.source
     });
-    t.update(orderRef, { affiliateEmail: affiliate, affiliateCreditCents: cents, affiliateRate: tierPick.rate, affiliateTier: tierPick.tier.name, affiliateSaleCents: tierPick.saleCents, affiliateCreditedAt: at, affiliateReversedAt: null });
-    log('  credited ' + affiliate + ' ' + Credits.formatCents(cents));
+    if (pick.newRecord && recRef) t.set(recRef, pick.newRecord);
+    t.update(orderRef, { affiliateEmail: affiliate, affiliateCode: pick.code || order.affiliateCode || '', affiliateVia: pick.source, affiliateCreditCents: cents, affiliateRate: tierPick.rate, affiliateTier: tierPick.tier.name, affiliateSaleCents: tierPick.saleCents, affiliateCreditedAt: at, affiliateReversedAt: null });
+    log('  credited ' + affiliate + ' ' + Credits.formatCents(cents) + (pick.source === 'saved' ? ' (saved referral)' : ''));
   });
 }
 

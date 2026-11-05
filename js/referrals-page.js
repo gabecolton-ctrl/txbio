@@ -194,7 +194,7 @@
     }
   }
 
-  function render(email, codes, account, entries, traffic) {
+  function render(email, codes, account, entries, traffic, saved) {
     $('ref-loading').style.display = 'none';
     if (!codes.length) { $('ref-none').style.display = ''; return; }
     $('ref-body').style.display = '';
@@ -216,7 +216,8 @@
       ['Orders from your link or code', placed, ''],
       ['Orders shipped', shipped, 'these earned you credit'],
       ['Credit earned', fmt(Math.max(0, earnedCents)), 'all time'],
-      ['Credit balance', fmt(account ? account.balanceCents : 0), 'ready to use at checkout']
+      ['Credit balance', fmt(account ? account.balanceCents : 0), 'ready to use at checkout'],
+      ['Customers saved to you', (saved || []).filter(function (x) { return window.ReferralAttribution ? ReferralAttribution.isActive(x) : true; }).length, 'you earn on all their orders for 18 months']
     ].map(function (r) {
       return '<div class="pnl-tile"><span class="pnl-label">' + r[0] + '</span><span class="pnl-value">' + r[1] + '</span>' + (r[2] ? '<span class="pnl-sub">' + r[2] + '</span>' : '') + '</div>';
     }).join('');
@@ -268,8 +269,11 @@
         Credits.getEntries(email, 1000).catch(function () { return []; }),
         Promise.all(codes.map(function (c) {
           return db.collection('refTraffic').doc(c.code).get().then(function (d) { return d.exists ? d.data() : null; }).catch(function () { return null; });
-        })).then(function (list) { return list.filter(Boolean); })
-      ]).then(function (r) { render(email, codes, r[0], r[1], r[2]); });
+        })).then(function (list) { return list.filter(Boolean); }),
+        db.collection('referredCustomers').where('affiliateEmail', '==', email).get().then(function (snap) {
+          var list = []; snap.forEach(function (d) { list.push(d.data()); }); return list;
+        }).catch(function () { return []; })
+      ]).then(function (r) { render(email, codes, r[0], r[1], r[2], r[3]); });
     }).catch(function (err) {
       $('ref-loading').textContent = 'Could not load your referrals: ' + err.message;
     });

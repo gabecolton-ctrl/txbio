@@ -474,6 +474,43 @@ test('leaderboard: turning it off hides the board and pays nothing', async () =>
   assert.deepStrictEqual([db.data['leaderboard/current'].enabled, !!db.data['credits/amy@x.com']], [false, false]);
 });
 
+test('saved referral: first code saves the customer; later orders credit them for 18 months', async () => {
+  const email = { send: async () => {} };
+  const carrier = { name: '17TRACK', canTrack: () => true, status: async () => summarize17(INFO('InTransit')) };
+  const O = (id, over) => Object.assign({ userEmail: 'cust@x.com', orderNumber: id, status: 'label-created', trackingNumber: '1Z999AA10123456784',
+    subtotal: 100, discount: 0, items: [], createdAt: '2026-11-05T15:00:00Z' }, over);
+  const db = fakeDb({
+    'promoCodes/AMY': { affiliateEmail: 'amy@x.com' }, 'promoCodes/BOB': { affiliateEmail: 'bob@x.com' }, 'promoCodes/THANKS20': { discountPercent: 20 },
+    'orders/1': O('1', { promoCode: 'AMY' })
+  });
+  await run({ db, carrier, email, log: () => {} });
+  const rec = db.data['referredCustomers/cust@x.com'];
+  assert.deepStrictEqual([rec.affiliateEmail, rec.code, rec.firstOrderId, rec.expiresAt.slice(0, 10)], ['amy@x.com', 'AMY', '1', '2028-05-05']);
+  // No code, another promo, and another affiliate's code: all still Amy's.
+  db.data['orders/2'] = O('2', { createdAt: '2027-01-10T15:00:00Z' });
+  db.data['orders/3'] = O('3', { promoCode: 'THANKS20', createdAt: '2027-02-10T15:00:00Z' });
+  db.data['orders/4'] = O('4', { promoCode: 'BOB', createdAt: '2027-03-10T15:00:00Z' });
+  // After 18 months with no code: nobody.
+  db.data['orders/5'] = O('5', { createdAt: '2028-06-10T15:00:00Z' });
+  await run({ db, carrier, email, log: () => {} });
+  const who = (id) => db.data['orders/' + id].affiliateEmail || null;
+  assert.deepStrictEqual([who(2), who(3), who(4), who(5)], ['amy@x.com', 'amy@x.com', 'amy@x.com', null]);
+  assert.strictEqual(db.data['orders/2'].affiliateVia, 'saved');
+  assert.ok(!db.data['credits/bob@x.com']);
+});
+
+test('referral backfill: saves earliest credited order per customer, once', async () => {
+  const { backfillReferrals } = require('./referral-backfill');
+  const db = fakeDb({
+    'orders/a': { userEmail: 'c@x.com', affiliateEmail: 'amy@x.com', affiliateCode: 'AMY', affiliateCreditedAt: 'x', createdAt: '2026-09-01T00:00:00Z' },
+    'orders/b': { userEmail: 'c@x.com', affiliateEmail: 'amy@x.com', affiliateCode: 'AMY', affiliateCreditedAt: 'x', createdAt: '2026-08-01T00:00:00Z' },
+    'orders/c': { userEmail: 'd@x.com', affiliateEmail: 'amy@x.com', affiliateCreditedAt: 'x', affiliateReversedAt: 'y', createdAt: '2026-08-01T00:00:00Z' }
+  });
+  assert.strictEqual(await backfillReferrals({ db, log: () => {} }), 1);
+  assert.deepStrictEqual([db.data['referredCustomers/c@x.com'].firstOrderId, db.data['referredCustomers/c@x.com'].expiresAt.slice(0, 7)], ['b', '2028-02']);
+  assert.strictEqual(await backfillReferrals({ db, log: () => {} }), 'done-before');
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {
