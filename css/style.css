@@ -1518,3 +1518,16 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .sn-box .sn-fine { font-size: 0.85rem; color: var(--text-light); }
 .sn-actions { display: flex; gap: 10px; margin-top: 14px; }
 .sn-actions .btn { flex: 1; }
+
+/* Admin → Promo codes: profit check */
+.profit-check { border: 1px solid var(--line); border-radius: 12px; padding: 12px 14px; margin: -6px 0 18px; background: var(--surface); }
+.profit-check .pc-title { font-weight: 700; margin-bottom: 4px; }
+.profit-check p { margin: 0 0 8px; font-size: 0.9rem; }
+.profit-check .pc-bad { color: var(--danger); }
+.profit-check .pc-ok { color: var(--mint); }
+.profit-check .pc-note { color: var(--text-light); font-size: 0.82rem; }
+.pc-table td, .pc-table th { font-size: 0.85rem; }
+.pc-row-bad td { color: var(--danger); }
+.pc-row-thin td { color: #fbbf24; }
+.pc-tag { font-size: 0.72rem; border: 1px solid var(--line); border-radius: 6px; padding: 0 5px; color: var(--text-light); }
+.pc-more { background: none; border: none; color: var(--mint); cursor: pointer; padding: 0; margin: 4px 0 8px; font-size: 0.85rem; }

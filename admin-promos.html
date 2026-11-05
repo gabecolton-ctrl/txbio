@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611042254">
+<link rel="stylesheet" href="css/style.css?v=202611042357">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611042254"></script>
+<script src="js/splash.js?v=202611042357"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -135,6 +135,8 @@
 
         <label for="promo-discount-field">Discount Percent</label>
         <input type="number" id="promo-discount-field" min="1" max="100" placeholder="e.g. 20" required>
+
+        <div id="profit-check" class="profit-check" hidden></div>
 
         <label for="promo-type-field">Applies To</label>
         <select id="promo-type-field">
@@ -241,16 +243,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611042254"></script>
-<script src="js/cart.js?v=202611042254"></script>
-<script src="js/leaderboard.js?v=202611042254"></script>
-<script src="js/promos.js?v=202611042254"></script>
-<script src="js/staff.js?v=202611042254"></script>
-<script src="js/nav-auth.js?v=202611042254"></script>
-<script src="js/profile-gate.js?v=202611042254"></script>
-<script src="js/auth-guard.js?v=202611042254"></script>
-<script src="js/main.js?v=202611042254"></script>
-<script src="js/nav-toggle.js?v=202611042254"></script>
+<script src="js/firebase-config.js?v=202611042357"></script>
+<script src="js/cart.js?v=202611042357"></script>
+<script src="js/leaderboard.js?v=202611042357"></script>
+<script src="js/profit-check.js?v=202611042357"></script>
+<script src="js/promos.js?v=202611042357"></script>
+<script src="js/staff.js?v=202611042357"></script>
+<script src="js/nav-auth.js?v=202611042357"></script>
+<script src="js/profile-gate.js?v=202611042357"></script>
+<script src="js/auth-guard.js?v=202611042357"></script>
+<script src="js/main.js?v=202611042357"></script>
+<script src="js/nav-toggle.js?v=202611042357"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var editingCode = null;
@@ -266,10 +269,57 @@
       staffRole = r;
       document.getElementById('admin-content').style.display = 'block';
       loadPromoTable();
-      if (r === 'admin') loadLeaderboardAdmin();
+      if (r === 'admin') { loadLeaderboardAdmin(); loadProfitData(); }
     });
   });
 
+
+
+  // ---------- Profit check (js/profit-check.js) ----------
+  var profitData = null, profitAll = false;
+  function loadProfitData() {
+    Promise.all([
+      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
+      firebase.firestore().collection('costs').get()
+    ]).then(function (r) {
+      var costs = {};
+      r[1].forEach(function (d) { var c = Number(d.data().perVialCost); if (c > 0) costs[d.id] = c; });
+      profitData = { catalog: r[0], costs: costs };
+      renderProfit();
+    }).catch(function () {});
+  }
+  function renderProfit() {
+    var el = document.getElementById('profit-check');
+    var pct = parseFloat(document.getElementById('promo-discount-field').value);
+    if (!profitData || !(pct > 0)) { el.hidden = true; return; }
+    var aff = !!document.getElementById('promo-affiliate-field').value.trim();
+    var res = ProfitCheck.compute(profitData.catalog, profitData.costs, pct, aff ? 0.10 : 0);
+    var worst = aff ? ProfitCheck.compute(profitData.catalog, profitData.costs, pct, 0.20) : null;
+    var below = res.rows.filter(function (x) { return x.profit < 0; });
+    var thin = res.rows.filter(function (x) { return x.profit >= 0 && x.margin < 0.2; });
+    var m = function (n) { return (n < 0 ? '-$' : '$') + Math.abs(n).toFixed(2); };
+    var head = below.length
+      ? '<p class="pc-bad">⚠ At ' + pct + '% off, <strong>' + below.length + (below.length === 1 ? ' item sells' : ' items sell') + ' below your cost.</strong></p>'
+      : '<p class="pc-ok">✓ At ' + pct + '% off, every item with a cost on file still makes money.' + (thin.length ? ' ' + thin.length + ' have thin margins (under 20%).' : '') + '</p>';
+    if (aff) {
+      var wb = worst.rows.filter(function (x) { return x.profit < 0; }).length;
+      head += '<p class="pc-note">Includes 10% affiliate commission.' + (wb > below.length ? ' If this affiliate reaches Elite (20%), ' + wb + ' items would be below cost.' : '') + '</p>';
+    }
+    var list = profitAll ? res.rows : res.rows.slice(0, 8);
+    el.innerHTML = '<div class="pc-title">Profit check</div>' + head +
+      '<div class="catalog-wrap"><table class="catalog-table pc-table"><thead><tr><th>Item</th><th>Price</th><th>After ' + pct + '%</th><th>Cost</th><th>Profit / vial</th></tr></thead><tbody>' +
+      list.map(function (x) {
+        return '<tr class="' + (x.profit < 0 ? 'pc-row-bad' : x.margin < 0.2 ? 'pc-row-thin' : '') + '"><td>' + esc(x.label) + (x.mode === 'case' ? ' <span class="pc-tag">case</span>' : '') + '</td><td>' + m(x.price) + '</td><td>' + m(x.after) + '</td><td>' + m(x.cost) + '</td><td><strong>' + m(x.profit) + '</strong> (' + Math.round(x.margin * 100) + '%)</td></tr>';
+      }).join('') + '</tbody></table></div>' +
+      (res.rows.length > 8 ? '<button type="button" class="pc-more" id="pc-more">' + (profitAll ? 'Show worst 8 only' : 'Show all ' + res.rows.length) + '</button>' : '') +
+      '<p class="pc-note">Lowest margin first. Case prices are per vial (cases are already 30% off). ' + (res.missing.length ? res.missing.length + ' items have no cost on file (Admin → At cost), so they aren’t checked.' : '') + '</p>';
+    el.hidden = false;
+    var more = document.getElementById('pc-more');
+    if (more) more.addEventListener('click', function () { profitAll = !profitAll; renderProfit(); });
+  }
+  ['promo-discount-field', 'promo-affiliate-field'].forEach(function (id) {
+    document.getElementById(id).addEventListener('input', renderProfit);
+  });
 
   // ---------- Affiliate leaderboard (settings/leaderboard, js/leaderboard.js) ----------
   var lbSettings = {};
