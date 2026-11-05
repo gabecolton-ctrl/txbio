@@ -130,6 +130,12 @@ service cloud.firestore {
     // Store credit, keyed by lowercased login email. The owner can read it
     // and can only SPEND it: balance goes down by exactly what spent goes
     // up, never below zero. Only the admin can add, reverse, or refund.
+    // Private notes about a customer (Admin → Customers). Staff only; never
+    // shown to the customer.
+    match /customerNotes/{email} {
+      allow read, write: if isStaff();
+    }
+
     // Tabs: what a customer owes for product fronted to them (Admin → Customers).
     // Admin writes; the customer can read their own.
     match /tabs/{email} {

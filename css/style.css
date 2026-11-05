@@ -1478,3 +1478,13 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .track-strip.track-bad .track-pill { color: var(--danger); }
 .track-strip .track-eta { font-weight: 600; color: var(--mint); white-space: nowrap; }
 .order-eta strong { color: var(--mint); }
+
+/* "Order within 3h 12m to ship today" (js/ship-cutoff.js) */
+.ship-cutoff { margin: 4px 0 12px; font-size: 0.9rem; color: var(--text-light); }
+.ship-cutoff strong { color: var(--mint); font-weight: 700; }
+.ship-cutoff-icon { margin-right: 2px; }
+
+/* Private customer notes */
+.note-box { border: 1px solid var(--line); border-radius: 12px; padding: 12px 16px; margin: 6px 0 18px; background: var(--surface); }
+.note-box textarea { width: 100%; margin: 6px 0 8px; }
+.order-note { margin: 0 0 10px; padding: 8px 12px; border-radius: 10px; background: rgba(251, 191, 36, 0.10); border: 1px solid rgba(251, 191, 36, 0.35); font-size: 0.88rem; color: var(--text); }

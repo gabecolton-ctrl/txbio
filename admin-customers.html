@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611041753">
+<link rel="stylesheet" href="css/style.css?v=202611042234">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611041753"></script>
+<script src="js/splash.js?v=202611042234"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -186,6 +186,15 @@
           </form>
         </div>
 
+        <div class="note-box">
+          <label for="cd-note" style="font-weight:700;">Private notes <span class="field-note" style="font-weight:400;">(only you and managers see these; they also show on this customer’s orders)</span></label>
+          <textarea id="cd-note" rows="3" maxlength="2000" placeholder="e.g. Family. Always pays Venmo. Prefers pickup."></textarea>
+          <div style="display:flex; gap:10px; align-items:center;">
+            <button type="button" class="btn" id="cd-note-save">Save note</button>
+            <span class="tracking-status" id="cd-note-status"></span>
+          </div>
+        </div>
+
         <div id="tab-box" class="tab-box">
           <div style="display:flex; justify-content:space-between; gap:12px; flex-wrap:wrap; align-items:baseline;">
             <h3 style="margin:0;">Tab: product fronted</h3>
@@ -266,17 +275,17 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611041753"></script>
-<script src="js/cart.js?v=202611041753"></script>
-<script src="js/account.js?v=202611041753"></script>
-<script src="js/tabs.js?v=202611041753"></script>
-<script src="js/credits.js?v=202611041753"></script>
-<script src="js/staff.js?v=202611041753"></script>
-<script src="js/nav-auth.js?v=202611041753"></script>
-<script src="js/profile-gate.js?v=202611041753"></script>
-<script src="js/auth-guard.js?v=202611041753"></script>
-<script src="js/main.js?v=202611041753"></script>
-<script src="js/nav-toggle.js?v=202611041753"></script>
+<script src="js/firebase-config.js?v=202611042234"></script>
+<script src="js/cart.js?v=202611042234"></script>
+<script src="js/account.js?v=202611042234"></script>
+<script src="js/tabs.js?v=202611042234"></script>
+<script src="js/credits.js?v=202611042234"></script>
+<script src="js/staff.js?v=202611042234"></script>
+<script src="js/nav-auth.js?v=202611042234"></script>
+<script src="js/profile-gate.js?v=202611042234"></script>
+<script src="js/auth-guard.js?v=202611042234"></script>
+<script src="js/main.js?v=202611042234"></script>
+<script src="js/nav-toggle.js?v=202611042234"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -460,6 +469,7 @@
     }).catch(function (err) { creditEl.innerHTML = '<p style="color:var(--danger);">Could not load credit history: ' + esc(err.message) + '</p>'; });
 
     setupEdit(c, keepStatus);
+    showNote(c, keepStatus);
     showTab(c, keepStatus);
     if (!keepStatus) {
       document.getElementById('credit-status').textContent = '';
@@ -588,6 +598,36 @@
     }).catch(function (err) {
       btn.disabled = false;
       st.style.color = 'var(--danger)';
+      st.textContent = 'Could not save: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
+    });
+  });
+
+
+  // ---------- Private notes (customerNotes/{email}) ----------
+  function showNote(c, keepStatus) {
+    var box = document.getElementById('cd-note');
+    if (!keepStatus) document.getElementById('cd-note-status').textContent = '';
+    box.value = '';
+    box.disabled = true;
+    firebase.firestore().collection('customerNotes').doc(c.email).get().then(function (d) {
+      if (current !== c) return;
+      box.value = d.exists ? (d.data().note || '') : '';
+      box.disabled = false;
+    }).catch(function (err) {
+      box.disabled = false;
+      document.getElementById('cd-note-status').textContent = /permission/i.test(err.message) ? 'Publish the latest Firestore rules to use notes.' : 'Could not load the note.';
+    });
+  }
+  document.getElementById('cd-note-save').addEventListener('click', function () {
+    if (!current) return;
+    var st = document.getElementById('cd-note-status'), btn = document.getElementById('cd-note-save');
+    var note = document.getElementById('cd-note').value.trim();
+    btn.disabled = true;
+    var ref = firebase.firestore().collection('customerNotes').doc(current.email);
+    (note ? ref.set({ note: note, updatedAt: new Date().toISOString() }) : ref.delete()).then(function () {
+      btn.disabled = false; st.style.color = 'var(--text-light)'; st.textContent = note ? 'Saved.' : 'Note cleared.';
+    }).catch(function (err) {
+      btn.disabled = false; st.style.color = 'var(--danger)';
       st.textContent = 'Could not save: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
     });
   });
