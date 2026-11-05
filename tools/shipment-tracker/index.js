@@ -7,6 +7,7 @@
 const admin = require('firebase-admin');
 const { upsClient } = require('./ups');
 const { track17Client } = require('./track17');
+const { combinedCarrier } = require('./carriers');
 const { emailjsClient } = require('./emailjs');
 const { run } = require('./tracker');
 
@@ -21,10 +22,13 @@ function need(name) {
 
 (async () => {
   const sa = JSON.parse(need('FIREBASE_SERVICE_ACCOUNT'));
-  // 17TRACK when its key is set (any carrier); otherwise UPS's own API.
-  const carrier = process.env.TRACK17_API_KEY
-    ? track17Client({ apiKey: process.env.TRACK17_API_KEY })
-    : upsClient({ clientId: need('UPS_CLIENT_ID'), clientSecret: need('UPS_CLIENT_SECRET') });
+  // UPS numbers use UPS's own API (live) when its keys are set; everything
+  // else, and UPS as a fallback, uses 17TRACK. Needs at least one of the two.
+  const ups = process.env.UPS_CLIENT_ID && process.env.UPS_CLIENT_SECRET
+    ? upsClient({ clientId: process.env.UPS_CLIENT_ID, clientSecret: process.env.UPS_CLIENT_SECRET }) : null;
+  const track17 = process.env.TRACK17_API_KEY ? track17Client({ apiKey: process.env.TRACK17_API_KEY }) : null;
+  if (!ups && !track17) need('TRACK17_API_KEY');
+  const carrier = combinedCarrier({ ups, track17 });
   console.log('Tracking with ' + (carrier.name || 'UPS'));
   const email = emailjsClient({ privateKey: need('EMAILJS_PRIVATE_KEY') });
   admin.initializeApp({ credential: admin.credential.cert(sa) });
