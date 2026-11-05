@@ -19,5 +19,18 @@ const { dump, encrypt, decrypt } = require('./backup-core');
   fs.mkdirSync(path.join(__dirname, 'backup'), { recursive: true });
   const file = path.join(__dirname, 'backup', 'txbio-backup-' + day + '.bin');
   fs.writeFileSync(file, bin);
-  console.log('Backed up ' + data.counts.docs + ' documents in ' + data.counts.collections + ' collections → ' + path.basename(file) + ' (' + Math.round(bin.length / 1024) + ' KB, encrypted)');
+  const line = 'Backed up ' + data.counts.docs + ' documents in ' + data.counts.collections + ' collections → ' + path.basename(file) + ' (' + Math.round(bin.length / 1024) + ' KB, encrypted)';
+  console.log(line);
+  // Shown on the run's summary page.
+  if (process.env.GITHUB_STEP_SUMMARY) {
+    const rows = Object.keys(data.collections).sort().map((c) => {
+      let n = 0;
+      const walk = (col) => Object.values(col).forEach((d) => { if (d.data) n++; Object.values(d.sub || {}).forEach(walk); });
+      walk(data.collections[c]);
+      return '| ' + c + ' | ' + n + ' |';
+    });
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY,
+      '## ✅ Backup complete\n\n' + line + '\n\nSaved ' + data.exportedAt.replace('T', ' ').slice(0, 16) + ' UTC. Download it under **Artifacts** below (kept 90 days).\n\n' +
+      '| Collection | Documents |\n|---|---|\n' + rows.join('\n') + '\n');
+  }
 })().catch((err) => { console.error('Backup failed: ' + err.message); process.exit(1); });
