@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611051242">
+<link rel="stylesheet" href="css/style.css?v=202611051246">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611051242"></script>
+<script src="js/splash.js?v=202611051246"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -159,6 +159,20 @@
         <div id="cd-edit-wrap" style="margin:8px 0 18px;">
           <button type="button" class="btn-outline-light" id="cd-edit-btn">Edit account</button>
           <button type="button" class="btn-outline-light" id="cd-reset-btn">Send password reset email</button>
+          <button type="button" class="btn-outline-light" id="cd-ref-btn">Change referred by</button>
+          <form id="cd-ref-form" style="display:none; max-width:560px; margin-top:12px;">
+            <label for="cr-aff">Referred by</label>
+            <select id="cr-aff"></select>
+            <label for="cr-since">Counts from <span class="field-note">(usually their first order; credit runs 18 months from this date)</span></label>
+            <input type="date" id="cr-since">
+            <p class="field-note" id="cr-until"></p>
+            <p class="field-note">Applies to orders that ship from now on. Orders that already shipped aren’t credited after the fact; use “Give or remove store credit” on the affiliate if you want to pay for those.</p>
+            <div style="display:flex; gap:10px; margin-top:8px;">
+              <button type="submit" class="btn" id="cr-save">Save</button>
+              <button type="button" class="btn-outline-light" id="cr-cancel">Cancel</button>
+            </div>
+            <p class="tracking-status" id="cr-status"></p>
+          </form>
           <p class="tracking-status" id="cd-reset-status"></p>
           <form id="cd-edit-form" style="display:none; max-width:560px; margin-top:12px;">
             <label for="ce-name">Full name</label>
@@ -275,17 +289,18 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611051242"></script>
-<script src="js/cart.js?v=202611051242"></script>
-<script src="js/account.js?v=202611051242"></script>
-<script src="js/tabs.js?v=202611051242"></script>
-<script src="js/credits.js?v=202611051242"></script>
-<script src="js/staff.js?v=202611051242"></script>
-<script src="js/nav-auth.js?v=202611051242"></script>
-<script src="js/profile-gate.js?v=202611051242"></script>
-<script src="js/auth-guard.js?v=202611051242"></script>
-<script src="js/main.js?v=202611051242"></script>
-<script src="js/nav-toggle.js?v=202611051242"></script>
+<script src="js/firebase-config.js?v=202611051246"></script>
+<script src="js/cart.js?v=202611051246"></script>
+<script src="js/account.js?v=202611051246"></script>
+<script src="js/tabs.js?v=202611051246"></script>
+<script src="js/referral-attribution.js?v=202611051246"></script>
+<script src="js/credits.js?v=202611051246"></script>
+<script src="js/staff.js?v=202611051246"></script>
+<script src="js/nav-auth.js?v=202611051246"></script>
+<script src="js/profile-gate.js?v=202611051246"></script>
+<script src="js/auth-guard.js?v=202611051246"></script>
+<script src="js/main.js?v=202611051246"></script>
+<script src="js/nav-toggle.js?v=202611051246"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -498,7 +513,8 @@
     var admin = staffRole === 'admin';
     $('cd-edit-btn').style.display = admin && c.uid && c.profile ? '' : 'none';
     $('cd-reset-btn').style.display = admin && c.uid ? '' : 'none';
-    wrap.style.display = admin && c.uid ? '' : 'none';
+    wrap.style.display = admin ? '' : 'none';
+    if (!keepStatus) { $('cd-ref-form').style.display = 'none'; $('cr-status').textContent = ''; }
     if (!keepStatus) { $('cd-edit-form').style.display = 'none'; $('ce-status').textContent = ''; $('cd-reset-status').textContent = ''; }
   }
   function fillEdit(c) {
@@ -641,6 +657,74 @@
       btn.disabled = false; st.style.color = 'var(--text-light)'; st.textContent = note ? 'Saved.' : 'Note cleared.';
     }).catch(function (err) {
       btn.disabled = false; st.style.color = 'var(--danger)';
+      st.textContent = 'Could not save: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
+    });
+  });
+
+
+  // ---------- Referred by (referredCustomers/{email}, js/referral-attribution.js) ----------
+  var affiliateList = null;
+  function loadAffiliates() {
+    if (affiliateList) return Promise.resolve(affiliateList);
+    return firebase.firestore().collection('promoCodes').get().then(function (snap) {
+      var by = {};
+      snap.forEach(function (d) {
+        var e = String(d.data().affiliateEmail || '').trim().toLowerCase();
+        if (e) (by[e] = by[e] || []).push(d.id);
+      });
+      affiliateList = Object.keys(by).sort().map(function (e) { return { email: e, codes: by[e] }; });
+      return affiliateList;
+    });
+  }
+  function dayOf(iso) { return iso ? String(iso).slice(0, 10) : ''; }
+  function untilText() {
+    var since = $('cr-since').value, aff = $('cr-aff').value;
+    $('cr-until').textContent = aff && since ? 'Earns credit on their orders until ' + fmtDate(ReferralAttribution.addMonths(since + 'T12:00:00Z', ReferralAttribution.WINDOW_MONTHS)) + '.' : '';
+  }
+  $('cr-aff').addEventListener('change', untilText);
+  $('cr-since').addEventListener('input', untilText);
+  $('cd-ref-btn').addEventListener('click', function () {
+    if (!current) return;
+    var c = current;
+    loadAffiliates().then(function (list) {
+      var r = c.referral || null;
+      $('cr-aff').innerHTML = '<option value="">Nobody</option>' + list.filter(function (a) { return a.email !== c.email; }).map(function (a) {
+        return '<option value="' + esc(a.email) + '"' + (r && r.affiliateEmail === a.email ? ' selected' : '') + '>' + esc(a.email) + ' (' + esc(a.codes.join(', ')) + ')</option>';
+      }).join('');
+      var firstOrder = c.orders.filter(function (o) { return o.status !== 'cancelled'; }).map(function (o) { return o.createdAt; }).sort()[0];
+      $('cr-since').value = dayOf(r && r.firstOrderAt) || dayOf(firstOrder) || new Date().toISOString().slice(0, 10);
+      untilText();
+      $('cd-ref-form').style.display = '';
+      $('cr-status').textContent = '';
+    }).catch(function (err) { $('cr-status').textContent = 'Could not load affiliates: ' + err.message; $('cd-ref-form').style.display = ''; });
+  });
+  $('cr-cancel').addEventListener('click', function () { $('cd-ref-form').style.display = 'none'; });
+  $('cd-ref-form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (!current) return;
+    var c = current, st = $('cr-status'), aff = $('cr-aff').value, since = $('cr-since').value;
+    var ref = firebase.firestore().collection('referredCustomers').doc(c.email);
+    var job;
+    if (!aff) job = ref.delete();
+    else {
+      if (!since) { st.style.color = 'var(--danger)'; st.textContent = 'Pick the date it counts from.'; return; }
+      var start = since + 'T12:00:00Z';
+      var codes = (affiliateList.find(function (a) { return a.email === aff; }) || {}).codes || [];
+      job = ref.set({
+        customerEmail: c.email, affiliateEmail: aff, code: codes[0] || '', firstOrderId: '', firstOrderNumber: '',
+        firstOrderAt: start, expiresAt: ReferralAttribution.addMonths(start, ReferralAttribution.WINDOW_MONTHS),
+        createdAt: new Date().toISOString(), setByAdmin: true
+      });
+    }
+    $('cr-save').disabled = true;
+    job.then(function () {
+      $('cr-save').disabled = false;
+      $('cd-ref-form').style.display = 'none';
+      $('cd-reset-status').style.color = 'var(--text-light)';
+      $('cd-reset-status').textContent = aff ? 'Saved: referred by ' + aff + '.' : 'Referral removed.';
+      loadCustomers();
+    }).catch(function (err) {
+      $('cr-save').disabled = false; st.style.color = 'var(--danger)';
       st.textContent = 'Could not save: ' + err.message + (/permission/i.test(err.message) ? ' (publish the latest Firestore rules).' : '');
     });
   });
