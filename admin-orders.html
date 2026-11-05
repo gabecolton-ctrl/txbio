@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611041753">
+<link rel="stylesheet" href="css/style.css?v=202611042234">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611041753"></script>
+<script src="js/splash.js?v=202611042234"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -174,26 +174,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611041753"></script>
-<script src="js/cart.js?v=202611041753"></script>
-<script src="js/site-config.js?v=202611041753"></script>
-<script src="js/payment-apps.js?v=202611041753"></script>
-<script src="js/account.js?v=202611041753"></script>
-<script src="js/inventory.js?v=202611041753"></script>
-<script src="js/promos.js?v=202611041753"></script>
-<script src="js/tabs.js?v=202611041753"></script>
-<script src="js/credits.js?v=202611041753"></script>
-<script src="js/affiliate-tiers.js?v=202611041753"></script>
-<script src="js/loyalty.js?v=202611041753"></script>
-<script src="js/lots.js?v=202611041753"></script>
-<script src="js/order-emails.js?v=202611041753"></script>
-<script src="js/gift-cards.js?v=202611041753"></script>
-<script src="js/staff.js?v=202611041753"></script>
-<script src="js/nav-auth.js?v=202611041753"></script>
-<script src="js/profile-gate.js?v=202611041753"></script>
-<script src="js/auth-guard.js?v=202611041753"></script>
-<script src="js/main.js?v=202611041753"></script>
-<script src="js/nav-toggle.js?v=202611041753"></script>
+<script src="js/firebase-config.js?v=202611042234"></script>
+<script src="js/cart.js?v=202611042234"></script>
+<script src="js/site-config.js?v=202611042234"></script>
+<script src="js/payment-apps.js?v=202611042234"></script>
+<script src="js/account.js?v=202611042234"></script>
+<script src="js/inventory.js?v=202611042234"></script>
+<script src="js/promos.js?v=202611042234"></script>
+<script src="js/tabs.js?v=202611042234"></script>
+<script src="js/credits.js?v=202611042234"></script>
+<script src="js/affiliate-tiers.js?v=202611042234"></script>
+<script src="js/loyalty.js?v=202611042234"></script>
+<script src="js/lots.js?v=202611042234"></script>
+<script src="js/order-emails.js?v=202611042234"></script>
+<script src="js/gift-cards.js?v=202611042234"></script>
+<script src="js/staff.js?v=202611042234"></script>
+<script src="js/nav-auth.js?v=202611042234"></script>
+<script src="js/profile-gate.js?v=202611042234"></script>
+<script src="js/auth-guard.js?v=202611042234"></script>
+<script src="js/main.js?v=202611042234"></script>
+<script src="js/nav-toggle.js?v=202611042234"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -693,9 +693,23 @@
       });
     }).catch(function (err) { st.style.color = 'var(--danger)'; st.textContent = 'Could not save: ' + err.message; });
   }
+  // Private customer notes (Admin → Customers), shown on each of their orders.
+  var customerNotes = {};
+  function noteHtml(order) {
+    var n = customerNotes[String(order.userEmail || '').toLowerCase()];
+    return n ? '<div class="order-note"><strong>Note:</strong> ' + escapeAttr(n).replace(/\n/g, '<br>') + '</div>' : '';
+  }
+  function loadNotes() {
+    return firebase.firestore().collection('customerNotes').get().then(function (snap) {
+      customerNotes = {};
+      snap.forEach(function (d) { if (d.data().note) customerNotes[d.id] = d.data().note; });
+    }).catch(function () { customerNotes = {}; });
+  }
+
   function loadOrders() {
     var loading = document.getElementById('orders-loading');
-    Account.getAllOrders().then(function (orders) {
+    Promise.all([Account.getAllOrders(), loadNotes()]).then(function (r) {
+      var orders = r[0];
       allOrders = orders;
       loading.style.display = 'none';
       renderOrders(allOrders);
@@ -765,6 +779,7 @@
             '<select data-order-id="' + order.id + '" class="order-status-select" style="margin-bottom:0; margin-top:4px;">' + statusOptionsHtml + '</select>' +
           '</div>' +
         '</div>' +
+        noteHtml(order) +
         trackStripHtml(order) +
         '<p style="font-size:0.85rem; margin-bottom:6px;"><strong>Payment:</strong> ' + (order.paymentMethod ? ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) + (order.paymentHandle ? ' to ' + PaymentApps.display(order.paymentMethod, order.paymentHandle) : '') : 'unknown') + (order.promoCode ? ' &middot; <strong>Promo:</strong> ' + order.promoCode : '') + (order.creditUsed > 0 ? ' &middot; <strong>Store credit used:</strong> $' + Number(order.creditUsed).toFixed(2) : '') + '</p>' +
         '<p class="tracking-status" data-affiliate-for="' + order.id + '" style="margin:0 0 8px;">' + (window.Credits ? affiliateText(order) : '') + '</p>' +
