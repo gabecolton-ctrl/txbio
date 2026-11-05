@@ -20,6 +20,19 @@
       return esc(a.lot) + exp + (list.length > 1 ? ' ×' + a.qty : '');
     }).join('<br>');
   }
+  // "Scan to reorder": a QR code that puts this order back in the buyer's cart
+  // (js/reorder-link.js). Only products and quantities are in the link.
+  function reorderQr(o) {
+    if (!window.ReorderLink || !window.qrcode) return '';
+    var link = ReorderLink.url(o);
+    if (!link) return '';
+    try {
+      var qr = window.qrcode(0, 'M'); qr.addData(link); qr.make();
+      return '<div class="reorder-qr">' + qr.createSvgTag({ cellSize: 3, scalable: true }) +
+        '<div><strong>Running low? Scan to reorder.</strong><span>Point your phone camera here. This order goes right back in your cart at today’s prices, ready to check out.</span></div></div>';
+    } catch (e) { return ''; }
+  }
+
   function slipHtml(o) {
     var a = o.shippingAddress || {};
     var items = o.items || [];
@@ -54,6 +67,7 @@
       '<tbody>' + (rows || '<tr><td colspan="6">No items on this order.</td></tr>') + '</tbody>' +
       '<tfoot><tr><td></td><td colspan="' + (showLots ? 4 : 3) + '">Total units</td><td class="num">' + units + '</td></tr></tfoot></table>' +
       (o.notes ? '<div class="note"><div class="label">Customer note</div>' + esc(o.notes) + '</div>' : '') +
+      reorderQr(o) +
       '<div class="foot"><p class="thanks">Thank you for your order. Questions? Email orders@txbioresearch.com and include your order number.</p>' +
       '<p>For laboratory research use only. Not for human or animal consumption. Store according to the label; refrigerate after reconstitution.</p></div>' +
     '</section>';
