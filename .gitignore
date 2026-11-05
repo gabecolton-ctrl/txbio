@@ -2,3 +2,8 @@
 /admin-orders-panel.zip
 __pycache__/
 node_modules/
+
+# Nightly backups (never commit these)
+tools/shipment-tracker/backup/
+txbio-backup-*.bin
+txbio-backup-*.json

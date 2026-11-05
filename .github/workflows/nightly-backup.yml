@@ -1,0 +1,48 @@
+# Nightly encrypted backup of the whole database (orders, customers, credit,
+# tabs, inventory, settings...). Kept for 90 days under this workflow's runs →
+# Artifacts. Needs secrets FIREBASE_SERVICE_ACCOUNT and BACKUP_PASSPHRASE.
+# Open a backup with tools/shipment-tracker/decrypt-backup.js.
+name: Nightly backup
+
+on:
+  schedule:
+    - cron: '41 8 * * *'     # about 2:41 AM Central (GitHub may run it late)
+  workflow_dispatch: {}
+
+permissions:
+  contents: read
+  actions: write             # keep-alive step
+
+concurrency:
+  group: nightly-backup
+  cancel-in-progress: false
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: tools/shipment-tracker/package-lock.json
+      - run: npm ci --omit=dev
+        working-directory: tools/shipment-tracker
+      - run: node backup-test.js && node backup.js
+        working-directory: tools/shipment-tracker
+        env:
+          FIREBASE_SERVICE_ACCOUNT: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          BACKUP_PASSPHRASE: ${{ secrets.BACKUP_PASSPHRASE }}
+      - uses: actions/upload-artifact@v4
+        with:
+          name: txbio-backup-${{ github.run_number }}
+          path: tools/shipment-tracker/backup/*.bin
+          retention-days: 90
+          if-no-files-found: error
+      - name: Keep this schedule active
+        if: always()
+        run: gh api -X PUT "repos/${{ github.repository }}/actions/workflows/nightly-backup.yml/enable" || true
+        env:
+          GH_TOKEN: ${{ github.token }}

@@ -93,3 +93,21 @@ and have a UPS tracking number: first scan → `in-transit`, delivery →
 kits (×10 vials) are added to `inventory` and it becomes `received`
 (`js/incoming.js`, one transaction, never twice). Shipments are watched for
 60 days.
+
+## Nightly backups
+
+`.github/workflows/nightly-backup.yml` saves an encrypted copy of the whole
+database every night (about 2:40 AM Central), kept for 90 days.
+
+**Setup (once):** GitHub → repo → Settings → Secrets and variables → Actions →
+New repository secret: `BACKUP_PASSPHRASE`, a long passphrase (12+ characters)
+you'll remember. Write it down somewhere safe; without it the backups can't be
+opened, and it can't be recovered.
+
+**Get a backup:** Actions → Nightly backup → a run → Artifacts → download.
+Unzip it to get `txbio-backup-YYYY-MM-DD.bin`.
+
+**Open it** (on a computer with Node 20+, in this folder):
+`node decrypt-backup.js path/to/txbio-backup-YYYY-MM-DD.bin`
+It asks for the passphrase and writes a `.json` with every collection and
+document. It contains customer details, so keep it private and delete it after.
