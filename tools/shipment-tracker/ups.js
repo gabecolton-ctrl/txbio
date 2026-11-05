@@ -64,7 +64,11 @@ function summarize(resp) {
   const sched = dd.find((d) => d.type === 'RDD') || dd.find((d) => d.type === 'SDD');
   const eta = sched ? String(sched.date).replace(/^(\d{4})(\d{2})(\d{2})$/, '$1-$2-$3') : '';
   const outForDelivery = /out for delivery/i.test(description);
-  const extra = { eta, stage: outForDelivery ? 'OutForDelivery' : '' };
+  const latestAct = acts[0] || null;
+  const addr = (latestAct && latestAct.location && latestAct.location.address) || {};
+  const location = [addr.city, addr.stateProvince].filter(Boolean).join(', ');
+  const lastEventAt = latestAct ? upsTime(latestAct.date, latestAct.time) : null;
+  const extra = { eta, stage: outForDelivery ? 'OutForDelivery' : (real.length ? 'InTransit' : 'InfoReceived'), location, lastEventAt };
   if (!real.length) return Object.assign({ state: 'label', at: null, description: description || 'Label created' }, extra);
   // UPS lists newest first; the first scan is the oldest non-label activity.
   const first = real[real.length - 1];

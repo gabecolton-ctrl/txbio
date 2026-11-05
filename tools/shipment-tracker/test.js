@@ -391,6 +391,20 @@ test('delivered email: sent once when the carrier delivers, only if the template
   OE.CONFIG.deliveredTemplateId = old;
 });
 
+test('combined carrier: UPS API for 1Z numbers, 17TRACK for others and as fallback', async () => {
+  const { combinedCarrier } = require('./carriers');
+  const used = [];
+  const ups = { track: async (n) => { used.push('ups ' + n); if (n === '1Z999AA10123456785') throw new Error('UPS tracking request failed (500)'); return { trackResponse: { shipment: [{ package: [{ activity: [{ status: { type: 'I', description: 'Arrived at Facility' }, location: { address: { city: 'Hialeah', stateProvince: 'FL' } }, date: '20261104', time: '204300' }] }] }] } }; } };
+  const t17 = { canTrack: () => true, status: async (n) => { used.push('17 ' + n); return summarize17(INFO('InTransit')); } };
+  const c = combinedCarrier({ ups, track17: t17, log: () => {} });
+  const a = await c.status('1Z999AA10123456784');
+  assert.deepStrictEqual([a.location, a.lastEventAt, a.stage], ['Hialeah, FL', '2026-11-04T20:43:00', 'InTransit']);
+  await c.status('9400111899223344556677');
+  await c.status('1Z999AA10123456785');
+  assert.deepStrictEqual(used, ['ups 1Z999AA10123456784', '17 9400111899223344556677', 'ups 1Z999AA10123456785', '17 1Z999AA10123456785']);
+  assert.strictEqual(c.name, 'UPS + 17TRACK');
+});
+
 (async () => {
   let failed = 0;
   for (const [name, fn] of tests) {
