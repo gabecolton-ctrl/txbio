@@ -3,17 +3,12 @@
 // server catalog (tools/build-catalog.js) and the sitemap (tools/build-seo.py).
 // To bring a product back, take its slug out of PAUSED and republish.
 //
-// Paused 2026-11-05 pending legal review: GLP-1 / incretin compounds.
-var PAUSED_PRODUCTS = [
-  'r-3',
-  'retatrutide-20mg-tirzepatide-40mg',
-  'retatrutide-5mg-cagrilintide-5mg',
-  'semaglutide',
-  'tirzepatide',
-  'cagrilintide',
-  'cagrisema-2-5mg-2-5mg',
-  'cagrisema-5mg-5mg'
-];
+// Nothing is paused right now. (GLP-1 / incretin products were paused
+// 2026-11-05 and put back the same day; the list was: 'r-3',
+// 'retatrutide-20mg-tirzepatide-40mg', 'retatrutide-5mg-cagrilintide-5mg',
+// 'semaglutide', 'tirzepatide', 'cagrilintide', 'cagrisema-2-5mg-2-5mg',
+// 'cagrisema-5mg-5mg'.)
+var PAUSED_PRODUCTS = [];
 
 // True for a paused product's slug, its dose slugs (r-3-30mg) and case slugs.
 function isPausedProduct(slug) {

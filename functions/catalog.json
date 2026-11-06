@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T00:15:49.591Z",
+  "generatedAt": "2026-11-06T00:42:12.274Z",
   "taxRate": 0.0825,
   "shipping": {
     "15": {
@@ -12,7 +12,7 @@
   "products": {
     "5-amino-1mq": {
       "name": "5-Amino-1MQ",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 32,
       "caseEligible": true,
       "doses": {
@@ -65,7 +65,7 @@
     },
     "bac-water": {
       "name": "Bacteriostatic Water",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 16,
       "caseEligible": false,
       "doses": {
@@ -90,7 +90,7 @@
     },
     "bpc-157": {
       "name": "BPC 157",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 30,
       "caseEligible": true,
       "doses": {
@@ -125,6 +125,27 @@
       "caseEligible": true,
       "doses": null
     },
+    "cagrilintide": {
+      "name": "Cagrilintide",
+      "packSize": "1 vial x 10mg",
+      "price": 121,
+      "caseEligible": true,
+      "doses": null
+    },
+    "cagrisema-2-5mg-2-5mg": {
+      "name": "Cagrisema (2.5mg+2.5mg)",
+      "packSize": "1 vial x 5mg",
+      "price": 46,
+      "caseEligible": true,
+      "doses": null
+    },
+    "cagrisema-5mg-5mg": {
+      "name": "Cagrisema(5mg+5mg)",
+      "packSize": "1 vial x 10mg",
+      "price": 89,
+      "caseEligible": true,
+      "doses": null
+    },
     "cartalax": {
       "name": "Cartalax",
       "packSize": "1 vial x 20mg",
@@ -148,7 +169,7 @@
     },
     "cjc-1295-without-dac": {
       "name": "CJC 1295(without DAC)",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 40,
       "caseEligible": true,
       "doses": {
@@ -180,7 +201,7 @@
     },
     "dsip": {
       "name": "DSIP",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 31,
       "caseEligible": true,
       "doses": {
@@ -205,7 +226,7 @@
     },
     "ghk-cu": {
       "name": "GHK-Cu",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 55,
       "caseEligible": true,
       "doses": {
@@ -230,7 +251,7 @@
     },
     "glutathione": {
       "name": "Glutathione",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 37,
       "caseEligible": true,
       "doses": {
@@ -253,7 +274,7 @@
     },
     "hcg": {
       "name": "HCG",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 42,
       "caseEligible": true,
       "doses": {
@@ -285,7 +306,7 @@
     },
     "ipamorelin": {
       "name": "Ipamorelin",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 29,
       "caseEligible": true,
       "doses": {
@@ -317,7 +338,7 @@
     },
     "kpv": {
       "name": "KPV",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 22,
       "caseEligible": true,
       "doses": {
@@ -348,7 +369,7 @@
       "doses": null
     },
     "lipo-c-fatblaster": {
-      "name": "Lipo-C (FatBlaster)",
+      "name": "Lipo-C Plus",
       "packSize": "1 vial x 10ml",
       "price": 31,
       "caseEligible": true,
@@ -391,7 +412,7 @@
     },
     "mots-c-human": {
       "name": "MOTS-c (Human)",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 35,
       "caseEligible": true,
       "doses": {
@@ -414,7 +435,7 @@
     },
     "nad-plus": {
       "name": "Nad+",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 24,
       "caseEligible": true,
       "doses": {
@@ -437,7 +458,7 @@
     },
     "oxytocin": {
       "name": "Oxytocin",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 22,
       "caseEligible": true,
       "doses": {
@@ -467,12 +488,92 @@
       "caseEligible": true,
       "doses": null
     },
+    "r-3": {
+      "name": "R-3",
+      "packSize": "1 vial, size selectable",
+      "price": 70,
+      "caseEligible": true,
+      "doses": {
+        "r-3-5mg": {
+          "label": "5mg",
+          "price": 70,
+          "packSize": "1 vial x 5mg"
+        },
+        "r-3-10mg": {
+          "label": "10mg",
+          "price": 109,
+          "packSize": "1 vial x 10mg"
+        },
+        "r-3-15mg": {
+          "label": "15mg",
+          "price": 147,
+          "packSize": "1 vial x 15mg"
+        },
+        "r-3-20mg": {
+          "label": "20mg",
+          "price": 179,
+          "packSize": "1 vial x 20mg"
+        },
+        "r-3-30mg": {
+          "label": "30mg",
+          "price": 249,
+          "packSize": "1 vial x 30mg"
+        },
+        "r-3-40mg": {
+          "label": "40mg",
+          "price": 299,
+          "packSize": "1 vial x 40mg"
+        },
+        "r-3-60mg": {
+          "label": "60mg",
+          "price": 359,
+          "packSize": "1 vial x 60mg"
+        }
+      }
+    },
+    "retatrutide-20mg-tirzepatide-40mg": {
+      "name": "Retatrutide 20mg + Tirzepatide 40mg",
+      "packSize": "1 vial x 60mg",
+      "price": 157,
+      "caseEligible": true,
+      "doses": null
+    },
+    "retatrutide-5mg-cagrilintide-5mg": {
+      "name": "Retatrutide 5mg+cagrilintide 5mg",
+      "packSize": "1 vial x 10mg",
+      "price": 84,
+      "caseEligible": true,
+      "doses": null
+    },
     "selank": {
       "name": "Selank",
       "packSize": "1 vial x 10mg",
       "price": 35,
       "caseEligible": true,
       "doses": null
+    },
+    "semaglutide": {
+      "name": "Semaglutide",
+      "packSize": "1 vial, size selectable",
+      "price": 69,
+      "caseEligible": true,
+      "doses": {
+        "semaglutide-5mg": {
+          "label": "5mg",
+          "price": 69,
+          "packSize": "1 vial x 5mg"
+        },
+        "semaglutide-10mg": {
+          "label": "10mg",
+          "price": 109,
+          "packSize": "1 vial x 10mg"
+        },
+        "semaglutide-20mg": {
+          "label": "20mg",
+          "price": 121,
+          "packSize": "1 vial x 20mg"
+        }
+      }
     },
     "semax-10mg-selank-10mg": {
       "name": "Semax 10mg+Selank 10mg",
@@ -483,7 +584,7 @@
     },
     "semax": {
       "name": "Semax",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 35,
       "caseEligible": true,
       "doses": {
@@ -496,7 +597,7 @@
     },
     "sermorelin-acetate": {
       "name": "Sermorelin Acetate",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 38,
       "caseEligible": true,
       "doses": {
@@ -514,7 +615,7 @@
     },
     "ss-31": {
       "name": "SS-31",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 47,
       "caseEligible": true,
       "doses": {
@@ -546,7 +647,7 @@
     },
     "tb500-thymosin-beta-4": {
       "name": "TB500 Thymosin Beta-4",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 42,
       "caseEligible": true,
       "doses": {
@@ -564,7 +665,7 @@
     },
     "tesamorelin": {
       "name": "Tesamorelin",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 98,
       "caseEligible": true,
       "doses": {
@@ -594,9 +695,47 @@
       "caseEligible": true,
       "doses": null
     },
+    "tirzepatide": {
+      "name": "Tirzepatide",
+      "packSize": "1 vial, size selectable",
+      "price": 62,
+      "caseEligible": true,
+      "doses": {
+        "tirzepatide-5mg": {
+          "label": "5mg",
+          "price": 62,
+          "packSize": "1 vial x 5mg"
+        },
+        "tirzepatide-10mg": {
+          "label": "10mg",
+          "price": 84,
+          "packSize": "1 vial x 10mg"
+        },
+        "tirzepatide-20mg": {
+          "label": "20mg",
+          "price": 139,
+          "packSize": "1 vial x 20mg"
+        },
+        "tirzepatide-30mg": {
+          "label": "30mg",
+          "price": 188,
+          "packSize": "1 vial x 30mg"
+        },
+        "tirzepatide-40mg": {
+          "label": "40mg",
+          "price": 233,
+          "packSize": "1 vial x 40mg"
+        },
+        "tirzepatide-60mg": {
+          "label": "60mg",
+          "price": 312,
+          "packSize": "1 vial x 60mg"
+        }
+      }
+    },
     "vip": {
       "name": "VIP",
-      "packSize": "1 vial, dosage selectable",
+      "packSize": "1 vial, size selectable",
       "price": 49,
       "caseEligible": true,
       "doses": {
