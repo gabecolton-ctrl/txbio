@@ -35,7 +35,7 @@ var PRODUCT_SEARCH = {
  "kpv": "KPV | Lys-Pro-Val; α-MSH (11–13) | Tripeptide",
  "l-carnitine-600mg": "L-carnitine 600mg | L-Carnitine | Levocarnitine | Amino acid derivative",
  "lemon-bottle": "Lemon Bottle",
- "lipo-c-fatblaster": "Lipo-C (FatBlaster) | Lipodin",
+ "lipo-c-fatblaster": "Lipo-C Plus | Lipodin",
  "lipo-c-with-b12": "Lipo-C with B12 | Lipodin",
  "lipo-c": "Lipo-C | Lipodin",
  "ll37": "LL37 | LL-37 | Human cathelicidin antimicrobial peptide | 37-amino-acid antimicrobial peptide",

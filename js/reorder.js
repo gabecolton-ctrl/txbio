@@ -35,6 +35,7 @@ var Reorder = (function () {
   function currentLine(item) {
     var isCase = !!(item.caseOf || /-case$/.test(item.slug || ''));
     var unitSlug = item.unitSlug || String(item.slug || '').replace(/-case$/, '');
+    if (typeof isPausedProduct === 'function' && isPausedProduct(unitSlug)) return Promise.resolve({ skip: 'temporarily unavailable' });
     var found = productFor(unitSlug);
     if (!found) return Promise.resolve({ skip: 'no longer in the catalog' });
     var price = found.dose === null

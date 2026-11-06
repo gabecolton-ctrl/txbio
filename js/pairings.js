@@ -54,6 +54,7 @@ var Pairings = (function () {
   // Diluent for powders; IGF-1 LR3 is usually reconstituted in acetic acid.
   var WATER = { 'igf-1-lr3': 'acetic-acid-water' };
   var DEFAULT_WATER = 'bac-water';
+  var SUGGEST_WATER = false;
   var WATER_DOSE = { 'bac-water': 'bac-water-10ml' };
   var LIQUID = /\d\s*ml\b/i;
 
@@ -98,7 +99,8 @@ var Pairings = (function () {
   function candidates(slugs) {
     var out = [];
     slugs.forEach(function (s) {
-      if (isPowder(s)) out.push(WATER[s] || DEFAULT_WATER);
+      // Diluent suggestions turned off 2026-11-05 (legal review): never pair water with peptides.
+      if (SUGGEST_WATER && isPowder(s)) out.push(WATER[s] || DEFAULT_WATER);
       (PAIRS[s] || []).forEach(function (r) { out.push(r); });
     });
     return out.filter(function (x, i) { return out.indexOf(x) === i; });
@@ -129,7 +131,7 @@ var Pairings = (function () {
     var out = [], seen = {};
     exclude.concat(slugs).forEach(function (s) { seen[s] = true; });
     var powders = slugs.filter(isPowder);
-    if (powders.length) {
+    if (SUGGEST_WATER && powders.length) {
       var water = WATER[powders[0]] || DEFAULT_WATER;
       if (!seen[water]) { seen[water] = true; out.push({ slug: water, why: 'For reconstitution' }); }
     }

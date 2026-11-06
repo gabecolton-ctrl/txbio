@@ -25,7 +25,7 @@
     var perks = promo.active
       ? 'Gives customers <strong>' + esc(promo.discountPercent) + '% off</strong> ' + esc(TYPE_TEXT[promo.type] || '') + '.'
       : '<span class="ref-paused">This code is paused right now. Contact us if you think that’s a mistake.</span>';
-    var extra = [['Catalog', '/services.html'], ['Reconstitution calculator', '/calculator.html']];
+    var extra = [['Catalog', '/services.html']];
     return '<div class="ref-card">' +
       '<span class="ref-card-label">Your link · code ' + esc(code) + '</span>' +
       '<div class="ref-card-row"><code class="ref-card-url">' + esc(url.replace('https://', '')) + '</code>' +

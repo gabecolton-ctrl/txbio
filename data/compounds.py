@@ -148,14 +148,14 @@ C = {
  '5-amino-1mq': dict(
     name='5-Amino-1MQ', aka='5-Amino-1-methylquinolinium', type='Small molecule; NNMT inhibitor',
     sequence='', formula='C10H11N2·I (iodide salt)', mw='286.1 (iodide salt)', cas='42464-96-0 (iodide salt)',
-    overview='5-Amino-1MQ is a small-molecule, selective inhibitor of nicotinamide N-methyltransferase (NNMT). In cell studies it reduced lipogenesis in 3T3-L1 adipocytes and lowered 1-methylnicotinamide levels without affecting related methyltransferases or NAD+ salvage enzymes, and it has been studied in mouse models of diet-induced obesity and muscle injury.',
+    overview='5-Amino-1MQ is a small-molecule, selective inhibitor of nicotinamide N-methyltransferase (NNMT). In cell studies it reduced lipogenesis in 3T3-L1 adipocytes and lowered 1-methylnicotinamide levels without affecting related methyltransferases or NAD+ salvage enzymes.',
     areas=['NNMT inhibition', 'Adipocyte metabolism', 'NAD+ and methyl-donor pathways'],
     sources=['amq_sigma']),
  'aod9604': dict(
     name='AOD9604', aka='hGH fragment 176–191 (Tyr-modified)', type='Synthetic 16-amino-acid peptide',
     sequence='YLRIVQCRSVEGSCGF (disulfide Cys7–Cys14)', formula='C78H123N23O23S2', mw='1815.1', cas='221231-10-3',
-    overview='AOD9604 is a 16-amino-acid fragment of the C-terminal region of human growth hormone (residues 176–191) with a tyrosine added at the N-terminus. It was developed to study the lipolytic activity of growth hormone separately from its effects on IGF-1. Later trials did not show a sufficient effect and its clinical development ended in 2007, and it is banned in competitive sport.',
-    areas=['Lipolysis and fat metabolism', 'Growth hormone structure–function', 'IGF-1-independent signaling'],
+    overview='AOD9604 is a 16-amino-acid fragment of the C-terminal region of human growth hormone (residues 176–191) with a tyrosine added at the N-terminus. It was developed to study growth hormone C-terminal fragment activity separately from IGF-1 signaling; its clinical development ended in 2007.',
+    areas=['Adipocyte signaling models', 'Growth hormone structure–function', 'IGF-1-independent signaling'],
     sources=['aod_wiki']),
  'ara290': dict(
     name='ARA-290 (Cibinetide)', aka='Pyroglutamate helix B surface peptide', type='Synthetic 11-amino-acid peptide',
@@ -233,8 +233,8 @@ C = {
  'mots-c': dict(
     name='MOTS-c', aka='Mitochondrial open reading frame of the 12S rRNA-c', type='Mitochondrial-derived peptide (16 amino acids)',
     sequence='MRWQEMGYIFYPRKLR', formula='C101H152N28O22S2', mw='2174.6', cas='1627580-64-6',
-    overview='MOTS-c is a 16-amino-acid peptide encoded by the mitochondrial MT-RNR1 (12S rRNA) gene, described in 2015 by researchers at the USC Davis School of Gerontology. It is studied for regulating glucose metabolism in skeletal muscle, rises in response to exercise, and in mice has been associated with improved physical fitness and reduced obesity.',
-    areas=['Mitochondrial-derived peptides', 'Skeletal-muscle glucose metabolism', 'Exercise and metabolic homeostasis'],
+    overview='MOTS-c is a 16-amino-acid peptide encoded by the mitochondrial MT-RNR1 (12S rRNA) gene, described in 2015 by researchers at the USC Davis School of Gerontology. It is studied in research on mitochondrial-nuclear signaling and cellular glucose handling.',
+    areas=['Mitochondrial-derived peptides', 'Skeletal-muscle glucose metabolism', 'Mitochondrial-nuclear signaling'],
     sources=['mots_wiki']),
  'nad-plus': dict(
     name='NAD+', aka='Nicotinamide adenine dinucleotide; β-DPN', type='Dinucleotide coenzyme',
@@ -263,8 +263,8 @@ C = {
  'selank': dict(
     name='Selank', aka='TKPRPGP', type='Synthetic heptapeptide (tuftsin analog)',
     sequence='Thr-Lys-Pro-Arg-Pro-Gly-Pro', formula='C33H57N11O9', mw='751.9', cas='129954-34-3',
-    overview='Selank is a synthetic analog of the human immunomodulatory peptide tuftsin, developed at the Institute of Molecular Genetics of the Russian Academy of Sciences. It has been investigated in clinical studies for effects on anxiety and cognitive function and is available in pharmacies in Russia and Ukraine.',
-    areas=['Anxiolytic peptide research', 'Immunomodulation', 'Cognitive-function models'],
+    overview='Selank is a synthetic analog of the human immunomodulatory peptide tuftsin, developed at the Institute of Molecular Genetics of the Russian Academy of Sciences. It has been investigated in studies of cognitive function.',
+    areas=['Neuropeptide signaling', 'Immunomodulation', 'Cognitive-function models'],
     sources=['selank_wiki']),
  'semax': dict(
     name='Semax', aka='MEHFPGP; ACTH (4-7)-Pro-Gly-Pro', type='Synthetic heptapeptide (ACTH fragment analog)',
@@ -311,7 +311,7 @@ C = {
  'slu-pp-332': dict(
     name='SLU-PP-332', aka='4-hydroxy-benzoic acid, 2-(2-naphthalenylmethylene)hydrazide', type='Small molecule; ERRα/β/γ agonist',
     sequence='', formula='C18H14N2O2', mw='290.3', cas='303760-60-3',
-    overview='SLU-PP-332 is a small-molecule agonist of the estrogen-related receptors ERRα, ERRβ, and ERRγ. In cell studies it increased mitochondrial respiration in skeletal myoblasts, and in mice it increased oxidative muscle fibers and running endurance and reduced fat mass in diet-induced obesity models.',
+    overview='SLU-PP-332 is a small-molecule agonist of the estrogen-related receptors ERRα, ERRβ, and ERRγ. In cell studies it increased mitochondrial respiration in skeletal myoblasts.',
     areas=['Estrogen-related receptor signaling', 'Mitochondrial biogenesis', 'Exercise-mimetic research'],
     sources=['slu_cay']),
  'hcg': dict(
@@ -403,18 +403,18 @@ P = {
  # Supplies and blends without a single defined compound.
  'bac-water': dict(text=dict(
     type='Sterile water with 0.9% benzyl alcohol',
-    overview='Bacteriostatic water is sterile, nonpyrogenic water containing 0.9% (9 mg/mL) benzyl alcohol as a bacteriostatic preservative. It is supplied in multiple-use vials for dissolving or diluting lyophilized compounds. Because of the benzyl alcohol, it is not appropriate where preservative-free water is required.',
-    areas=['Reconstitution of lyophilized peptides', 'Multiple-withdrawal laboratory use'],
-    sources=['bac_pfizer'])),
+    overview='Bacteriostatic water is sterile, nonpyrogenic water containing 0.9% (9 mg/mL) benzyl alcohol as a bacteriostatic preservative, supplied in multiple-use vials as a general laboratory reagent. Because of the benzyl alcohol, it is not appropriate where preservative-free water is required.',
+    areas=['General laboratory reagent', 'Multiple-withdrawal laboratory use'],
+    sources=[])),
  'sterile-water': dict(text=dict(
     type='Sterile, preservative-free water',
-    overview='Sterile water is water purified and sterilized without added preservatives. It is used to reconstitute or dilute compounds where a preservative such as benzyl alcohol is not wanted. Because it contains no preservative, an opened vial should be handled as single-use.',
-    areas=['Preservative-free reconstitution', 'Laboratory dilution'],
+    overview='Sterile water is water purified and sterilized without added preservatives, used as a general laboratory reagent where a preservative such as benzyl alcohol is not wanted. Because it contains no preservative, an opened vial should be handled as single-use.',
+    areas=['General laboratory reagent', 'Laboratory dilution'],
     sources=[])),
  'acetic-acid-water': dict(text=dict(
     type='Dilute acetic acid in sterile water',
-    overview='Acetic acid water is sterile water containing a small amount of acetic acid. The mildly acidic solution is used to dissolve peptides that are poorly soluble in neutral water, such as some basic or aggregation-prone sequences.',
-    areas=['Reconstitution of poorly soluble peptides'],
+    overview='Acetic acid water is sterile water containing a small amount of acetic acid, a mildly acidic laboratory solvent for in-vitro work with compounds that are poorly soluble in neutral water.',
+    areas=['General laboratory reagent', 'In-vitro solubility work'],
     sources=[]),
     needs='concentration of acetic acid (e.g. 0.6%)'),
  'glow-blend': dict(compounds=['ghk-cu', 'bpc-157', 'tb-500'], blend='50mg GHK-Cu + 10mg BPC-157 + 10mg TB-500 per vial (70mg total)'),

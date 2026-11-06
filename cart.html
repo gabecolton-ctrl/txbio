@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611051302">
+<link rel="stylesheet" href="css/style.css?v=202611051821">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611051302"></script>
+<script src="js/splash.js?v=202611051821"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -63,7 +63,6 @@
       <ul class="nav-primary">
         <li><a href="services.html">Catalog</a></li>
         <li><a href="bundles.html">Panels</a></li>
-        <li><a href="calculator.html">Calculator</a></li>
         <li><a href="about.html">About</a></li>
         <li><a href="contact.html">Contact</a></li>
       </ul>
@@ -79,6 +78,7 @@
               <li><a href="admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
               <li><a href="admin-carts.html" id="nav-admin-carts-link">Carts</a></li>
               <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+              <li><a href="admin-calculator.html">Calculator</a></li>
               <li><a href="admin-incoming.html" id="nav-admin-incoming-link">Incoming</a></li>
               <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
               <li><a href="admin-gift-cards.html" id="nav-admin-giftcards-link">Gift cards</a></li>
@@ -184,7 +184,6 @@
       <div class="footer-links">
         <a href="services.html">Catalog</a>
         <a href="bundles.html">Research panels</a>
-        <a href="calculator.html">Reconstitution calculator</a>
         <a href="gift-cards.html">Gift cards</a>
         <a href="about.html">About</a>
         <a href="contact.html">Contact</a>
@@ -205,24 +204,26 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611051302"></script>
-<script src="js/analytics.js?v=202611051302"></script>
-<script src="js/referral.js?v=202611051302"></script>
-<script src="js/cart.js?v=202611051302"></script>
-<script src="js/quotes.js?v=202611051302"></script>
-<script src="js/at-cost.js?v=202611051302"></script>
-<script src="js/family-pricing.js?v=202611051302"></script>
-<script src="js/free-shipping.js?v=202611051302"></script>
-<script src="js/loyalty.js?v=202611051302"></script>
-<script src="js/pairings.js?v=202611051302"></script>
-<script src="js/staff.js?v=202611051302"></script>
-<script src="js/nav-auth.js?v=202611051302"></script>
-<script src="js/profile-gate.js?v=202611051302"></script>
-<script src="js/auth-guard.js?v=202611051302"></script>
-<script src="js/main.js?v=202611051302"></script>
-<script src="js/ship-cutoff.js?v=202611051302"></script>
-<script src="js/nav-toggle.js?v=202611051302"></script>
+<script src="js/firebase-config.js?v=202611051821"></script>
+<script src="js/analytics.js?v=202611051821"></script>
+<script src="js/referral.js?v=202611051821"></script>
+<script src="js/paused.js?v=202611051821"></script>
+<script src="js/cart.js?v=202611051821"></script>
+<script src="js/quotes.js?v=202611051821"></script>
+<script src="js/at-cost.js?v=202611051821"></script>
+<script src="js/family-pricing.js?v=202611051821"></script>
+<script src="js/free-shipping.js?v=202611051821"></script>
+<script src="js/loyalty.js?v=202611051821"></script>
+<script src="js/pairings.js?v=202611051821"></script>
+<script src="js/staff.js?v=202611051821"></script>
+<script src="js/nav-auth.js?v=202611051821"></script>
+<script src="js/profile-gate.js?v=202611051821"></script>
+<script src="js/auth-guard.js?v=202611051821"></script>
+<script src="js/main.js?v=202611051821"></script>
+<script src="js/ship-cutoff.js?v=202611051821"></script>
+<script src="js/nav-toggle.js?v=202611051821"></script>
 <script>
+  var BAC_WATER_PROMPT = false;
   var bacWaterPromptShown = false;
   // When the cart holds a case of a powder product, the prompt offers a case
   // of 10ml bac water (10 vials, full price) instead of a single vial.
@@ -312,6 +313,7 @@
     }
     // Lines from a quote we sent (js/quotes.js): fixed price and quantity.
     function quoteTag(item) {
+      if (typeof isPausedProduct === 'function' && isPausedProduct(item.unitSlug || item.slug)) return ' <span class="quote-tag is-ended">Temporarily unavailable · remove to check out</span>';
       if (item.bundleName) return ' <span class="quote-tag">' + String(item.bundleName).replace(/[&<>"]/g, '') + '</span>';
       if (item.giftCard) return ' <span class="quote-tag">Gift card · emailed to ' + String(item.giftCard.toEmail || '').replace(/[&<>"]/g, '') + '</span>';
       if (!item.quoteId) return '';
@@ -379,7 +381,8 @@
 
       // Prompt about bac water once per page load, only if the cart has
       // powder products and doesn't already include bac water.
-      if (!bacWaterPromptShown && cartHasPowderProduct(items) && !cartHasBacWater(items)) {
+      // Turned off 2026-11-05 (legal review): don't suggest a diluent alongside peptides.
+      if (BAC_WATER_PROMPT && !bacWaterPromptShown && cartHasPowderProduct(items) && !cartHasBacWater(items)) {
         bacWaterPromptShown = true;
         setBacWaterOffer(items);
         document.getElementById('bac-water-modal').style.display = 'flex';

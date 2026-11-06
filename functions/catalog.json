@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T23:39:58.715Z",
+  "generatedAt": "2026-11-06T00:15:49.591Z",
   "taxRate": 0.0825,
   "shipping": {
     "15": {
@@ -122,27 +122,6 @@
       "name": "BPC 5mg+TB5mg",
       "packSize": "1 vial x 10mg",
       "price": 53,
-      "caseEligible": true,
-      "doses": null
-    },
-    "cagrilintide": {
-      "name": "Cagrilintide",
-      "packSize": "1 vial x 10mg",
-      "price": 121,
-      "caseEligible": true,
-      "doses": null
-    },
-    "cagrisema-2-5mg-2-5mg": {
-      "name": "Cagrisema (2.5mg+2.5mg)",
-      "packSize": "1 vial x 5mg",
-      "price": 46,
-      "caseEligible": true,
-      "doses": null
-    },
-    "cagrisema-5mg-5mg": {
-      "name": "Cagrisema(5mg+5mg)",
-      "packSize": "1 vial x 10mg",
-      "price": 89,
       "caseEligible": true,
       "doses": null
     },
@@ -488,92 +467,12 @@
       "caseEligible": true,
       "doses": null
     },
-    "r-3": {
-      "name": "R-3",
-      "packSize": "1 vial, dosage selectable",
-      "price": 70,
-      "caseEligible": true,
-      "doses": {
-        "r-3-5mg": {
-          "label": "5mg",
-          "price": 70,
-          "packSize": "1 vial x 5mg"
-        },
-        "r-3-10mg": {
-          "label": "10mg",
-          "price": 109,
-          "packSize": "1 vial x 10mg"
-        },
-        "r-3-15mg": {
-          "label": "15mg",
-          "price": 147,
-          "packSize": "1 vial x 15mg"
-        },
-        "r-3-20mg": {
-          "label": "20mg",
-          "price": 179,
-          "packSize": "1 vial x 20mg"
-        },
-        "r-3-30mg": {
-          "label": "30mg",
-          "price": 249,
-          "packSize": "1 vial x 30mg"
-        },
-        "r-3-40mg": {
-          "label": "40mg",
-          "price": 299,
-          "packSize": "1 vial x 40mg"
-        },
-        "r-3-60mg": {
-          "label": "60mg",
-          "price": 359,
-          "packSize": "1 vial x 60mg"
-        }
-      }
-    },
-    "retatrutide-20mg-tirzepatide-40mg": {
-      "name": "Retatrutide 20mg + Tirzepatide 40mg",
-      "packSize": "1 vial x 60mg",
-      "price": 157,
-      "caseEligible": true,
-      "doses": null
-    },
-    "retatrutide-5mg-cagrilintide-5mg": {
-      "name": "Retatrutide 5mg+cagrilintide 5mg",
-      "packSize": "1 vial x 10mg",
-      "price": 84,
-      "caseEligible": true,
-      "doses": null
-    },
     "selank": {
       "name": "Selank",
       "packSize": "1 vial x 10mg",
       "price": 35,
       "caseEligible": true,
       "doses": null
-    },
-    "semaglutide": {
-      "name": "Semaglutide",
-      "packSize": "1 vial, dosage selectable",
-      "price": 69,
-      "caseEligible": true,
-      "doses": {
-        "semaglutide-5mg": {
-          "label": "5mg",
-          "price": 69,
-          "packSize": "1 vial x 5mg"
-        },
-        "semaglutide-10mg": {
-          "label": "10mg",
-          "price": 109,
-          "packSize": "1 vial x 10mg"
-        },
-        "semaglutide-20mg": {
-          "label": "20mg",
-          "price": 121,
-          "packSize": "1 vial x 20mg"
-        }
-      }
     },
     "semax-10mg-selank-10mg": {
       "name": "Semax 10mg+Selank 10mg",
@@ -694,44 +593,6 @@
       "price": 89,
       "caseEligible": true,
       "doses": null
-    },
-    "tirzepatide": {
-      "name": "Tirzepatide",
-      "packSize": "1 vial, dosage selectable",
-      "price": 62,
-      "caseEligible": true,
-      "doses": {
-        "tirzepatide-5mg": {
-          "label": "5mg",
-          "price": 62,
-          "packSize": "1 vial x 5mg"
-        },
-        "tirzepatide-10mg": {
-          "label": "10mg",
-          "price": 84,
-          "packSize": "1 vial x 10mg"
-        },
-        "tirzepatide-20mg": {
-          "label": "20mg",
-          "price": 139,
-          "packSize": "1 vial x 20mg"
-        },
-        "tirzepatide-30mg": {
-          "label": "30mg",
-          "price": 188,
-          "packSize": "1 vial x 30mg"
-        },
-        "tirzepatide-40mg": {
-          "label": "40mg",
-          "price": 233,
-          "packSize": "1 vial x 40mg"
-        },
-        "tirzepatide-60mg": {
-          "label": "60mg",
-          "price": 312,
-          "packSize": "1 vial x 60mg"
-        }
-      }
     },
     "vip": {
       "name": "VIP",

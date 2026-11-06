@@ -83,7 +83,15 @@ var Cart = (function () {
     return new Promise(function () {}); // the page is leaving
   }
 
+  // Paused products (js/paused.js) can't be added.
+  function pausedIn(list) {
+    if (typeof isPausedProduct !== 'function') return null;
+    for (var i = 0; i < list.length; i++) if (list[i] && isPausedProduct(list[i].unitSlug || list[i].slug)) return list[i];
+    return null;
+  }
+
   function addItem(product, qty) {
+    if (pausedIn([product])) return Promise.reject(new Error(typeof PAUSED_MESSAGE === 'string' ? PAUSED_MESSAGE : 'This product is temporarily unavailable.'));
     qty = qty || 1;
     var user = getCurrentUser();
     if (!user) {
@@ -159,6 +167,8 @@ var Cart = (function () {
 
   // Adds several lines at once (a bundle, js/bundles.js).
   function addLines(lines) {
+    var bad = pausedIn(lines || []);
+    if (bad) return Promise.reject(new Error((bad.name || 'An item') + ' is temporarily unavailable.'));
     var user = getCurrentUser();
     if (!user) {
       return waitForUser(1500).then(function (u) {

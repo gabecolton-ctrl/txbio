@@ -3,7 +3,7 @@ var PRODUCTS = [
   {
     slug: "5-amino-1mq",
     name: "5-Amino-1MQ",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 32,
     category: "Research Compound",
     description: "5-Amino-1MQ is a small-molecule, selective inhibitor of nicotinamide N-methyltransferase (NNMT).",
@@ -17,7 +17,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 7,
     category: "Research Compound",
-    description: "Acetic acid water is sterile water containing a small amount of acetic acid.",
+    description: "Acetic acid water is sterile water containing a small amount of acetic acid, a mildly acidic laboratory solvent for in-vitro work with compounds that are poorly soluble in neutral water..",
     storage: "Store at room temperature, protect from light. Refrigerate after opening per standard lab protocol.",
     purity: "99% Pure",
     form: "Sterile liquid"
@@ -69,10 +69,10 @@ var PRODUCTS = [
   {
     slug: "bac-water",
     name: "Bacteriostatic Water",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 16,
     category: "Research Compound",
-    description: "Bacteriostatic water is sterile, nonpyrogenic water containing 0.9% (9 mg/mL) benzyl alcohol as a bacteriostatic preservative.",
+    description: "Bacteriostatic water is sterile, nonpyrogenic water containing 0.9% (9 mg/mL) benzyl alcohol as a bacteriostatic preservative, supplied in multiple-use vials as a general laboratory reagent.",
     storage: "Store at room temperature, protect from light. Refrigerate after opening per standard lab protocol.",
     purity: "99% Pure",
     form: "Sterile liquid"
@@ -91,7 +91,7 @@ var PRODUCTS = [
   {
     slug: "bpc-157",
     name: "BPC 157",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 30,
     category: "Research Compound",
     description: "BPC-157 is a synthetic 15-amino-acid peptide derived from a protein found in human gastric juice.",
@@ -190,7 +190,7 @@ var PRODUCTS = [
   {
     slug: "cjc-1295-without-dac",
     name: "CJC 1295(without DAC)",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 40,
     category: "Research Compound",
     description: "CJC-1295 without DAC (Modified GRF 1-29) is a 29-amino-acid analog of growth hormone-releasing hormone (GHRH).",
@@ -223,7 +223,7 @@ var PRODUCTS = [
   {
     slug: "dsip",
     name: "DSIP",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 31,
     category: "Research Compound",
     description: "Delta sleep-inducing peptide (DSIP) is a nonapeptide found in neurons, peripheral organs, and plasma.",
@@ -245,7 +245,7 @@ var PRODUCTS = [
   {
     slug: "ghk-cu",
     name: "GHK-Cu",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 55,
     category: "Research Compound",
     description: "GHK-Cu is a naturally occurring copper complex of the tripeptide glycyl-L-histidyl-L-lysine, first isolated from human plasma and also found in saliva and urine.",
@@ -267,7 +267,7 @@ var PRODUCTS = [
   {
     slug: "glutathione",
     name: "Glutathione",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 37,
     category: "Research Compound",
     description: "Glutathione is a tripeptide of glutamate, cysteine, and glycine with an unusual gamma-peptide bond, and the main non-protein thiol in cells.",
@@ -278,7 +278,7 @@ var PRODUCTS = [
   {
     slug: "hcg",
     name: "HCG",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 42,
     category: "Research Compound",
     description: "Human chorionic gonadotropin is a 237-amino-acid glycoprotein hormone produced naturally by the placenta.",
@@ -311,7 +311,7 @@ var PRODUCTS = [
   {
     slug: "ipamorelin",
     name: "Ipamorelin",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 29,
     category: "Research Compound",
     description: "Ipamorelin is a synthetic pentapeptide that acts as a selective agonist of the ghrelin / growth hormone secretagogue receptor (GHS-R).",
@@ -344,7 +344,7 @@ var PRODUCTS = [
   {
     slug: "kpv",
     name: "KPV",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 22,
     category: "Research Compound",
     description: "KPV is a tripeptide derived from the C-terminal fragment of alpha-melanocyte-stimulating hormone (α-MSH).",
@@ -376,11 +376,11 @@ var PRODUCTS = [
   },
   {
     slug: "lipo-c-fatblaster",
-    name: "Lipo-C (FatBlaster)",
+    name: "Lipo-C Plus",
     packSize: "1 vial x 10ml",
     price: 31,
     category: "Research Compound",
-    description: "Lipo-C (FatBlaster) is a multi-compound research blend.",
+    description: "Lipo-C Plus is a multi-compound research blend.",
     storage: "Refrigerate at 2-8°C, protect from light.",
     purity: "99% Pure",
     form: "Liquid solution"
@@ -443,7 +443,7 @@ var PRODUCTS = [
   {
     slug: "mots-c-human",
     name: "MOTS-c (Human)",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 35,
     category: "Research Compound",
     description: "MOTS-c is a 16-amino-acid peptide encoded by the mitochondrial MT-RNR1 (12S rRNA) gene, described in 2015 by researchers at the USC Davis School of Gerontology.",
@@ -454,7 +454,7 @@ var PRODUCTS = [
   {
     slug: "nad-plus",
     name: "Nad+",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 24,
     category: "Research Compound",
     description: "Nicotinamide adenine dinucleotide (NAD+) is the oxidized form of a coenzyme central to cellular redox reactions and energy metabolism.",
@@ -465,7 +465,7 @@ var PRODUCTS = [
   {
     slug: "oxytocin",
     name: "Oxytocin",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 22,
     category: "Research Compound",
     description: "Oxytocin is a mammalian peptide hormone that also acts as a neurotransmitter in the brain.",
@@ -498,7 +498,7 @@ var PRODUCTS = [
   {
     slug: "r-3",
     name: "R-3",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 70,
     category: "Research Compound",
     description: "Retatrutide is a single peptide that activates three receptors: the glucagon receptor, the GLP-1 receptor, and the GIP receptor.",
@@ -542,7 +542,7 @@ var PRODUCTS = [
   {
     slug: "semaglutide",
     name: "Semaglutide",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 69,
     category: "Research Compound",
     description: "Semaglutide is a synthetic analog of glucagon-like peptide-1 (GLP-1).",
@@ -564,7 +564,7 @@ var PRODUCTS = [
   {
     slug: "semax",
     name: "Semax",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 35,
     category: "Research Compound",
     description: "Semax is a synthetic heptapeptide analog of a fragment of adrenocorticotropic hormone (ACTH 4–10).",
@@ -575,7 +575,7 @@ var PRODUCTS = [
   {
     slug: "sermorelin-acetate",
     name: "Sermorelin Acetate",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 38,
     category: "Research Compound",
     description: "Sermorelin is the amidated 1–29 fragment of human growth hormone-releasing hormone (somatoliberin), the shortest fully active portion of the hormone.",
@@ -586,7 +586,7 @@ var PRODUCTS = [
   {
     slug: "ss-31",
     name: "SS-31",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 47,
     category: "Research Compound",
     description: "SS-31 (elamipretide) is a synthetic tetrapeptide that binds with high affinity to cardiolipin, a phospholipid of the inner mitochondrial membrane, and inhibits cytochrome c peroxidase activity.",
@@ -600,7 +600,7 @@ var PRODUCTS = [
     packSize: "1 vial x 10ml",
     price: 4,
     category: "Research Compound",
-    description: "Sterile water is water purified and sterilized without added preservatives.",
+    description: "Sterile water is water purified and sterilized without added preservatives, used as a general laboratory reagent where a preservative such as benzyl alcohol is not wanted.",
     storage: "Store at room temperature, protect from light. Refrigerate after opening per standard lab protocol.",
     purity: "99% Pure",
     form: "Sterile liquid"
@@ -619,7 +619,7 @@ var PRODUCTS = [
   {
     slug: "tb500-thymosin-beta-4",
     name: "TB500 Thymosin Beta-4",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 42,
     category: "Research Compound",
     description: "TB-500 is a synthetic, N-acetylated heptapeptide matching residues 17–23 of thymosin β4, the actin-binding region of that protein.",
@@ -630,7 +630,7 @@ var PRODUCTS = [
   {
     slug: "tesamorelin",
     name: "Tesamorelin",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 98,
     category: "Research Compound",
     description: "Tesamorelin is a synthetic peptide made of all 44 amino acids of human growth hormone-releasing hormone with a trans-3-hexenoic acid group added.",
@@ -663,7 +663,7 @@ var PRODUCTS = [
   {
     slug: "tirzepatide",
     name: "Tirzepatide",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 62,
     category: "Research Compound",
     description: "Tirzepatide is a synthetic peptide that activates both the glucose-dependent insulinotropic polypeptide (GIP) receptor and the GLP-1 receptor, with greater affinity for GIP receptors.",
@@ -674,7 +674,7 @@ var PRODUCTS = [
   {
     slug: "vip",
     name: "VIP",
-    packSize: "1 vial, dosage selectable",
+    packSize: "1 vial, size selectable",
     price: 49,
     category: "Research Compound",
     description: "Vasoactive intestinal peptide (VIP) is a 28-amino-acid neuropeptide and gastrointestinal hormone related to glucagon and secretin.",

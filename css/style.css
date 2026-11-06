@@ -1538,3 +1538,6 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .paste-counts .pc-diff { color: var(--text-light); font-size: 0.85rem; }
 .paste-counts .pc-unknown { color: #fbbf24; font-size: 0.88rem; margin-top: 10px; }
 .code-input.code-saved { border-color: var(--mint); }
+
+/* Paused products (js/paused.js) */
+.paused-note { margin: 10px 0 0; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; color: var(--text-light); font-size: 0.92rem; }
