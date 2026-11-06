@@ -34,8 +34,12 @@ const excludedBlock = caseJs.match(/var NOT_CASE_ELIGIBLE = \[([\s\S]*?)\];/);
 if (!excludedBlock) throw new Error('Could not find NOT_CASE_ELIGIBLE in js/case-pricing.js');
 const NOT_CASE_ELIGIBLE = [...excludedBlock[1].matchAll(/'([^']+)'/g)].map((m) => m[1]);
 
+// Paused products (js/paused.js) are left out, so the server won't price them.
+const { isPausedProduct } = require(path.join(root, 'js/paused.js'));
+
 const products = {};
 for (const p of PRODUCTS) {
+  if (isPausedProduct(p.slug)) continue;
   const entry = {
     name: p.name,
     packSize: p.packSize,

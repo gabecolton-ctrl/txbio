@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="../css/style.css?v=202611051302">
+<link rel="stylesheet" href="../css/style.css?v=202611051821">
 <!-- seo:start -->
 <link rel="canonical" href="https://txbioresearch.com/products/semax-10mg-selank-10mg.html">
 <meta property="og:type" content="product">
@@ -47,7 +47,7 @@
   <img src="../images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="../js/splash.js?v=202611051302"></script>
+<script src="../js/splash.js?v=202611051821"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -71,7 +71,6 @@
       <ul class="nav-primary">
         <li><a href="../services.html" class="active">Catalog</a></li>
         <li><a href="../bundles.html">Panels</a></li>
-        <li><a href="../calculator.html">Calculator</a></li>
         <li><a href="../about.html">About</a></li>
         <li><a href="../contact.html">Contact</a></li>
       </ul>
@@ -87,6 +86,7 @@
               <li><a href="../admin-customers.html" id="nav-admin-customers-link">Customers</a></li>
               <li><a href="../admin-carts.html" id="nav-admin-carts-link">Carts</a></li>
               <li><a href="../admin-inventory.html" id="nav-admin-link">Inventory</a></li>
+              <li><a href="../admin-calculator.html">Calculator</a></li>
               <li><a href="../admin-incoming.html" id="nav-admin-incoming-link">Incoming</a></li>
               <li><a href="../admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
               <li><a href="../admin-gift-cards.html" id="nav-admin-giftcards-link">Gift cards</a></li>
@@ -155,7 +155,6 @@
       <button id="add-to-cart-btn" class="btn" style="width:100%; margin-bottom:10px;">Add to cart</button>
       <p id="add-to-cart-msg" style="display:none; color:var(--mint-dark); font-weight:600; font-size:0.9rem;">Added to your cart.</p>
       <a href="../contact.html" class="btn-outline-light" style="display:block; text-align:center;">Ask about this product</a>
-      <a href="../calculator.html?p=semax-10mg-selank-10mg" class="calc-link">Reconstitution calculator &rarr;</a>
     </div>
   </div>
 
@@ -170,9 +169,9 @@
     <p>This vial combines Semax and Selank (10mg Semax + 10mg Selank per vial).</p>
     <h3>Semax</h3><p>Semax is a synthetic heptapeptide analog of a fragment of adrenocorticotropic hormone (ACTH 4–10). It has been studied extensively in Russia in stroke, transient ischemic attack, memory and cognitive disorders, and optic nerve disease. It is not FDA-approved and has not been evaluated or marketed in most other countries.</p>
     <table class="spec-table compound-table"><tr class="gen-row"><td>Also known as</td><td>MEHFPGP; ACTH (4-7)-Pro-Gly-Pro</td></tr><tr class="gen-row"><td>Compound type</td><td>Synthetic heptapeptide (ACTH fragment analog)</td></tr><tr class="gen-row"><td>Sequence</td><td class="mono">Met-Glu-His-Phe-Pro-Gly-Pro</td></tr><tr class="gen-row"><td>Molecular formula</td><td class="mono">C37H51N9O10S</td></tr><tr class="gen-row"><td>Molecular weight</td><td>813.9 g/mol</td></tr><tr class="gen-row"><td>CAS number</td><td class="mono">80714-61-0</td></tr></table>
-    <h3>Selank</h3><p>Selank is a synthetic analog of the human immunomodulatory peptide tuftsin, developed at the Institute of Molecular Genetics of the Russian Academy of Sciences. It has been investigated in clinical studies for effects on anxiety and cognitive function and is available in pharmacies in Russia and Ukraine.</p>
+    <h3>Selank</h3><p>Selank is a synthetic analog of the human immunomodulatory peptide tuftsin, developed at the Institute of Molecular Genetics of the Russian Academy of Sciences. It has been investigated in studies of cognitive function.</p>
     <table class="spec-table compound-table"><tr class="gen-row"><td>Also known as</td><td>TKPRPGP</td></tr><tr class="gen-row"><td>Compound type</td><td>Synthetic heptapeptide (tuftsin analog)</td></tr><tr class="gen-row"><td>Sequence</td><td class="mono">Thr-Lys-Pro-Arg-Pro-Gly-Pro</td></tr><tr class="gen-row"><td>Molecular formula</td><td class="mono">C33H57N11O9</td></tr><tr class="gen-row"><td>Molecular weight</td><td>751.9 g/mol</td></tr><tr class="gen-row"><td>CAS number</td><td class="mono">129954-34-3</td></tr></table>
-    <h3>Research areas</h3><ul class="research-areas"><li>Neuroprotection and ischemia models</li><li>Neurotrophic signaling</li><li>Cognitive-function research</li><li>Anxiolytic peptide research</li><li>Immunomodulation</li><li>Cognitive-function models</li></ul>
+    <h3>Research areas</h3><ul class="research-areas"><li>Neuroprotection and ischemia models</li><li>Neurotrophic signaling</li><li>Cognitive-function research</li><li>Neuropeptide signaling</li><li>Immunomodulation</li><li>Cognitive-function models</li></ul>
     <h3>Sources</h3><ul class="research-sources"><li><a href="https://en.wikipedia.org/wiki/Semax" target="_blank" rel="noopener">Wikipedia: Semax</a></li><li><a href="https://en.wikipedia.org/wiki/Selank" target="_blank" rel="noopener">Wikipedia: Selank</a></li></ul>
     <!-- research:end -->
   </section>
@@ -197,7 +196,6 @@
       <div class="footer-links">
         <a href="../services.html">Catalog</a>
         <a href="../bundles.html">Research panels</a>
-        <a href="../calculator.html">Reconstitution calculator</a>
         <a href="../gift-cards.html">Gift cards</a>
         <a href="../about.html">About</a>
         <a href="../contact.html">Contact</a>
@@ -224,26 +222,27 @@
     slug: "semax-10mg-selank-10mg",
   };
 </script>
-<script src="../js/firebase-config.js?v=202611051302"></script>
-<script src="../js/analytics.js?v=202611051302"></script>
-<script src="../js/referral.js?v=202611051302"></script>
-<script src="../js/cart.js?v=202611051302"></script>
-<script src="../js/stock-notice.js?v=202611051302"></script>
-<script src="../js/products.js?v=202611051302"></script>
-<script src="../js/case-pricing.js?v=202611051302"></script>
-<script src="../js/bogo.js?v=202611051302"></script>
-<script src="../js/bogo-badges.js?v=202611051302"></script>
-<script src="../js/product-page.js?v=202611051302"></script>
-<script src="../js/at-cost.js?v=202611051302"></script>
-<script src="../js/family-pricing.js?v=202611051302"></script>
-<script src="../js/pairings.js?v=202611051302"></script>
-<script src="../js/favorites.js?v=202611051302"></script>
-<script src="../js/staff.js?v=202611051302"></script>
-<script src="../js/nav-auth.js?v=202611051302"></script>
-<script src="../js/profile-gate.js?v=202611051302"></script>
-<script src="../js/auth-guard.js?v=202611051302"></script>
-<script src="../js/main.js?v=202611051302"></script>
-<script src="../js/ship-cutoff.js?v=202611051302"></script>
-<script src="../js/nav-toggle.js?v=202611051302"></script>
+<script src="../js/firebase-config.js?v=202611051821"></script>
+<script src="../js/analytics.js?v=202611051821"></script>
+<script src="../js/referral.js?v=202611051821"></script>
+<script src="../js/paused.js?v=202611051821"></script>
+<script src="../js/cart.js?v=202611051821"></script>
+<script src="../js/stock-notice.js?v=202611051821"></script>
+<script src="../js/products.js?v=202611051821"></script>
+<script src="../js/case-pricing.js?v=202611051821"></script>
+<script src="../js/bogo.js?v=202611051821"></script>
+<script src="../js/bogo-badges.js?v=202611051821"></script>
+<script src="../js/product-page.js?v=202611051821"></script>
+<script src="../js/at-cost.js?v=202611051821"></script>
+<script src="../js/family-pricing.js?v=202611051821"></script>
+<script src="../js/pairings.js?v=202611051821"></script>
+<script src="../js/favorites.js?v=202611051821"></script>
+<script src="../js/staff.js?v=202611051821"></script>
+<script src="../js/nav-auth.js?v=202611051821"></script>
+<script src="../js/profile-gate.js?v=202611051821"></script>
+<script src="../js/auth-guard.js?v=202611051821"></script>
+<script src="../js/main.js?v=202611051821"></script>
+<script src="../js/ship-cutoff.js?v=202611051821"></script>
+<script src="../js/nav-toggle.js?v=202611051821"></script>
 </body>
 </html>

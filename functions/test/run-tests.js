@@ -4,7 +4,10 @@
 const assert = require('assert');
 const path = require('path');
 const { HttpsError } = require('firebase-functions/v2/https');
-const catalog = require(path.join(__dirname, '..', 'catalog.json'));
+// A fixed snapshot of the full catalog (including products paused on the
+// live site, which these tests use as examples), so pausing a product for sale
+// doesn't change what the pricing tests check.
+const catalog = require(path.join(__dirname, 'catalog-fixture.json'));
 const P = require('../pricing');
 
 const { placeOrderHandler: placeOrder } = require('../checkout');
@@ -438,3 +441,11 @@ test('every catalog dose and product prices without error', async () => {
   console.log(failed ? failed + ' failed' : 'All ' + tests.length + ' tests passed');
   process.exit(failed ? 1 : 0);
 })();
+
+// The live catalog leaves paused products out (js/paused.js).
+test('live catalog: paused products are left out', async () => {
+  const live = require(path.join(__dirname, '..', 'catalog.json'));
+  const { PAUSED_PRODUCTS } = require(path.join(__dirname, '..', '..', 'js', 'paused.js'));
+  PAUSED_PRODUCTS.forEach((s) => assert.ok(!live.products[s], s + ' is paused but still in catalog.json'));
+  assert.ok(live.products['bpc-157']);
+});

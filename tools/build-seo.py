@@ -29,10 +29,8 @@ START, END = '<!-- seo:start -->', '<!-- seo:end -->'
 PUBLIC_PAGES = {
     'index.html': ('Research Peptides for Laboratories | Texas Advanced BioResearch',
                    'Research-grade peptides and lab supplies from Dallas, TX. Detailed specs, sequences and CAS numbers, case pricing, and fast US shipping. For laboratory research use only.'),
-    'services.html': ('Research Peptide Catalog: GLP-1s, BPC-157, Blends & More | TXBioResearch',
-                      'Browse 60+ research peptides and lab supplies: GLP-1 analogs, growth hormone secretagogues, tissue-repair, cognitive, and mitochondrial research compounds. Case pricing available.'),
-    'calculator.html': ('Peptide Reconstitution Calculator (mg, mcg, mL) | TXBioResearch',
-                        'Free peptide reconstitution calculator: enter the vial amount and diluent volume to get concentration in mg/mL and mcg/mL, the volume for a target amount, and aliquots per vial. For laboratory research use only.'),
+    'services.html': ('Research Peptide Catalog: BPC-157, Blends & More | TXBioResearch',
+                      'Browse research peptides and lab supplies: growth hormone secretagogues, tissue-repair, cognitive, and mitochondrial research compounds. Case pricing available. For laboratory research use only.'),
     'about.html': ('About Texas Advanced BioResearch | TXBioResearch',
                    'Texas Advanced BioResearch supplies research-use peptides and reagents to laboratories and researchers from Dallas, TX.'),
     'bundles.html': ('Research Panels | TXBioResearch', 'Research compounds grouped by research area and priced together. For laboratory research use only.'),
@@ -44,7 +42,7 @@ PUBLIC_PAGES = {
     'terms.html': ('Terms & Conditions | TXBioResearch', 'Terms and conditions of sale for TXBioResearch research products.'),
     'privacy.html': ('Privacy Policy | TXBioResearch', 'How TXBioResearch collects, uses, and protects your information.'),
 }
-PRIVATE = ['cart.html', 'checkout.html', 'account.html', 'orders.html', 'login.html', 'referrals.html', 'favorites.html', 'gift.html', 'reorder.html']
+PRIVATE = ['calculator.html', 'cart.html', 'checkout.html', 'account.html', 'orders.html', 'login.html', 'referrals.html', 'favorites.html', 'gift.html', 'reorder.html']
 SUPPLY_SLUGS = {'bac-water', 'sterile-water', 'acetic-acid-water', 'b12', 'l-carnitine-600mg'}
 
 e = lambda v: html.escape(v, quote=True)
@@ -156,12 +154,14 @@ def main():
         if page == 'calculator.html':
             extra = faq_ld(os.path.join(ROOT, page))
         apply(os.path.join(ROOT, page), title, desc, head_block(page, title, desc, extra))
-        urls.append((SITE + '/' + page.replace('index.html', ''), '1.0' if page in ('index.html', 'services.html') else '0.8' if page == 'calculator.html' else '0.5'))
+        urls.append((SITE + '/' + page.replace('index.html', ''), '1.0' if page in ('index.html', 'services.html') else '0.5'))
 
     for path in sorted(glob.glob(os.path.join(ROOT, 'products', '*.html'))):
         slug = os.path.basename(path)[:-5]
         entry = catalog.get(slug)
         if not entry:
+            # Paused products (js/paused.js): out of the catalog, so noindex and no sitemap entry.
+            apply(path, block=head_block('products/' + slug + '.html', '', '', noindex=True))
             continue
         name, title, desc, prices, aka, kind = product_meta(slug, names.get(slug, slug), entry)
         page = 'products/' + slug + '.html'
