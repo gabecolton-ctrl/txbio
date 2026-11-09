@@ -30,16 +30,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
 <link rel="stylesheet" href="css/style.css?v=202611061519">
-<!-- seo:start -->
-<link rel="canonical" href="https://txbioresearch.com/bundles.html">
-<meta property="og:type" content="website">
-<meta property="og:site_name" content="Texas Advanced BioResearch">
-<meta property="og:title" content="Research Panels | TXBioResearch">
-<meta property="og:description" content="Research compounds grouped by research area and priced together. For laboratory research use only.">
-<meta property="og:url" content="https://txbioresearch.com/bundles.html">
-<meta property="og:image" content="https://txbioresearch.com/images/icon-512.png">
-<meta name="twitter:card" content="summary">
-<!-- seo:end -->
+<meta name="robots" content="noindex, nofollow">
 </head>
 <body>
 <div id="splash-screen">
@@ -124,7 +115,9 @@
 </a>
 
 
-<main>
+<div id="auth-loading" class="auth-status">Checking researcher access&hellip;</div>
+
+<main id="gated-content" style="display:none;">
   <section class="page-head">
     <h1>Research panels</h1>
     <p class="lead">Compounds grouped by research area, priced together. Each panel ships as the individual vials listed, with the same labeling and lot records as single orders.</p>
@@ -181,6 +174,7 @@
 <script src="js/profile-gate.js?v=202611061519"></script>
 <script src="js/main.js?v=202611061519"></script>
 <script src="js/nav-toggle.js?v=202611061519"></script>
+<script src="js/auth-guard.js?v=202611061519"></script>
 <script src="js/bundles.js?v=202611061519"></script>
 <script>
   (function () {
