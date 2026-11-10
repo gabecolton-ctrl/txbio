@@ -14,7 +14,8 @@
     if (q) sessionStorage.setItem('txbio_season', q);
     var forced = sessionStorage.getItem('txbio_season');
     var md = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Chicago', month: '2-digit', day: '2-digit' }).format(new Date()).replace('/', '-');
-    var season = forced && forced !== 'auto' ? forced
+    var season = window.SITE_ID === 'budget' ? '' // the budget store has no seasonal look
+      : forced && forced !== 'auto' ? forced
       : md >= '10-24' && md <= '10-31' ? 'halloween'
       : md >= '11-01' && md <= '11-26' ? 'thanksgiving'
       : md >= '11-27' && md <= '11-30' ? 'blackfriday' : '';
@@ -43,6 +44,12 @@
     '<circle class="ring" cx="335" cy="155" r="27" style="animation-delay:1.38s"/><circle class="ring" cx="116" cy="315" r="27" style="animation-delay:1.5s"/>' +
     '<circle class="ring" cx="166" cy="155" r="17" style="animation-delay:1.62s"/><circle class="ring" cx="233" cy="155" r="17" style="animation-delay:1.74s"/>' +
     '<circle class="ring" cx="145" cy="215" r="17" style="animation-delay:1.86s"/><circle class="ring" cx="253" cy="215" r="17" style="animation-delay:1.98s"/></svg>';
+  // The budget store (js/sites.js) shows its own flask mark instead.
+  if (window.SITE_ID === 'budget') {
+    STAR = '<svg viewBox="0 0 64 64" aria-hidden="true" class="bb-entry-mark"><rect width="64" height="64" rx="14" fill="#1756d1"/>' +
+      '<path d="M25 14h14M28 14v13L17.5 45.5A4 4 0 0 0 21 51.5h22a4 4 0 0 0 3.5-6L36 27V14" fill="none" stroke="#fff" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M22.4 40h19.2l3.2 5.6a1.6 1.6 0 0 1-1.4 2.4H20.6a1.6 1.6 0 0 1-1.4-2.4z" fill="#fff"/></svg>';
+  }
 
   // ---------- Entry confirmation ----------
   if (!entryOk()) {
