@@ -42,7 +42,10 @@ function params(user, p) {
     items: lines + (lines === 1 ? ' item' : ' items') + (p.units !== lines ? ' (' + p.units + ' units)' : ''),
     cart_total: '$' + p.value.toFixed(2),
     cart_url: SITE + '/cart.html',
-    unsubscribe_url: SITE + '/account.html#email-prefs'
+    unsubscribe_url: SITE + '/account.html#email-prefs',
+    // Shared templates (js/order-emails.js withStore): cart reminders are TXBio-only.
+    store_name: 'TXBioResearch', store_full_name: 'Texas Advanced BioResearch', store_url: SITE,
+    store_domain: SITE.replace(/^https?:\/\//, ''), reply_to: 'orders@txbioresearch.com'
   };
 }
 

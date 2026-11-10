@@ -25,22 +25,35 @@ var OrderEmails = (function () {
     cartReminderTemplateId: 'template_pyl2lcv'                // Email Templates → "Cart reminder" → Template ID (hourly job, tools/shipment-tracker/cart-reminders.js)
   };
 
-  // Budget site (js/sites.js). Its emails come from its own mailbox and
-  // templates, so nothing says TXBio. Until these are filled in, budget orders
-  // get no EmailJS emails (the site's FormSubmit order notice still works).
+  // TexasBench (budget store, js/sites.js). Same templates as TXBio: every
+  // email carries {{store_name}}, {{store_full_name}}, {{store_url}} and
+  // {{reply_to}}, so one template serves both stores. TexasBench mail goes
+  // through its own mailbox (its own EmailJS service). Until that Service ID
+  // is filled in, budget orders get no EmailJS emails (the site's FormSubmit
+  // order notice still works).
   var BUDGET_CONFIG = {
-    publicKey: 'mCHNzwcAKKJCasPJ9',  // same EmailJS account
-    serviceId: '',                   // Email Services → the budget mailbox's service → Service ID
-    confirmationTemplateId: '',
-    shippedTemplateId: '',
-    cancelledTemplateId: '',
-    deliveredTemplateId: '',
-    giftCardTemplateId: '',
-    cartReminderTemplateId: ''
+    publicKey: CONFIG.publicKey,     // same EmailJS account
+    serviceId: '',                   // Email Services → the orders@texasbench.com service → Service ID
+    confirmationTemplateId: CONFIG.confirmationTemplateId,
+    shippedTemplateId: CONFIG.shippedTemplateId,
+    cancelledTemplateId: CONFIG.cancelledTemplateId,
+    deliveredTemplateId: CONFIG.deliveredTemplateId,
+    giftCardTemplateId: CONFIG.giftCardTemplateId,
+    cartReminderTemplateId: ''       // cart reminders are TXBio-only
   };
 
   // The settings for the store an order (or gift card) belongs to.
   function cfgFor(thing) { return thing && thing.site === 'budget' ? BUDGET_CONFIG : CONFIG; }
+  // Store details every template can use ({{store_name}} etc.).
+  function withStore(params, thing) {
+    var info = SitesRef ? SitesRef.info(thing && thing.site) : { name: 'TXBioResearch', fullName: 'Texas Advanced BioResearch', url: 'https://txbioresearch.com', email: 'orders@txbioresearch.com' };
+    params.store_name = info.name;
+    params.store_full_name = info.fullName || info.name;
+    params.store_url = info.url;
+    params.store_domain = String(info.url).replace(/^https?:\/\//, '');
+    params.reply_to = info.email;
+    return params;
+  }
   function siteUrl(thing) { return SitesRef ? SitesRef.info(thing && thing.site).url : 'https://txbioresearch.com'; }
 
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
@@ -133,7 +146,7 @@ var OrderEmails = (function () {
     var c = cfgFor(order);
     if (!isConfigured(order) || !toEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(c.serviceId, c.confirmationTemplateId, {
+      return emailjs.send(c.serviceId, c.confirmationTemplateId, withStore({
         to_email: toEmail,
         order_number: order.orderNumber || '',
         items: itemsText(order.items),
@@ -147,7 +160,7 @@ var OrderEmails = (function () {
         payment_method: methodText(order.paymentMethod),
         next_steps: nextSteps(order.paymentMethod, order) + '\n\nYour order: ' + orderUrl(order),
         order_url: orderUrl(order)
-      });
+      }, order));
     }).then(function () { return true; });
   }
 
@@ -155,7 +168,7 @@ var OrderEmails = (function () {
   // marked shipped; tools/shipment-tracker sends the same email through the
   // EmailJS REST API when UPS first scans the package.
   function shippedParams(order, trackingNumber) {
-    return {
+    return withStore({
       to_email: order.userEmail,
       order_number: order.orderNumber || '',
       items: itemsText(order.items),
@@ -164,7 +177,7 @@ var OrderEmails = (function () {
       tracking_line: (trackingNumber ? 'Tracking number: ' + trackingNumber : 'We’ll send tracking details if they become available.') +
         '\n\nView your order: ' + orderUrl(order),
       order_url: orderUrl(order)
-    };
+    }, order);
   }
 
   function sendShipped(order, trackingNumber) {
@@ -180,14 +193,14 @@ var OrderEmails = (function () {
   function canSendDelivered(order) { return isConfigured(order) && !!cfgFor(order).deliveredTemplateId; }
   function deliveredParams(order) {
     var d = order.deliveredAt ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(order.deliveredAt) ? order.deliveredAt + 'T12:00:00' : order.deliveredAt) : null;
-    return {
+    return withStore({
       to_email: order.userEmail,
       order_number: order.orderNumber || '',
       items: itemsText(order.items),
       delivered_on: d && !isNaN(d) ? d.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: 'America/Chicago' }) : 'today',
       shipping_address: addressText(order.shippingAddress) || 'the address on your order',
       order_url: orderUrl(order)
-    };
+    }, order);
   }
   function sendDelivered(order) {
     var c = cfgFor(order);
@@ -206,7 +219,7 @@ var OrderEmails = (function () {
     var c = cfgFor(order);
     if (!canSendCancelled(order) || !order.userEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(c.serviceId, c.cancelledTemplateId, {
+      return emailjs.send(c.serviceId, c.cancelledTemplateId, withStore({
         to_email: order.userEmail,
         order_number: order.orderNumber || '',
         items: itemsText(order.items),
@@ -214,7 +227,7 @@ var OrderEmails = (function () {
         payment_method: methodText(order.paymentMethod),
         reason_line: reason ? 'Reason: ' + reason : 'If you have questions about this cancellation, reply to this email.',
         refund_line: 'If you already sent payment for this order, reply to this email and we\u2019ll arrange your refund.'
-      });
+      }, order));
     }).then(function () { return true; });
   }
 
@@ -225,7 +238,7 @@ var OrderEmails = (function () {
     if (!c.publicKey || !c.serviceId || !c.giftCardTemplateId || !card.toEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
       var amount = '$' + ((card.amountCents || 0) / 100).toFixed((card.amountCents || 0) % 100 ? 2 : 0);
-      return emailjs.send(c.serviceId, c.giftCardTemplateId, {
+      return emailjs.send(c.serviceId, c.giftCardTemplateId, withStore({
         to_email: card.toEmail,
         to_name: card.toName || 'there',
         from_name: card.from || 'A friend',
@@ -233,7 +246,7 @@ var OrderEmails = (function () {
         message: card.message || '',
         gift_code: code,
         redeem_url: siteUrl(card) + '/gift.html?code=' + encodeURIComponent(code)
-      });
+      }, card));
     }).then(function () { return true; });
   }
 

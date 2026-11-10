@@ -45,7 +45,8 @@ const line = { slug: 'bpc-157-10mg', name: 'BPC 157', price: 73, qty: 2 };
     const r = await run({ db, email, now: NOW, log: () => {} });
     assert.strictEqual(r.sent, 1);
     assert.deepStrictEqual(sent[0], ['template_cart', { to_email: 'jo@example.com', to_name: 'Jo', items: '2 items (12 units)', cart_total: '$346.00',
-      cart_url: 'https://txbioresearch.com/cart.html', unsubscribe_url: 'https://txbioresearch.com/account.html#email-prefs' }]);
+      cart_url: 'https://txbioresearch.com/cart.html', unsubscribe_url: 'https://txbioresearch.com/account.html#email-prefs',
+      store_name: 'TXBioResearch', store_full_name: 'Texas Advanced BioResearch', store_url: 'https://txbioresearch.com', store_domain: 'txbioresearch.com', reply_to: 'orders@txbioresearch.com' }]);
     assert.ok(!JSON.stringify(sent).includes('BPC'));
     assert.strictEqual(db.data['users/u1'].cartReminderAt, new Date(NOW).toISOString());
     const again = await run({ db, email, now: NOW + 36e5, log: () => {} });
