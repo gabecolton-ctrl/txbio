@@ -51,10 +51,16 @@ var GiftCards = (function () {
     if (!email) return Promise.reject(new Error('Please sign in first.'));
     if (!CODE_RE.test(code)) return Promise.reject(new Error('That doesn’t look like a gift card code. It looks like TXB-XXXX-XXXX-XXXX.'));
     var gref = db.collection('giftCards').doc(code);
-    var cref = db.collection('credits').doc(email);
-    return Promise.all([gref.get(), cref.get()]).then(function (r) {
-      var g = r[0], c = r[1];
+    var cref = null;
+    return gref.get().then(function (g) {
       if (!g.exists) throw new Error('We couldn’t find that gift card. Check the code and try again.');
+      // A card works on the store it's from, and goes into that store's credit.
+      var here = typeof Sites !== 'undefined' ? Sites.current() : 'main';
+      if ((g.data().site === 'budget' ? 'budget' : 'main') !== here) throw new Error('We couldn’t find that gift card. Check the code and try again.');
+      cref = db.collection(here === 'budget' ? 'budgetCredits' : 'credits').doc(email);
+      return cref.get().then(function (c) { return [g, c]; });
+    }).then(function (r) {
+      var g = r[0], c = r[1];
       var d = g.data();
       if (d.void) throw new Error('This gift card is no longer valid.');
       if (d.redeemedBy) throw new Error(d.redeemedBy === email ? 'You already redeemed this gift card. It’s in your store credit.' : 'This gift card has already been redeemed.');

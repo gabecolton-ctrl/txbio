@@ -38,6 +38,10 @@ var Loyalty = (function () {
     for (var i = 0; i < TIERS.length; i++) if (spend < TIERS[i].min) return TIERS[i];
     return null;
   }
+  // Each store has its own tier and its own store credit (js/sites.js).
+  function storeOf(o) { return o && o.site === 'budget' ? 'budget' : 'main'; }
+  function sameStore(a, b) { return storeOf(a) === storeOf(b); }
+  function creditsOf(o) { return storeOf(o) === 'budget' ? 'budgetCredits' : 'credits'; }
   function rewardCents(order, priorSpend) {
     var t = tierFor(priorSpend);
     return { tier: t, cents: Math.max(0, Math.round(spendOf(order) * t.pct * 100)) };
@@ -53,12 +57,12 @@ var Loyalty = (function () {
       return db.collection('orders').where('userId', '==', o.userId).get().then(function (all) {
         var list = [];
         (all.docs || []).forEach(function (d) { list.push(Object.assign({ id: d.id }, d.data())); });
-        // Only orders shipped before this one count toward the tier.
-        var before = list.filter(function (x) { return x.id !== orderId && String(x.createdAt || '') < String(o.createdAt || ''); });
+        // Only orders shipped before this one, on the same store, count toward the tier.
+        var before = list.filter(function (x) { return x.id !== orderId && String(x.createdAt || '') < String(o.createdAt || '') && sameStore(x, o); });
         var r = rewardCents(o, lifetime(before));
         if (r.cents <= 0) return null;
         var email = String(o.userEmail).toLowerCase();
-        var creditRef = db.collection('credits').doc(email);
+        var creditRef = db.collection(creditsOf(o)).doc(email);
         var entryRef = creditRef.collection('entries').doc();
         return db.runTransaction(function (t) {
           return Promise.all([t.get(ref), t.get(creditRef)]).then(function (s) {
@@ -83,7 +87,7 @@ var Loyalty = (function () {
       return t.get(ref).then(function (snap) {
         var o = snap.exists ? snap.data() : null;
         if (!o || !o.loyaltyCreditedAt || o.loyaltyReversedAt || !(o.loyaltyCreditCents > 0)) return null;
-        var creditRef = db.collection('credits').doc(String(o.userEmail).toLowerCase());
+        var creditRef = db.collection(creditsOf(o)).doc(String(o.userEmail).toLowerCase());
         return t.get(creditRef).then(function (cs) {
           var c = cs.exists ? cs.data() : {};
           var at = new Date().toISOString();
@@ -98,12 +102,14 @@ var Loyalty = (function () {
 
   // The signed-in customer's own tier (browser), remembered 10 min per tab.
   function myTier(db, uid) {
-    var key = 'txbio_tier_' + uid;
+    var here = typeof window !== 'undefined' && window.SITE_ID === 'budget' ? 'budget' : 'main';
+    var key = 'txbio_tier_' + here + '_' + uid;
     try { var c = JSON.parse(sessionStorage.getItem(key) || 'null'); if (c && Date.now() - c.at < 600000) return Promise.resolve({ tier: tierFor(c.spend), spend: c.spend }); } catch (e) {}
     return db.collection('orders').where('userId', '==', uid).get().then(function (snap) {
       var list = [];
       (snap.docs || []).forEach(function (d) { list.push(Object.assign({ id: d.id }, d.data())); });
-      var spend = lifetime(list);
+      // This store's orders only (js/sites.js).
+      var spend = lifetime(list.filter(function (x) { return sameStore(x, { site: here }); }));
       try { sessionStorage.setItem(key, JSON.stringify({ at: Date.now(), spend: spend })); } catch (e) {}
       return { tier: tierFor(spend), spend: spend };
     });

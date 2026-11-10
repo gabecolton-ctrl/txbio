@@ -183,6 +183,16 @@ test('store credit never exceeds the total', async () => {
   assert.strictEqual(db.store.get('credits/buyer@example.com').balanceCents, 100000 - order.creditUsedCents);
 });
 
+test('each store spends its own store credit', async () => {
+  const seed = { 'carts/u1': { items: [{ slug: 'sterile-water', qty: 1 }] }, 'budgetCarts/u1': { items: [{ slug: 'sterile-water', qty: 1 }] },
+    'credits/buyer@example.com': { balanceCents: 100000, earnedCents: 100000, spentCents: 0 },
+    'budgetCredits/buyer@example.com': { balanceCents: 300, earnedCents: 300, spentCents: 0 } };
+  const { order, db } = await run(seed, { useCredit: true, site: 'budget' });
+  assert.strictEqual(order.creditUsedCents, 300);
+  assert.strictEqual(db.store.get('budgetCredits/buyer@example.com').balanceCents, 0);
+  assert.strictEqual(db.store.get('credits/buyer@example.com').balanceCents, 100000); // TXBio credit untouched
+});
+
 test('cases: pay for 7 of 10; supplies by the case at full price', async () => {
   const { order } = await run(cart([{ slug: 'semaglutide-10mg-case', qty: 1 }, { slug: 'bac-water-10ml-case', qty: 1 }]));
   const sema = order.items.find((i) => i.slug === 'semaglutide-10mg-case');

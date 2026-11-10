@@ -13,14 +13,16 @@ async function affiliates(db) {
   codes.docs.forEach((d) => { const e = String(d.data().affiliateEmail || '').trim().toLowerCase(); if (e) emails.add(e); });
   const out = [];
   for (const email of emails) {
-    const [entries, users, profile] = await Promise.all([
+    // Sales on either store count (TXBio credits + TexasBench budgetCredits).
+    const [entries, users, profile, budgetEntries] = await Promise.all([
       db.collection('credits').doc(email).collection('entries').get(),
       db.collection('users').where('email', '==', email).get(),
-      db.collection('affiliateProfiles').doc(email).get()
+      db.collection('affiliateProfiles').doc(email).get(),
+      db.collection('budgetCredits').doc(email).collection('entries').get().catch(() => ({ docs: [] }))
     ]);
     const user = users.docs[0] ? users.docs[0].data() : {};
     const name = user.name || String(user.displayName || '').split(' — ')[0];
-    out.push({ email, id: idOf(email), name: Leaderboard.displayName(name, profile.exists ? profile.data().nickname : ''), entries: entries.docs.map((d) => d.data()) });
+    out.push({ email, id: idOf(email), name: Leaderboard.displayName(name, profile.exists ? profile.data().nickname : ''), entries: entries.docs.concat(budgetEntries.docs).map((d) => d.data()) });
   }
   return out;
 }

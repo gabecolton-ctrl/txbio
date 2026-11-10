@@ -194,6 +194,38 @@ service cloud.firestore {
       }
     }
 
+    // TexasBench's store credit (js/sites.js), same rules as TXBio's.
+    match /budgetCredits/{email} {
+      allow read: if isStaff() || myEmail() == email;
+      // The owner can add credit only by redeeming a gift card.
+      allow create: if isStaff() || (
+        myEmail() == email
+        && request.resource.data.keys().hasOnly(['balanceCents', 'earnedCents', 'spentCents', 'giftCents', 'lastGiftCard', 'updatedAt'])
+        && request.resource.data.get('earnedCents', 0) == 0
+        && request.resource.data.get('spentCents', 0) == 0
+        && redeemingGift(request.resource.data.lastGiftCard)
+        && request.resource.data.balanceCents == giftAmount(request.resource.data.lastGiftCard)
+        && request.resource.data.giftCents == giftAmount(request.resource.data.lastGiftCard)
+      );
+      allow update: if isStaff() || (
+        myEmail() == email
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['balanceCents', 'giftCents', 'lastGiftCard', 'updatedAt'])
+        && redeemingGift(request.resource.data.lastGiftCard)
+        && request.resource.data.balanceCents == resource.data.balanceCents + giftAmount(request.resource.data.lastGiftCard)
+        && request.resource.data.giftCents == resource.data.get('giftCents', 0) + giftAmount(request.resource.data.lastGiftCard)
+      );
+      allow delete: if isAdmin();
+
+      match /entries/{entryId} {
+        allow read: if isStaff() || myEmail() == email;
+        allow create: if isStaff()
+          || (myEmail() == email && request.resource.data.type == 'gift'
+              && redeemingGift(request.resource.data.code)
+              && request.resource.data.amountCents == giftAmount(request.resource.data.code));
+        allow update, delete: if isAdmin();
+      }
+    }
+
     // "At cost" family pricing (js/at-cost.js, admin-at-cost.html).
     // Costs are private: the admin, and the emails listed on an at-cost code
     // (mirrored into atCostMembers/{email}) so their checkout can price at cost.
@@ -280,7 +312,9 @@ service cloud.firestore {
         && (resource.data.get('forEmail', '') == '' || resource.data.forEmail == myEmail())
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['redeemedBy', 'redeemedAt'])
         && request.resource.data.redeemedBy == myEmail()
-        && getAfter(/databases/$(database)/documents/credits/$(myEmail())).data.get('lastGiftCard', '') == code
+        // Into the card's own store's credit (js/sites.js).
+        && ((resource.data.get('site', '') != 'budget' && getAfter(/databases/$(database)/documents/credits/$(myEmail())).data.get('lastGiftCard', '') == code)
+          || (resource.data.get('site', '') == 'budget' && getAfter(/databases/$(database)/documents/budgetCredits/$(myEmail())).data.get('lastGiftCard', '') == code))
       );
     }
 
