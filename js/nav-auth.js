@@ -28,6 +28,8 @@ document.addEventListener('DOMContentLoaded', function () {
       var fields = { email: (user.email || '').toLowerCase(), lastSignInAt: new Date().toISOString() };
       if (user.metadata && user.metadata.creationTime) fields.createdAt = new Date(user.metadata.creationTime).toISOString();
       if (user.displayName) fields.displayName = user.displayName; // "Name — Institution" from sign-up
+      // Which stores they've signed in to (js/sites.js), for Admin → Customers.
+      if (firebase.firestore.FieldValue) fields.stores = firebase.firestore.FieldValue.arrayUnion(window.Sites ? Sites.current() : 'main');
       firebase.firestore().collection('users').doc(user.uid).set(fields, { merge: true }).then(function () {
         sessionStorage.setItem('txbio_customer_recorded', user.uid);
       }).catch(function () {});
