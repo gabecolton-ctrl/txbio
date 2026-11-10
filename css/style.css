@@ -1618,3 +1618,10 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .cust-bulk .btn, .cust-bulk .btn-outline-light { margin: 0; }
 .cust-delete-btn { background: var(--alert) !important; border-color: var(--alert) !important; color: #fff !important; }
 .cust-delete-link { color: var(--alert) !important; border-color: var(--alert) !important; }
+
+/* Admin → Customers: last active */
+.cust-tools { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin-bottom: 14px; }
+.cust-tools #customer-search { flex: 1 1 260px; margin: 0; }
+.cust-tools select { width: auto; margin: 0; }
+.cust-tools .checkbox-row { margin: 0; }
+.active-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); margin-right: 7px; vertical-align: 1px; }

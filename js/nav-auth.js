@@ -36,6 +36,24 @@ document.addEventListener('DOMContentLoaded', function () {
     } catch (e) {}
   }
 
+  // "Last active" on Admin → Customers: while a signed-in customer has a page
+  // open and in view, note the time (at most every 5 minutes) and the store.
+  var SEEN_EVERY = 5 * 60 * 1000;
+  function markSeen(user) {
+    try {
+      if (!user || !firebase.firestore || document.visibilityState === 'hidden') return;
+      var key = 'txbio_seen_' + user.uid, last = Number(localStorage.getItem(key) || 0);
+      if (Date.now() - last < SEEN_EVERY) return;
+      localStorage.setItem(key, String(Date.now()));
+      firebase.firestore().collection('users').doc(user.uid).set({
+        lastSeenAt: new Date().toISOString(), lastSeenSite: window.Sites ? Sites.current() : 'main'
+      }, { merge: true }).catch(function () {});
+    } catch (e) {}
+  }
+  var seenUser = null;
+  setInterval(function () { markSeen(seenUser); }, 60 * 1000);
+  document.addEventListener('visibilitychange', function () { markSeen(seenUser); });
+
   // "Referrals" in the account menu, only for accounts that are the affiliate
   // on a promo code (and the admin). Remembered for this browser session.
   function showReferralsLink(user) {
@@ -74,6 +92,8 @@ document.addEventListener('DOMContentLoaded', function () {
     document.documentElement.classList.toggle('signed-in', !!user);
     try { sessionStorage.setItem('txbio_signed_in', user ? '1' : '0'); } catch (e) {}
     if (user) recordCustomer(user);
+    seenUser = user || null;
+    markSeen(seenUser);
     if (user) showReferralsLink(user);
     if (user) {
       // Signed in: the "My account" menu (My orders, Account details, Sign out)
