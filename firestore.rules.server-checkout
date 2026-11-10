@@ -295,6 +295,12 @@ service cloud.firestore {
       allow read: if signedIn();
       allow write: if isAdmin();
     }
+    // Admin → Customers → Delete account: queued here, done by the shipment
+    // tracker with the server key (tools/shipment-tracker/account-deletes.js).
+    match /accountDeletions/{uid} {
+      allow read, write: if isAdmin();
+    }
+
     match /roleMembers/{email} {
       allow read: if isStaff() || myEmail() == email;
       allow write: if isAdmin();

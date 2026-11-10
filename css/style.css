@@ -1609,3 +1609,12 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .cd-wholesale { max-width: 560px; margin: 4px 0 18px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); }
 .cd-wholesale p { margin: 4px 0 10px; color: var(--muted); font-size: 0.9rem; }
 .cd-wholesale .btn, .cd-wholesale .btn-outline-light { margin: 0 6px 0 0; }
+
+/* Admin → Customers: deleting accounts */
+.cust-pick-col { width: 34px; padding-right: 0 !important; }
+.cust-pick-col input { margin: 0; width: 16px; height: 16px; }
+.cust-bulk { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; margin: 12px 0; padding: 10px 14px; border: 1px solid var(--alert); border-radius: var(--radius); background: var(--alert-wash); }
+.cust-bulk #cust-bulk-n { flex: 1; font-weight: 600; }
+.cust-bulk .btn, .cust-bulk .btn-outline-light { margin: 0; }
+.cust-delete-btn { background: var(--alert) !important; border-color: var(--alert) !important; color: #fff !important; }
+.cust-delete-link { color: var(--alert) !important; border-color: var(--alert) !important; }

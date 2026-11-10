@@ -12,6 +12,7 @@ const { emailjsClient } = require('./emailjs');
 const { run } = require('./tracker');
 const { updateLeaderboard } = require('./leaderboard-job');
 const { backfillReferrals } = require('./referral-backfill');
+const { processAccountDeletes } = require('./account-deletes');
 
 function need(name) {
   const v = process.env[name];
@@ -36,6 +37,9 @@ function need(name) {
   admin.initializeApp({ credential: admin.credential.cert(sa) });
   // One time: save referrals for customers credited before saved referrals existed.
   try { await backfillReferrals({ db: admin.firestore() }); } catch (err) { console.log('Referral backfill failed: ' + err.message); }
+  // Accounts the admin deleted on Admin → Customers.
+  try { const n = await processAccountDeletes({ db: admin.firestore(), auth: admin.auth() }); if (n) console.log('Deleted ' + n + ' account(s)'); }
+  catch (err) { console.log('Account deletes failed: ' + err.message); }
   const tally = await run({ db: admin.firestore(), carrier, email });
   // Monthly affiliate leaderboard (Admin → Promo codes turns it on).
   try { const r = await updateLeaderboard({ db: admin.firestore() }); if (r !== 'off') console.log('Leaderboard: ' + r + ' affiliates with sales this month'); }
