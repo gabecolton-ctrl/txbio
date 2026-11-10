@@ -2,7 +2,7 @@
   "_readme": "Exact-text swaps for the budget store, applied after the name swap by tools/build-budget.py. Each pair is [text on the TXBio page, text on the budget page]. The build warns if a TXBio text has changed and no longer matches.",
   "index.html": [
     ["Research peptides, documented and shipped from Dallas.", "Research peptides at everyday low prices."],
-    ["BenchBasics Research Supply supplies research peptides and laboratory reagents to qualified labs, institutions, and researchers across the country. Every product is sold strictly for laboratory research.", "BenchBasics keeps it simple: lab-grade research peptides and reagents, plain packaging, and lower prices for qualified labs and researchers. Every product is sold strictly for laboratory research."],
+    ["TexasBench Research Supply supplies research peptides and laboratory reagents to qualified labs, institutions, and researchers across the country. Every product is sold strictly for laboratory research.", "TexasBench keeps it simple: lab-grade research peptides and reagents, plain packaging, and lower prices for qualified labs and researchers. Every product is sold strictly for laboratory research."],
     ["<strong>Specs on every product</strong><span>Form, purity, and storage listed before you order</span>", "<strong>Low prices, every day</strong><span>No markups for branding, just the materials</span>"]
   ],
   "about.html": [

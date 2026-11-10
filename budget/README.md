@@ -11,7 +11,7 @@ cart and emails; shared stock, customer logins, admin and order list.
 | Product label images | `node budget/make-labels.js` → `budget/product-labels/` |
 | Prices | Admin → Pricing → Budget store (percent off TXBio, or per product) |
 | Buyer emails | `BUDGET_CONFIG` in `js/order-emails.js` (its own EmailJS service and templates) |
-| Orders | Admin → Orders, "Budget" badge and store filter; order numbers start `BB-` |
+| Orders | Admin → Orders, "Budget" badge and store filter; order numbers start `TB-` (`BB-` before the rename) |
 
 Build locally: `python3 tools/build-budget.py` → `dist-budget/`.
 
