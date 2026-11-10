@@ -13,8 +13,8 @@
 // see the same list.
 var Sites = (function () {
   var LIST = {
-    main: { id: 'main', name: 'TXBioResearch', url: 'https://txbioresearch.com', orderPrefix: 'TXB', badge: 'TXBio', email: 'orders@txbioresearch.com', fullName: 'Texas Advanced BioResearch' },
-    budget: { id: 'budget', name: 'TexasBench', url: 'https://texasbench.com', orderPrefix: 'TB', badge: 'Budget', email: 'orders@texasbench.com', fullName: 'TexasBench Research Supply' }
+    main: { id: 'main', name: 'TXBioResearch', url: 'https://txbioresearch.com', orderPrefix: 'TXB', badge: 'TXBio', email: 'orders@txbioresearch.com', fullName: 'Texas Advanced BioResearch', logo: 'images/logo-icon.png' },
+    budget: { id: 'budget', name: 'TexasBench', url: 'https://texasbench.com', orderPrefix: 'TB', badge: 'Budget', email: 'orders@texasbench.com', fullName: 'TexasBench Research Supply', logo: 'images/texasbench-icon.png' }
   };
   function current() { return (typeof window !== 'undefined' && window.SITE_ID === 'budget') ? 'budget' : 'main'; }
   function of(thing) { return thing && thing.site === 'budget' ? 'budget' : 'main'; }

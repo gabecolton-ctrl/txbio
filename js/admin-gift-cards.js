@@ -66,8 +66,8 @@
 
   // ---------- Share panel: picture, link, text ----------
   function textFor(c) {
-    return (c.toName ? 'Hi ' + c.toName.split(' ')[0] + '! ' : '') + 'Here’s a ' + GiftCards.money(c.amountCents) + ' TXBioResearch gift card' + (c.from ? ' from ' + c.from : '') + '. ' +
-      'Redeem it here (it goes into your store credit): ' + GiftCards.redeemUrl(c.code) + '  Code: ' + c.code;
+    return (c.toName ? 'Hi ' + c.toName.split(' ')[0] + '! ' : '') + 'Here’s a ' + GiftCards.money(c.amountCents) + ' ' + Sites.info(c.site).name + ' gift card' + (c.from ? ' from ' + c.from : '') + '. ' +
+      'Redeem it here (it goes into your store credit): ' + GiftCards.redeemUrl(c.code, c) + '  Code: ' + c.code;
   }
   function show(code) {
     var c = cards.filter(function (x) { return x.code === code; })[0];
@@ -75,7 +75,7 @@
     shown = c;
     $('gc-share').style.display = '';
     $('gc-share-title').textContent = GiftCards.money(c.amountCents) + ' gift card' + (c.toName ? ' for ' + c.toName : '');
-    $('gc-link').value = GiftCards.redeemUrl(c.code);
+    $('gc-link').value = GiftCards.redeemUrl(c.code, c);
     $('gc-text').value = textFor(c);
     GiftCards.drawCard($('gc-canvas'), c).then(function () {
       $('gc-share').scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -105,6 +105,7 @@
         message: $('gc-message').value.trim().slice(0, 140), paidCents: paid, paidMethod: paid ? $('gc-paid-method').value : '',
         createdAt: new Date().toISOString(), createdBy: me, void: false, redeemedBy: ''
       };
+      if ($('gc-store').value === 'budget') card.site = 'budget'; // TexasBench look and links (js/sites.js)
       var btn = $('gc-submit'); btn.disabled = true;
       db.collection('giftCards').doc(code).set(card).then(function () {
         btn.disabled = false;

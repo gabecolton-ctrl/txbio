@@ -8,6 +8,13 @@
 // users/{uid}.cartReminderAt records when the last one went out.
 const path = require('path');
 const OrderEmails = require(path.join(__dirname, '../../js/order-emails.js'));
+const Sites = require(path.join(__dirname, '../../js/sites.js'));
+// Both stores (js/sites.js): carts/{uid} is TXBio, budgetCarts/{uid} TexasBench.
+// TexasBench reminders go through its own mailbox and record budgetCartReminderAt.
+const STORES = [
+  { site: 'main', carts: 'carts', field: 'cartReminderAt' },
+  { site: 'budget', carts: 'budgetCarts', field: 'budgetCartReminderAt' }
+];
 
 const HOUR = 36e5;
 const IDLE_HOURS = 24;          // cart unchanged this long
@@ -15,7 +22,7 @@ const MAX_AGE_DAYS = 7;         // older carts are left alone
 const GAP_DAYS = 7;             // at most one reminder a week per customer
 const SITE = 'https://txbioresearch.com';
 
-function plan(cart, user, now) {
+function plan(cart, user, now, field = 'cartReminderAt') {
   const items = (cart.items || []).filter((i) => Number(i.qty) > 0);
   if (!items.length) return { skip: 'empty' };
   if (!user || !user.email) return { skip: 'no email' };
@@ -25,7 +32,7 @@ function plan(cart, user, now) {
   const idle = (now - changed) / HOUR;
   if (idle < IDLE_HOURS) return { skip: 'recent' };
   if (idle > MAX_AGE_DAYS * 24) return { skip: 'old' };
-  const last = Date.parse(user.cartReminderAt || '');
+  const last = Date.parse(user[field] || '');
   if (last && (now - last) < GAP_DAYS * 24 * HOUR) return { skip: 'reminded this week' };
   if (last && last >= changed) return { skip: 'already reminded for this cart' };
   const units = items.reduce((n, i) => n + Number(i.qty) * (i.caseOf ? Number(i.caseOf) : 1), 0);
@@ -33,7 +40,9 @@ function plan(cart, user, now) {
   return { send: true, items, units, value };
 }
 
-function params(user, p) {
+function params(user, p, site = 'main') {
+  const info = Sites.info(site);
+  const url = site === 'budget' ? info.url : SITE;
   const name = String(user.name || String(user.displayName || '').split(' — ')[0] || '').trim();
   const lines = p.items.length;
   return {
@@ -41,33 +50,38 @@ function params(user, p) {
     to_name: name ? name.split(' ')[0] : 'there',
     items: lines + (lines === 1 ? ' item' : ' items') + (p.units !== lines ? ' (' + p.units + ' units)' : ''),
     cart_total: '$' + p.value.toFixed(2),
-    cart_url: SITE + '/cart.html',
-    unsubscribe_url: SITE + '/account.html#email-prefs',
-    // Shared templates (js/order-emails.js withStore): cart reminders are TXBio-only.
-    store_name: 'TXBioResearch', store_full_name: 'Texas Advanced BioResearch', store_url: SITE,
-    store_domain: SITE.replace(/^https?:\/\//, ''), reply_to: 'orders@txbioresearch.com'
+    cart_url: url + '/cart.html',
+    unsubscribe_url: url + '/account.html#email-prefs',
+    // Shared templates (js/order-emails.js withStore).
+    store_name: info.name, store_full_name: info.fullName, store_url: url,
+    store_domain: url.replace(/^https?:\/\//, ''), reply_to: info.email
   };
 }
 
 async function run({ db, email, now = Date.now(), log = console.log }) {
   const templateId = OrderEmails.CONFIG.cartReminderTemplateId;
   if (!templateId) { log('Cart reminders: no "Cart reminder" template ID in js/order-emails.js yet. Nothing sent.'); return { sent: 0 }; }
-  const [carts, users] = await Promise.all([db.collection('carts').get(), db.collection('users').get()]);
+  const users = await db.collection('users').get();
   const byUid = {};
   users.docs.forEach((d) => { byUid[d.id] = d.data(); });
   const tally = { sent: 0, skipped: {}, failed: 0 };
-  for (const c of carts.docs) {
-    const user = byUid[c.id];
-    const p = plan(c.data(), user, now);
-    if (!p.send) { tally.skipped[p.skip] = (tally.skipped[p.skip] || 0) + 1; continue; }
-    try {
-      await email.send(templateId, params(user, p));
-      await db.collection('users').doc(c.id).update({ cartReminderAt: new Date(now).toISOString() });
-      tally.sent++;
-      log('Reminded ' + user.email + ' (' + p.items.length + ' items, $' + p.value.toFixed(2) + ')');
-    } catch (err) {
-      tally.failed++;
-      log('Could not remind ' + user.email + ': ' + err.message);
+  for (const st of STORES) {
+    const cfg = OrderEmails.configFor({ site: st.site });
+    if (!cfg.serviceId) continue; // that store's emails aren't set up
+    const carts = await db.collection(st.carts).get().catch(() => ({ docs: [] }));
+    for (const c of carts.docs) {
+      const user = byUid[c.id];
+      const p = plan(c.data(), user, now, st.field);
+      if (!p.send) { tally.skipped[p.skip] = (tally.skipped[p.skip] || 0) + 1; continue; }
+      try {
+        await email.send(templateId, params(user, p, st.site), cfg);
+        await db.collection('users').doc(c.id).update({ [st.field]: new Date(now).toISOString() });
+        tally.sent++;
+        log('Reminded ' + user.email + (st.site === 'budget' ? ' (TexasBench)' : '') + ' (' + p.items.length + ' items, $' + p.value.toFixed(2) + ')');
+      } catch (err) {
+        tally.failed++;
+        log('Could not remind ' + user.email + ': ' + err.message);
+      }
     }
   }
   log('Cart reminders: ' + tally.sent + ' sent, ' + tally.failed + ' failed, skipped ' + JSON.stringify(tally.skipped));

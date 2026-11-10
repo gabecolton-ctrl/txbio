@@ -30,7 +30,14 @@ var GiftCards = (function () {
     return 'TXB-' + s.slice(0, 4) + '-' + s.slice(4, 8) + '-' + s.slice(8);
   }
 
-  function redeemUrl(code) { return SITE + '/gift.html?code=' + encodeURIComponent(code); }
+  // The store a card belongs to (js/sites.js): the card's own site, else the
+  // store this page is on.
+  function storeOf(card) {
+    var id = card && card.site ? card.site : (typeof Sites !== 'undefined' ? Sites.current() : 'main');
+    return id === 'budget' ? 'budget' : 'main';
+  }
+  function storeUrl(card) { return typeof Sites !== 'undefined' ? Sites.info(storeOf(card)).url : SITE; }
+  function redeemUrl(code, card) { return storeUrl(card) + '/gift.html?code=' + encodeURIComponent(code); }
   function money(cents) {
     var d = (cents || 0) / 100;
     return '$' + (d % 1 ? d.toFixed(2) : d.toLocaleString('en-US'));
@@ -100,61 +107,71 @@ var GiftCards = (function () {
     return lines;
   }
   // card: { code, amountCents, toName, from, message, noQr }. Resolves the canvas.
+  // TXBio: dark teal. TexasBench: white and blue.
+  var LOOKS = {
+    main: { bg: '#0a1416', glow: 'rgba(94,234,212,0.22)', glow0: 'rgba(94,234,212,0)', lines: 'rgba(94,234,212,0.10)', edge: 'rgba(94,234,212,0.35)',
+      text: '#e6efed', accent: '#5eead4', muted: '#93a8a5', quote: '#c7d6d3', qrBg: '#e6efed', qrInk: '#0f1b1d', serif: 'Georgia, "Times New Roman", serif' },
+    budget: { bg: '#ffffff', glow: 'rgba(23,86,209,0.10)', glow0: 'rgba(23,86,209,0)', lines: 'rgba(23,86,209,0.10)', edge: 'rgba(23,86,209,0.45)',
+      text: '#0f1d33', accent: '#1756d1', muted: '#4b5b72', quote: '#334155', qrBg: '#eef3fa', qrInk: '#0f1d33', serif: 'Inter, "Segoe UI", Arial, sans-serif' }
+  };
   function drawCard(canvas, card, logoSrc) {
     var W = 1500, H = 945;
     canvas.width = W; canvas.height = H;
     var ctx = canvas.getContext('2d');
-    return loadImage(logoSrc || 'images/logo-icon.png').then(function (logo) {
-      // Background: deep teal-black with a soft mint glow.
-      ctx.fillStyle = '#0a1416'; roundRect(ctx, 0, 0, W, H, 56); ctx.fill();
+    var store = storeOf(card), L = LOOKS[store];
+    var info = typeof Sites !== 'undefined' ? Sites.info(store) : { fullName: 'Texas Advanced BioResearch', url: SITE, logo: 'images/logo-icon.png' };
+    var domain = String(info.url).replace(/^https?:\/\//, '');
+    return loadImage(logoSrc || info.logo || 'images/logo-icon.png').then(function (logo) {
+      // Background with a soft glow.
+      ctx.fillStyle = L.bg; roundRect(ctx, 0, 0, W, H, 56); ctx.fill();
       ctx.save(); roundRect(ctx, 0, 0, W, H, 56); ctx.clip();
       var g = ctx.createRadialGradient(W * 0.2, H * 0.1, 40, W * 0.2, H * 0.1, W * 0.9);
-      g.addColorStop(0, 'rgba(94,234,212,0.22)'); g.addColorStop(1, 'rgba(94,234,212,0)');
+      g.addColorStop(0, L.glow); g.addColorStop(1, L.glow0);
       ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
       // Faint molecule lines in the corner.
-      ctx.strokeStyle = 'rgba(94,234,212,0.10)'; ctx.lineWidth = 3;
+      ctx.strokeStyle = L.lines; ctx.lineWidth = 3;
       var pts = [[1180, 120], [1330, 200], [1290, 360], [1420, 450], [1250, 520]];
       ctx.beginPath(); pts.forEach(function (p, i) { if (i) ctx.lineTo(p[0], p[1]); else ctx.moveTo(p[0], p[1]); }); ctx.stroke();
       pts.forEach(function (p) { ctx.beginPath(); ctx.arc(p[0], p[1], 12, 0, Math.PI * 2); ctx.stroke(); });
       ctx.restore();
-      ctx.strokeStyle = 'rgba(94,234,212,0.35)'; ctx.lineWidth = 3; roundRect(ctx, 1.5, 1.5, W - 3, H - 3, 55); ctx.stroke();
+      ctx.strokeStyle = L.edge; ctx.lineWidth = 3; roundRect(ctx, 1.5, 1.5, W - 3, H - 3, 55); ctx.stroke();
 
       // Brand.
       if (logo) {
         ctx.save(); roundRect(ctx, 80, 72, 96, 96, 22); ctx.clip(); ctx.drawImage(logo, 80, 72, 96, 96); ctx.restore();
       }
-      ctx.fillStyle = '#e6efed'; ctx.font = '48px Georgia, "Times New Roman", serif';
-      ctx.fillText('Texas Advanced BioResearch', 200, 136);
-      ctx.fillStyle = '#5eead4'; ctx.font = '600 30px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillStyle = L.text; ctx.font = (store === 'budget' ? '700 ' : '') + '48px ' + L.serif;
+      ctx.fillText(info.fullName || info.name, 200, 136);
+      ctx.fillStyle = L.accent; ctx.font = '600 30px system-ui, -apple-system, "Segoe UI", sans-serif';
       ctx.fillText('G I F T   C A R D', 82, 250);
 
       // Amount.
-      ctx.fillStyle = '#e6efed'; ctx.font = '200px Georgia, "Times New Roman", serif';
+      ctx.fillStyle = L.text; ctx.font = (store === 'budget' ? '800 ' : '') + '200px ' + L.serif;
       ctx.fillText(money(card.amountCents), 70, 450);
 
       // To / from / message.
       var y = 530;
       ctx.font = '36px system-ui, -apple-system, "Segoe UI", sans-serif';
-      if (card.toName) { ctx.fillStyle = '#93a8a5'; ctx.fillText('For', 82, y); ctx.fillStyle = '#e6efed'; ctx.fillText(card.toName, 150, y); y += 56; }
-      if (card.from) { ctx.fillStyle = '#93a8a5'; ctx.fillText('From', 82, y); ctx.fillStyle = '#e6efed'; ctx.fillText(card.from, 175, y); y += 56; }
+      if (card.toName) { ctx.fillStyle = L.muted; ctx.fillText('For', 82, y); ctx.fillStyle = L.text; ctx.fillText(card.toName, 150, y); y += 56; }
+      if (card.from) { ctx.fillStyle = L.muted; ctx.fillText('From', 82, y); ctx.fillStyle = L.text; ctx.fillText(card.from, 175, y); y += 56; }
       if (card.message) {
-        ctx.fillStyle = '#c7d6d3'; ctx.font = 'italic 34px Georgia, "Times New Roman", serif';
+        ctx.fillStyle = L.quote; ctx.font = 'italic 34px ' + L.serif;
         wrap(ctx, '“' + card.message + '”', 900).slice(0, 2).forEach(function (l) { ctx.fillText(l, 82, y + 8); y += 48; });
       }
 
       // Code + how to redeem.
-      ctx.fillStyle = '#5eead4'; ctx.font = '600 46px ui-monospace, Menlo, Consolas, monospace';
+      ctx.fillStyle = L.accent; ctx.font = '600 46px ui-monospace, Menlo, Consolas, monospace';
       ctx.fillText(card.code, 82, 820);
-      ctx.fillStyle = '#93a8a5'; ctx.font = '28px system-ui, -apple-system, "Segoe UI", sans-serif';
-      ctx.fillText('Redeem at txbioresearch.com/gift  ·  added to your store credit', 82, 872);
+      ctx.fillStyle = L.muted; ctx.font = '28px system-ui, -apple-system, "Segoe UI", sans-serif';
+      ctx.fillText('Redeem at ' + domain + '/gift  ·  added to your store credit', 82, 872);
 
       // QR to the redeem page, on a light panel so every phone can scan it.
       if (window.qrcode && !card.noQr) {
-        var qr = window.qrcode(0, 'M'); qr.addData(redeemUrl(card.code)); qr.make();
+        var qr = window.qrcode(0, 'M'); qr.addData(redeemUrl(card.code, card)); qr.make();
         var n = qr.getModuleCount(), size = 300, cell = Math.floor(size / (n + 4)), qs = cell * (n + 4);
         var qx = W - 80 - qs, qy = H - 80 - qs;
-        ctx.fillStyle = '#e6efed'; roundRect(ctx, qx, qy, qs, qs, 26); ctx.fill();
-        ctx.fillStyle = '#0f1b1d';
+        ctx.fillStyle = L.qrBg; roundRect(ctx, qx, qy, qs, qs, 26); ctx.fill();
+        ctx.fillStyle = L.qrInk;
         for (var r = 0; r < n; r++) for (var c = 0; c < n; c++) {
           if (qr.isDark(r, c)) ctx.fillRect(qx + (c + 2) * cell, qy + (r + 2) * cell, cell, cell);
         }
@@ -234,8 +251,8 @@ var GiftCards = (function () {
 
   // The text a buyer or the admin can send by hand.
   function shareText(card, code) {
-    return (card.toName ? 'Hi ' + String(card.toName).split(' ')[0] + '! ' : '') + 'Here’s a ' + money(card.amountCents) + ' TXBioResearch gift card' +
-      (card.from ? ' from ' + card.from : '') + '. Redeem it here (it goes into your store credit): ' + redeemUrl(code) + '  Code: ' + code;
+    return (card.toName ? 'Hi ' + String(card.toName).split(' ')[0] + '! ' : '') + 'Here’s a ' + money(card.amountCents) + ' ' + (typeof Sites !== 'undefined' ? Sites.info(storeOf(card)).name : 'TXBioResearch') + ' gift card' +
+      (card.from ? ' from ' + card.from : '') + '. Redeem it here (it goes into your store credit): ' + redeemUrl(code, card) + '  Code: ' + code;
   }
 
   return {

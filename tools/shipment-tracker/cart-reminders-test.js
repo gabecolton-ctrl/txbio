@@ -53,6 +53,23 @@ const line = { slug: 'bpc-157-10mg', name: 'BPC 157', price: 73, qty: 2 };
     assert.strictEqual(again.sent, 0);
   });
 
+  await test('run: TexasBench carts get a TexasBench reminder, tracked separately', async () => {
+    const db = fakeDb({
+      'budgetCarts/u1': { items: [line], updatedAt: ago(30) }, 'carts/u1': { items: [line], updatedAt: ago(30) },
+      'users/u1': { email: 'jo@x.com', name: 'Jo' }
+    });
+    const sent = [];
+    const email = { send: async (t, p, cfg) => { sent.push([t, p, cfg && cfg.serviceId]); } };
+    const r = await run({ db, email, now: NOW, log: () => {} });
+    assert.strictEqual(r.sent, 2);
+    const tb = sent.find((x) => x[1].store_name === 'TexasBench');
+    assert.ok(tb, 'TexasBench reminder sent');
+    assert.strictEqual(tb[1].cart_url, 'https://texasbench.com/cart.html');
+    assert.strictEqual(tb[1].reply_to, 'orders@texasbench.com');
+    assert.strictEqual(tb[2], OrderEmails.BUDGET_CONFIG.serviceId);
+    assert.ok(db.data['users/u1'].budgetCartReminderAt && db.data['users/u1'].cartReminderAt);
+  });
+
   await test('run: no template ID yet sends nothing', async () => {
     OrderEmails.CONFIG.cartReminderTemplateId = '';
     const r = await run({ db: fakeDb({ 'carts/u1': { items: [line], updatedAt: ago(30) }, 'users/u1': { email: 'a@x.com' } }), email: { send: async () => { throw new Error('should not send'); } }, now: NOW, log: () => {} });
