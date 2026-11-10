@@ -159,13 +159,16 @@
       db.collection('orders').get(), soft(db.collection('costs').get()), soft(db.collection('settings').doc('paymentFees').get()),
       soft(db.collection('traffic').get()), soft(db.collection('inventory').get()), soft(db.collection('incoming').get()),
       soft(db.collection('paymentEmails').get()), soft(db.collection('lots').get()),
-      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
+      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
+      soft(db.collection('trafficBudget').get())
     ]).then(function (r) {
       var each = function (snap, f) { if (snap) snap.forEach(f); };
       D = { orders: [], costs: {}, fees: r[2] && r[2].exists ? r[2].data() : {}, traffic: {}, stock: {}, incoming: [], paymentEmails: [], lots: [], names: {} };
       each(r[0], function (d) { D.orders.push(Object.assign({ id: d.id }, d.data())); });
       each(r[1], function (d) { D.costs[d.id] = d.data(); });
       each(r[3], function (d) { D.traffic[d.id] = d.data(); });
+      // Both stores' visitors (orders already include both).
+      each(r[9], function (d) { var t = D.traffic[d.id] || (D.traffic[d.id] = {}); t.visitors = (t.visitors || 0) + (d.data().visitors || 0); });
       each(r[4], function (d) { if (typeof d.data().qty === 'number') D.stock[d.id] = d.data().qty; });
       each(r[5], function (d) { D.incoming.push(d.data()); });
       each(r[6], function (d) { D.paymentEmails.push(d.data()); });
