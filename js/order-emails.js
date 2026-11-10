@@ -33,7 +33,7 @@ var OrderEmails = (function () {
   // order notice still works).
   var BUDGET_CONFIG = {
     publicKey: CONFIG.publicKey,     // same EmailJS account
-    serviceId: '',                   // Email Services → the orders@texasbench.com service → Service ID
+    serviceId: 'service_h40phab',    // Email Services → the orders@texasbench.com service (TexasBench)
     confirmationTemplateId: CONFIG.confirmationTemplateId,
     shippedTemplateId: CONFIG.shippedTemplateId,
     cancelledTemplateId: CONFIG.cancelledTemplateId,
