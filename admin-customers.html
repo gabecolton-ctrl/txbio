@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101256">
+<link rel="stylesheet" href="css/style.css?v=202611101327">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101256"></script>
-<script src="js/splash.js?v=202611101256"></script>
+<script src="js/sites.js?v=202611101327"></script>
+<script src="js/splash.js?v=202611101327"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -141,9 +141,14 @@
       <input type="text" id="customer-search" placeholder="Search by name, institution, or email" autocomplete="off" style="max-width:480px;">
       <div id="customers-loading" class="cart-empty">Loading customers&hellip;</div>
       <div id="customers-empty" class="cart-empty" style="display:none;"><p>No customers yet.</p></div>
+      <div id="cust-bulk" class="cust-bulk" style="display:none;">
+        <span id="cust-bulk-n"></span>
+        <button type="button" class="btn-outline-light" id="cust-bulk-clear">Clear</button>
+        <button type="button" class="btn cust-delete-btn" id="cust-bulk-delete">Delete selected</button>
+      </div>
       <div id="customers-wrap" class="catalog-wrap" style="display:none;">
         <table class="catalog-table">
-          <thead><tr><th>Customer</th><th>Email</th><th>Joined</th><th>Orders</th><th>Total spent</th><th>Store credit</th><th>Owes you</th></tr></thead>
+          <thead><tr><th class="cust-pick-col"><input type="checkbox" id="cust-pick-all" aria-label="Select all shown"></th><th>Customer</th><th>Email</th><th>Joined</th><th>Orders</th><th>Total spent</th><th>Store credit</th><th>Owes you</th></tr></thead>
           <tbody id="customer-rows"></tbody>
         </table>
       </div>
@@ -170,6 +175,7 @@
           <button type="button" class="btn-outline-light" id="cd-edit-btn">Edit account</button>
           <button type="button" class="btn-outline-light" id="cd-reset-btn">Send password reset email</button>
           <button type="button" class="btn-outline-light" id="cd-ref-btn">Change referred by</button>
+          <button type="button" class="btn-outline-light cust-delete-link" id="cd-delete-btn">Delete account</button>
           <form id="cd-ref-form" style="display:none; max-width:560px; margin-top:12px;">
             <label for="cr-aff">Referred by</label>
             <select id="cr-aff"></select>
@@ -299,20 +305,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101256"></script>
-<script src="js/paused.js?v=202611101256"></script>
-<script src="js/cart.js?v=202611101256"></script>
-<script src="js/price-book.js?v=202611101256"></script>
-<script src="js/account.js?v=202611101256"></script>
-<script src="js/tabs.js?v=202611101256"></script>
-<script src="js/referral-attribution.js?v=202611101256"></script>
-<script src="js/credits.js?v=202611101256"></script>
-<script src="js/staff.js?v=202611101256"></script>
-<script src="js/nav-auth.js?v=202611101256"></script>
-<script src="js/profile-gate.js?v=202611101256"></script>
-<script src="js/auth-guard.js?v=202611101256"></script>
-<script src="js/main.js?v=202611101256"></script>
-<script src="js/nav-toggle.js?v=202611101256"></script>
+<script src="js/firebase-config.js?v=202611101327"></script>
+<script src="js/paused.js?v=202611101327"></script>
+<script src="js/cart.js?v=202611101327"></script>
+<script src="js/price-book.js?v=202611101327"></script>
+<script src="js/account.js?v=202611101327"></script>
+<script src="js/tabs.js?v=202611101327"></script>
+<script src="js/referral-attribution.js?v=202611101327"></script>
+<script src="js/credits.js?v=202611101327"></script>
+<script src="js/staff.js?v=202611101327"></script>
+<script src="js/nav-auth.js?v=202611101327"></script>
+<script src="js/profile-gate.js?v=202611101327"></script>
+<script src="js/auth-guard.js?v=202611101327"></script>
+<script src="js/main.js?v=202611101327"></script>
+<script src="js/nav-toggle.js?v=202611101327"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -352,8 +358,11 @@
       db.collection('orders').get(),
       db.collection('credits').get(),
       staffRole === 'admin' ? Tabs.getAll().catch(function () { return {}; }) : Promise.resolve({}),
-      db.collection('referredCustomers').get().catch(function () { return null; })
+      db.collection('referredCustomers').get().catch(function () { return null; }),
+      staffRole === 'admin' ? db.collection('accountDeletions').get().catch(function () { return null; }) : Promise.resolve(null)
     ]).then(function (res) {
+      deletions = {};
+      if (res[5]) res[5].forEach(function (d) { deletions[d.id] = d.data(); });
       var byEmail = {};
       function get(email) {
         var k = String(email || '').trim().toLowerCase();
@@ -397,7 +406,7 @@
         c.owedCents = c.tab ? (c.tab.owedCents || 0) : 0;
         c.stores = storesOf(c);
         return c;
-      }).filter(function (c) { return c.email !== ADMIN_EMAIL; });
+      }).filter(function (c) { return c.email !== ADMIN_EMAIL && !(c.uid && deletions[c.uid] && deletions[c.uid].status === 'done'); });
       customers.sort(function (a, b) { return (b.createdAt || '') < (a.createdAt || '') ? -1 : 1; });
       loading.style.display = 'none';
       renderList();
@@ -452,6 +461,61 @@
     });
   });
 
+  // ---------- Deleting accounts (test accounts etc.) ----------
+  // The page queues accountDeletions/{uid}; the shipment tracker (runs every
+  // ~10 min) removes the sign-in and the account's data
+  // (tools/shipment-tracker/account-deletes.js). Accounts with an order that
+  // isn't cancelled can't be deleted, so real sales records stay.
+  var deletions = {}, picked = {};
+  function deletionBadge(c) {
+    var d = c.uid && deletions[c.uid];
+    if (!d) return '';
+    if (d.status === 'queued') return ' <span class="site-badge site-badge-review">Deleting (within 10 min)</span>';
+    if (d.status === 'blocked') return ' <span class="site-badge site-badge-review" title="' + esc(d.reason || '') + '">Delete blocked</span>';
+    return '';
+  }
+  function openOrders(c) { return c.orders.filter(function (o) { return (o.status || 'pending') !== 'cancelled'; }); }
+  function drawBulk() {
+    var n = Object.keys(picked).length;
+    document.getElementById('cust-bulk').style.display = n ? '' : 'none';
+    document.getElementById('cust-bulk-n').textContent = n + ' selected';
+  }
+  function queueDeletes(list) {
+    var ok = [], skip = [];
+    list.forEach(function (c) {
+      if (!c.uid) skip.push((c.email || '?') + ': no sign-in account');
+      else if (openOrders(c).length) skip.push(c.email + ': has ' + openOrders(c).length + ' order(s) not cancelled');
+      else ok.push(c);
+    });
+    if (!ok.length) { alert('Nothing to delete.\n\n' + skip.join('\n')); return Promise.resolve(false); }
+    var msg = 'Delete ' + ok.length + ' account' + (ok.length === 1 ? '' : 's') + ' for good?\n\n' + ok.map(function (c) { return '• ' + (c.name ? c.name + ' – ' : '') + c.email; }).join('\n') +
+      '\n\nRemoves their sign-in, profile, carts, notes and any cancelled orders. Can\u2019t be undone.' +
+      (skip.length ? '\n\nSkipped:\n' + skip.join('\n') : '');
+    if (!confirm(msg)) return Promise.resolve(false);
+    var db = firebase.firestore(), batch = db.batch(), now = new Date().toISOString();
+    ok.forEach(function (c) {
+      var d = { email: c.email, status: 'queued', requestedAt: now, requestedBy: ADMIN_EMAIL };
+      batch.set(db.collection('accountDeletions').doc(c.uid), d);
+    });
+    return batch.commit().then(function () {
+      ok.forEach(function (c) { deletions[c.uid] = { email: c.email, status: 'queued' }; delete picked[c.email]; });
+      renderList();
+      return true;
+    }).catch(function (err) {
+      alert('Could not delete: ' + err.message + (/permission/i.test(err.message) ? '\n\nPublish the updated Firestore rules first.' : ''));
+      return false;
+    });
+  }
+  document.getElementById('cust-bulk-delete').addEventListener('click', function () {
+    queueDeletes(customers.filter(function (c) { return picked[c.email]; }));
+  });
+  document.getElementById('cust-bulk-clear').addEventListener('click', function () { picked = {}; renderList(); });
+  document.getElementById('cust-pick-all').addEventListener('change', function () {
+    var on = this.checked;
+    document.querySelectorAll('.cust-pick').forEach(function (cb) { var e = cb.getAttribute('data-email'); if (on) picked[e] = 1; else delete picked[e]; });
+    renderList();
+  });
+
   function stat(v, label) { return '<div class="carts-stat"><span class="carts-stat-v">' + v + '</span><span class="carts-stat-l">' + label + '</span></div>'; }
   function renderList() {
     var q = document.getElementById('customer-search').value.trim().toLowerCase();
@@ -478,14 +542,23 @@
     document.getElementById('customers-wrap').style.display = all.length ? 'block' : 'none';
     document.getElementById('customer-rows').innerHTML = list.map(function (c) {
       return '<tr class="customer-row" data-email="' + esc(c.email) + '" tabindex="0" style="cursor:pointer;">' +
-        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + storeBadge(c) + wholesaleBadge(c) + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
+        '<td class="cust-pick-col">' + (staffRole === 'admin' && c.uid ? '<input type="checkbox" class="cust-pick" data-email="' + esc(c.email) + '"' + (picked[c.email] ? ' checked' : '') + ' aria-label="Select ' + esc(c.name || c.email) + '">' : '') + '</td>' +
+        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + storeBadge(c) + wholesaleBadge(c) + deletionBadge(c) + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
         '<td>' + esc(c.email) + '</td>' +
         '<td>' + fmtDate(c.createdAt) + '</td>' +
         '<td>' + storeOrders(c).length + '</td>' +
         '<td>' + money(storeSpent(c)) + '</td>' +
         '<td>' + Credits.formatCents(c.balanceCents) + '</td>' +
         '<td>' + (c.owedCents ? '<strong style="color:' + (c.owedCents > 0 ? 'var(--danger)' : 'var(--text)') + ';">' + Tabs.money(c.owedCents) + '</strong>' : '') + '</td></tr>';
-    }).join('') || '<tr><td colspan="7" style="color:var(--text-light);">' + (q ? 'No customers match &ldquo;' + esc(q) + '&rdquo;.' : 'No customers on this store yet.') + '</td></tr>';
+    }).join('') || '<tr><td colspan="8" style="color:var(--text-light);">' + (q ? 'No customers match &ldquo;' + esc(q) + '&rdquo;.' : 'No customers on this store yet.') + '</td></tr>';
+    document.querySelectorAll('.cust-pick').forEach(function (cb) {
+      cb.addEventListener('click', function (e) { e.stopPropagation(); });
+      cb.addEventListener('change', function () { if (cb.checked) picked[cb.getAttribute('data-email')] = 1; else delete picked[cb.getAttribute('data-email')]; drawBulk(); });
+    });
+    var pickAll = document.getElementById('cust-pick-all');
+    pickAll.style.display = staffRole === 'admin' ? '' : 'none';
+    pickAll.checked = list.length > 0 && list.every(function (c) { return !c.uid || picked[c.email]; });
+    drawBulk();
     document.querySelectorAll('.customer-row').forEach(function (tr) {
       var open = function () { openCustomer(tr.getAttribute('data-email')); };
       tr.addEventListener('click', open);
@@ -564,6 +637,11 @@
     ];
     document.getElementById('cd-facts').innerHTML = facts.map(function (f) { return '<tr><td>' + f[0] + '</td><td>' + esc(f[1]) + '</td></tr>'; }).join('');
     drawWholesale(c);
+    var delBtn = document.getElementById('cd-delete-btn');
+    delBtn.style.display = staffRole === 'admin' && c.uid ? '' : 'none';
+    delBtn.textContent = c.uid && deletions[c.uid] && deletions[c.uid].status === 'queued' ? 'Deleting…' : 'Delete account';
+    delBtn.disabled = !!(c.uid && deletions[c.uid] && deletions[c.uid].status === 'queued');
+    delBtn.onclick = function () { queueDeletes([c]).then(function (done) { if (done) { delBtn.textContent = 'Deleting…'; delBtn.disabled = true; } }); };
 
     document.getElementById('cd-orders').innerHTML = c.orders.length
       ? '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Items</th><th>Total</th></tr></thead><tbody>' +
