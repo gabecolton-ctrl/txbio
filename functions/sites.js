@@ -14,7 +14,7 @@
 var Sites = (function () {
   var LIST = {
     main: { id: 'main', name: 'TXBioResearch', url: 'https://txbioresearch.com', orderPrefix: 'TXB', badge: 'TXBio' },
-    budget: { id: 'budget', name: 'BenchBasics', url: 'https://gabecolton-ctrl.github.io/budget-store', orderPrefix: 'BB', badge: 'Budget' }
+    budget: { id: 'budget', name: 'TexasBench', url: 'https://gabecolton-ctrl.github.io/budget-store', orderPrefix: 'TB', badge: 'Budget' }
   };
   function current() { return (typeof window !== 'undefined' && window.SITE_ID === 'budget') ? 'budget' : 'main'; }
   function of(thing) { return thing && thing.site === 'budget' ? 'budget' : 'main'; }

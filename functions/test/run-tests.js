@@ -407,7 +407,7 @@ test('budget store: percent off, budget prices, its own cart, tagged order', asy
   // $100 TXBio price - 40% = $60; AHK-CU has its own budget price.
   assert.deepStrictEqual(r.order.items.map((i) => i.price), [60, 33]);
   assert.strictEqual(r.order.site, 'budget');
-  assert.ok(/^BB-/.test(r.order.orderNumber), r.order.orderNumber);
+  assert.ok(/^TB-/.test(r.order.orderNumber), r.order.orderNumber);
   assert.deepStrictEqual((await r.db.collection('budgetCarts').doc('u1').get()).data().items, []);
   assert.strictEqual((await r.db.collection('carts').doc('u1').get()).data().items.length, 1); // TXBio cart untouched
   // TXBio order: no site tag, TXBio prices.
