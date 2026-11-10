@@ -38,7 +38,7 @@ const line = { slug: 'bpc-157-10mg', name: 'BPC 157', price: 73, qty: 2 };
     const db = fakeDb({
       'carts/u1': { items: [line, { slug: 'bac-water-10ml-case', name: 'Bac water', price: 200, qty: 1, caseOf: 10 }], updatedAt: ago(30) },
       'users/u1': { email: 'Jo@Example.com', name: 'Jo Smith' },
-      'carts/u2': { items: [line], updatedAt: ago(2) }, 'users/u2': { email: 'b@x.com' }
+      'carts/u2': { items: [line], updatedAt: ago(1) }, 'users/u2': { email: 'b@x.com' }
     });
     const sent = [];
     const email = { send: async (t, p) => { sent.push([t, p]); } };
