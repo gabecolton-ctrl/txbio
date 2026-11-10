@@ -417,6 +417,19 @@ test('budget store: percent off, budget prices, its own cart, tagged order', asy
   assert.ok(/^TXB-/.test(m.order.orderNumber));
 });
 
+test('promo codes belong to a store: TXBio, TexasBench or both', async () => {
+  const seed = { 'carts/u1': { items: [{ slug: 'ahk-cu', qty: 1 }] }, 'budgetCarts/u1': { items: [{ slug: 'ahk-cu', qty: 1 }] },
+    'promoCodes/TXB10': { code: 'TXB10', discountPercent: 10, type: 'always', active: true },
+    'promoCodes/TB10': { code: 'TB10', discountPercent: 10, type: 'always', active: true, store: 'budget' },
+    'promoCodes/ALL10': { code: 'ALL10', discountPercent: 10, type: 'always', active: true, store: 'both' } };
+  assert.ok((await run(seed, { promoCode: 'TXB10' })).order.discount > 0);
+  await rejects(run(seed, { promoCode: 'TXB10', site: 'budget' }), 'failed-precondition', 'does not exist');
+  await rejects(run(seed, { promoCode: 'TB10' }), 'failed-precondition', 'does not exist');
+  assert.ok((await run(seed, { promoCode: 'TB10', site: 'budget' })).order.discount > 0);
+  assert.ok((await run(seed, { promoCode: 'ALL10' })).order.discount > 0);
+  assert.ok((await run(seed, { promoCode: 'ALL10', site: 'budget' })).order.discount > 0);
+});
+
 test('family code: one shipping option (default 2nd Day Air $15), others rejected without the code', async () => {
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), {
     'atCostCodes/FAMILY': { active: true, emails: ['buyer@example.com'] }, 'costs/semaglutide-10mg': { perVialCost: 6.6 }

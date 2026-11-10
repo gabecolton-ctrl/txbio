@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101059">
+<link rel="stylesheet" href="css/style.css?v=202611101104">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101059"></script>
-<script src="js/splash.js?v=202611101059"></script>
+<script src="js/sites.js?v=202611101104"></script>
+<script src="js/splash.js?v=202611101104"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -141,6 +141,13 @@
 
         <div id="profit-check" class="profit-check" hidden></div>
 
+        <label for="promo-store-field">Store</label>
+        <select id="promo-store-field">
+          <option value="main">TXBio only</option>
+          <option value="budget">TexasBench only</option>
+          <option value="both">Both stores</option>
+        </select>
+
         <label for="promo-type-field">Applies To</label>
         <select id="promo-type-field">
           <option value="always">Any Order</option>
@@ -176,10 +183,15 @@
       <div id="promo-empty" class="cart-empty" style="display:none;">
         <p>No promo codes yet. Create one above.</p>
       </div>
+      <div class="store-tabs" role="tablist" aria-label="Which store" id="promo-store-tabs">
+        <button type="button" class="store-tab is-on" data-store="" role="tab" aria-selected="true">All</button>
+        <button type="button" class="store-tab" data-store="main" role="tab" aria-selected="false">TXBio</button>
+        <button type="button" class="store-tab" data-store="budget" role="tab" aria-selected="false">TexasBench</button>
+      </div>
       <div class="catalog-wrap" id="promo-table-wrap" style="display:none;">
         <table class="catalog-table" id="promo-table">
           <thead>
-            <tr><th>Code</th><th>Referral link</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Affiliate</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
+            <tr><th>Code</th><th>Store</th><th>Referral link</th><th>Discount</th><th>Applies To</th><th>Status</th><th>Affiliate</th><th>Times Used</th><th>Total Discounted</th><th></th></tr>
           </thead>
           <tbody id="promo-rows"></tbody>
         </table>
@@ -246,19 +258,19 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101059"></script>
-<script src="js/paused.js?v=202611101059"></script>
-<script src="js/cart.js?v=202611101059"></script>
-<script src="js/price-book.js?v=202611101059"></script>
-<script src="js/leaderboard.js?v=202611101059"></script>
-<script src="js/profit-check.js?v=202611101059"></script>
-<script src="js/promos.js?v=202611101059"></script>
-<script src="js/staff.js?v=202611101059"></script>
-<script src="js/nav-auth.js?v=202611101059"></script>
-<script src="js/profile-gate.js?v=202611101059"></script>
-<script src="js/auth-guard.js?v=202611101059"></script>
-<script src="js/main.js?v=202611101059"></script>
-<script src="js/nav-toggle.js?v=202611101059"></script>
+<script src="js/firebase-config.js?v=202611101104"></script>
+<script src="js/paused.js?v=202611101104"></script>
+<script src="js/cart.js?v=202611101104"></script>
+<script src="js/price-book.js?v=202611101104"></script>
+<script src="js/leaderboard.js?v=202611101104"></script>
+<script src="js/profit-check.js?v=202611101104"></script>
+<script src="js/promos.js?v=202611101104"></script>
+<script src="js/staff.js?v=202611101104"></script>
+<script src="js/nav-auth.js?v=202611101104"></script>
+<script src="js/profile-gate.js?v=202611101104"></script>
+<script src="js/auth-guard.js?v=202611101104"></script>
+<script src="js/main.js?v=202611101104"></script>
+<script src="js/nav-toggle.js?v=202611101104"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var editingCode = null;
@@ -403,6 +415,22 @@
     return 'Any Order';
   }
 
+  // Store tabs over the code list: a "Both" code shows on either store's tab.
+  var promoStoreFilter = '';
+  function filterPromoRows() {
+    document.querySelectorAll('#promo-rows tr[data-store]').forEach(function (tr) {
+      var s = tr.getAttribute('data-store');
+      tr.hidden = !!promoStoreFilter && s !== 'both' && s !== promoStoreFilter;
+    });
+  }
+  document.querySelectorAll('#promo-store-tabs .store-tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      promoStoreFilter = b.getAttribute('data-store');
+      document.querySelectorAll('#promo-store-tabs .store-tab').forEach(function (x) { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      filterPromoRows();
+    });
+  });
+
   function loadPromoTable() {
     var loading = document.getElementById('promo-loading');
     var empty = document.getElementById('promo-empty');
@@ -420,7 +448,14 @@
       tableWrap.style.display = 'block';
       rowsEl.innerHTML = '';
 
-      function refLink(code) { return 'txbioresearch.com/?code=' + encodeURIComponent(code); }
+      function refLink(code, promo) {
+        var host = Promos.storeOf(promo) === 'budget' ? Sites.info('budget').url : Sites.info('main').url;
+        return host.replace(/^https?:\/\//, '') + '/?code=' + encodeURIComponent(code);
+      }
+      function storeCell(promo) {
+        var s = Promos.storeOf(promo);
+        return s === 'both' ? '<span class="site-badge site-badge-both">Both</span>' : s === 'budget' ? '<span class="site-badge">TexasBench</span>' : 'TXBio';
+      }
       function copyText(btn) {
         var url = 'https://' + btn.getAttribute('data-copy');
         var done = function () {
@@ -437,9 +472,11 @@
 
       codes.forEach(function (promo) {
         var tr = document.createElement('tr');
+        tr.setAttribute('data-store', Promos.storeOf(promo));
         tr.innerHTML =
           '<td>' + promo.code + '</td>' +
-          '<td class="ref-link-cell"><code class="ref-link">' + refLink(promo.code) + '</code><button type="button" class="ref-copy" data-copy="' + refLink(promo.code) + '">Copy</button></td>' +
+          '<td>' + storeCell(promo) + '</td>' +
+          '<td class="ref-link-cell"><code class="ref-link">' + refLink(promo.code, promo) + '</code><button type="button" class="ref-copy" data-copy="' + refLink(promo.code, promo) + '">Copy</button></td>' +
           '<td>' + promo.discountPercent + '%</td>' +
           '<td>' + (promo.roleOnly ? esc(promo.label || 'Role') + ' only' : typeLabel(promo.type)) + (promo.oncePerCustomer ? '<br><span style="color:var(--text-light);font-size:0.82rem;">Once per customer</span>' : '') + '</td>' +
           '<td>' + (!promo.active ? 'Inactive' : Promos.isExpired(promo) ? 'Ended ' + promo.endsOn : 'Active' + (promo.endsOn ? '<br><span style="color:var(--text-light);font-size:0.82rem;">through ' + promo.endsOn + '</span>' : '')) + '</td>' +
@@ -464,6 +501,7 @@
           document.getElementById('promo-affiliate-field').value = promo.affiliateEmail || '';
           document.getElementById('promo-ends-field').value = promo.endsOn || '';
           document.getElementById('promo-once-field').checked = !!promo.oncePerCustomer;
+          document.getElementById('promo-store-field').value = Promos.storeOf(promo);
           editingCode = promo.code;
           window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -476,6 +514,7 @@
           });
         });
       });
+      filterPromoRows();
     }).catch(function (err) {
       loading.textContent = 'Could not load promo codes: ' + err.message;
     });
@@ -508,7 +547,8 @@
     btn.disabled = true;
     btn.textContent = 'Saving...';
 
-    Promos.createOrUpdateCode(code, discount, type, active, affiliateEmail, endsOn, once).then(function () {
+    var store = document.getElementById('promo-store-field').value;
+    Promos.createOrUpdateCode(code, discount, type, active, affiliateEmail, endsOn, once, store).then(function () {
       btn.disabled = false;
       btn.textContent = 'Save Code';
       var msg = document.getElementById('promo-save-msg');
