@@ -53,8 +53,9 @@ HERO = os.path.join(ROOT, 'budget', 'hero-mark.html')
 
 def page(text, depth, rel=''):
     up = '../' * depth
-    # TXBio-only extras: intro splash and seasonal effects.
-    text = re.sub(r'<script src="(?:\.\./)?js/(?:splash|star-fx)\.js(?:\?v=\d+)?"></script>\n?', '', text)
+    # TXBio-only extra: seasonal effects. (js/splash.js stays: it runs the
+    # age / research-use confirmation; it skips the seasons on the budget store.)
+    text = re.sub(r'<script src="(?:\.\./)?js/star-fx\.js(?:\?v=\d+)?"></script>\n?', '', text)
     if rel == 'index.html' and os.path.exists(HERO):
         text = re.sub(r'<div class="hero-mark">.*?</svg>\s*</div>', lambda m: open(HERO).read().strip(), text, count=1, flags=re.S)
     head = '<head>\n<script>window.SITE_ID = \'budget\';</script>\n'
