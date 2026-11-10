@@ -6,14 +6,15 @@ const OrderEmails = require(path.join(__dirname, '../../js/order-emails.js'));
 
 function emailjsClient({ privateKey, fetchImpl = fetch }) {
   return {
-    async send(templateId, params) {
+    // cfg: OrderEmails.configFor(order) — which store's mailbox (js/sites.js).
+    async send(templateId, params, cfg = OrderEmails.CONFIG) {
       const res = await fetchImpl('https://api.emailjs.com/api/v1.0/email/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          service_id: OrderEmails.CONFIG.serviceId,
+          service_id: cfg.serviceId,
           template_id: templateId,
-          user_id: OrderEmails.CONFIG.publicKey,
+          user_id: cfg.publicKey,
           accessToken: privateKey,
           template_params: params
         })

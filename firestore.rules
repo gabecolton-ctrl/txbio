@@ -46,6 +46,13 @@ service cloud.firestore {
       allow write: if isAdmin(); // Admin → New order: send a quote to their cart
     }
 
+    // The budget store's carts (js/sites.js), same rules.
+    match /budgetCarts/{userId} {
+      allow read, write: if signedIn() && request.auth.uid == userId;
+      allow read: if isStaff();
+      allow write: if isAdmin();
+    }
+
     // Each user's profile info (name, org, address) — only they can write it;
     // they and the admin (Customers page) can read it.
     match /users/{userId} {

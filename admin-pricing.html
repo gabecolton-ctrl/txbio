@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611091842">
+<link rel="stylesheet" href="css/style.css?v=202611101010">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611091842"></script>
+<script src="js/sites.js?v=202611101010"></script>
+<script src="js/splash.js?v=202611101010"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -151,8 +152,18 @@
     </section>
 
     <section>
+      <h2>Budget store</h2>
+      <p class="pr-help">The budget store sells the same products for less. Its prices follow TXBio's automatically, rounded to whole dollars; type a price in the Budget column below to set one yourself.</p>
+      <div class="pr-free-row">
+        <span>Sell for</span>
+        <span class="pr-money"><input type="number" id="budget-pct" min="0" max="99" step="1" inputmode="numeric" aria-label="Percent below TXBio prices"><span>%</span></span>
+        <span>less than TXBio</span>
+      </div>
+    </section>
+
+    <section>
       <h2>Product prices</h2>
-      <p class="pr-help">Type a new price to change it; clear the box to go back to the site price. Cases are 10 vials for the price of 7, so they follow the vial price. Cost and margin come from your costs on Admin &rarr; At cost.</p>
+      <p class="pr-help">Type a new price to change it; clear the box to go back to the site price. Cases are 10 vials for the price of 7, so they follow the vial price. Cost and margins come from your costs on Admin &rarr; At cost.</p>
       <div class="pr-tools">
         <input type="text" id="pr-search" placeholder="Search products" aria-label="Search products">
         <label class="checkbox-row"><input type="checkbox" id="pr-changed-only"> <span>Changed only</span></label>
@@ -164,8 +175,8 @@
       </div>
       <div class="catalog-wrap">
         <table class="catalog-table pr-table">
-          <thead><tr><th>Product</th><th>Size</th><th>Site price</th><th>Your price</th><th>Case of 10</th><th>Cost</th><th>Margin</th></tr></thead>
-          <tbody id="price-rows"><tr><td colspan="7">Loading&hellip;</td></tr></tbody>
+          <thead><tr><th>Product</th><th>Size</th><th>Site price</th><th>Your price</th><th>Case of 10</th><th>Cost</th><th>Margin</th><th>Budget</th><th>Budget margin</th></tr></thead>
+          <tbody id="price-rows"><tr><td colspan="9">Loading&hellip;</td></tr></tbody>
         </table>
       </div>
     </section>
@@ -227,16 +238,16 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611091842"></script>
-<script src="js/paused.js?v=202611091842"></script>
-<script src="js/cart.js?v=202611091842"></script>
-<script src="js/price-book.js?v=202611091842"></script>
-<script src="js/staff.js?v=202611091842"></script>
-<script src="js/nav-auth.js?v=202611091842"></script>
-<script src="js/profile-gate.js?v=202611091842"></script>
-<script src="js/auth-guard.js?v=202611091842"></script>
-<script src="js/main.js?v=202611091842"></script>
-<script src="js/nav-toggle.js?v=202611091842"></script>
-<script src="js/admin-pricing.js?v=202611091842"></script>
+<script src="js/firebase-config.js?v=202611101010"></script>
+<script src="js/paused.js?v=202611101010"></script>
+<script src="js/cart.js?v=202611101010"></script>
+<script src="js/price-book.js?v=202611101010"></script>
+<script src="js/staff.js?v=202611101010"></script>
+<script src="js/nav-auth.js?v=202611101010"></script>
+<script src="js/profile-gate.js?v=202611101010"></script>
+<script src="js/auth-guard.js?v=202611101010"></script>
+<script src="js/main.js?v=202611101010"></script>
+<script src="js/nav-toggle.js?v=202611101010"></script>
+<script src="js/admin-pricing.js?v=202611101010"></script>
 </body>
 </html>

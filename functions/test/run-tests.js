@@ -399,6 +399,24 @@ test('Admin → Pricing (settings/pricing): changed prices, shipping options and
   assert.strictEqual(r.order.shipping, 55);
 });
 
+test('budget store: percent off, budget prices, its own cart, tagged order', async () => {
+  const pricing = { prices: { 'semaglutide-10mg': 100 }, budget: { percentOff: 40, prices: { 'ahk-cu': 33 } } };
+  const seed = { 'settings/pricing': pricing, 'carts/u1': { items: [{ slug: 'semaglutide-10mg', qty: 9 }] },
+    'budgetCarts/u1': { items: [{ slug: 'semaglutide-10mg', price: 1, qty: 1 }, { slug: 'ahk-cu', qty: 1 }] } };
+  const r = await run(seed, { site: 'budget' });
+  // $100 TXBio price - 40% = $60; AHK-CU has its own budget price.
+  assert.deepStrictEqual(r.order.items.map((i) => i.price), [60, 33]);
+  assert.strictEqual(r.order.site, 'budget');
+  assert.ok(/^BB-/.test(r.order.orderNumber), r.order.orderNumber);
+  assert.deepStrictEqual((await r.db.collection('budgetCarts').doc('u1').get()).data().items, []);
+  assert.strictEqual((await r.db.collection('carts').doc('u1').get()).data().items.length, 1); // TXBio cart untouched
+  // TXBio order: no site tag, TXBio prices.
+  const m = await run(seed);
+  assert.strictEqual(m.order.items[0].price, 100);
+  assert.strictEqual(m.order.site, undefined);
+  assert.ok(/^TXB-/.test(m.order.orderNumber));
+});
+
 test('family code: one shipping option (default 2nd Day Air $15), others rejected without the code', async () => {
   const seed = Object.assign(cart([{ slug: 'semaglutide-10mg', qty: 1 }]), {
     'atCostCodes/FAMILY': { active: true, emails: ['buyer@example.com'] }, 'costs/semaglutide-10mg': { perVialCost: 6.6 }
