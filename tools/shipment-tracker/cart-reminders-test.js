@@ -25,8 +25,8 @@ const line = { slug: 'bpc-157-10mg', name: 'BPC 157', price: 73, qty: 2 };
 
   await test('plan: idle 24h+ gets a reminder; recent, old, empty, opted out, reminded do not', async () => {
     const u = { email: 'a@x.com' };
-    assert.ok(plan({ items: [line], updatedAt: ago(25) }, u, NOW).send);
-    assert.strictEqual(plan({ items: [line], updatedAt: ago(5) }, u, NOW).skip, 'recent');
+    assert.ok(plan({ items: [line], updatedAt: ago(4) }, u, NOW).send);
+    assert.strictEqual(plan({ items: [line], updatedAt: ago(2) }, u, NOW).skip, 'recent');
     assert.strictEqual(plan({ items: [line], updatedAt: ago(24 * 8) }, u, NOW).skip, 'old');
     assert.strictEqual(plan({ items: [], updatedAt: ago(30) }, u, NOW).skip, 'empty');
     assert.strictEqual(plan({ items: [line], updatedAt: ago(30) }, { email: 'a@x.com', cartReminders: false }, NOW).skip, 'opted out');

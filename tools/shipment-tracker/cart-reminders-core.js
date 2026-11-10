@@ -1,7 +1,7 @@
 // cart-reminders-core.js — finds carts left alone and emails a reminder.
 // Run hourly by .github/workflows/cart-reminders.yml (cart-reminders.js).
 //
-// A signed-in customer whose cart has items and hasn't changed for 24 hours
+// A signed-in customer whose cart has items and hasn't changed for 3 hours
 // (but less than 7 days) gets one email, at most once a week, unless they
 // turned reminders off on their Account page (users/{uid}.cartReminders === false).
 // The email gives the item count, not product names (names trip spam filters).
@@ -17,7 +17,7 @@ const STORES = [
 ];
 
 const HOUR = 36e5;
-const IDLE_HOURS = 24;          // cart unchanged this long
+const IDLE_HOURS = 3;           // cart unchanged this long (first nudge while they still remember)
 const MAX_AGE_DAYS = 7;         // older carts are left alone
 const GAP_DAYS = 7;             // at most one reminder a week per customer
 const SITE = 'https://txbioresearch.com';

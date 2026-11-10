@@ -1,4 +1,4 @@
-# Emails customers whose cart has sat untouched for a day (once a week at
+# Emails customers whose cart has sat untouched for 3 hours (once a week at
 # most; they can turn it off on their Account page). Uses the same secrets as
 # the shipment tracker. Code: tools/shipment-tracker/cart-reminders*.js
 name: Cart reminders
