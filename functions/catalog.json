@@ -1,10 +1,18 @@
 {
-  "generatedAt": "2026-11-06T21:19:05.157Z",
+  "generatedAt": "2026-11-10T00:42:16.588Z",
   "taxRate": 0.0825,
   "shipping": {
-    "15": {
-      "price": 15,
-      "label": "2nd Day — $15"
+    "std": {
+      "price": 20,
+      "label": "3–5 Business Days — $20"
+    },
+    "3day": {
+      "price": 25,
+      "label": "3 Business Days — $25"
+    },
+    "2day": {
+      "price": 40,
+      "label": "2nd Day — $40"
     }
   },
   "caseSize": 10,

@@ -1,24 +1,36 @@
-// free-shipping.js — free standard shipping on bigger orders. Shared by the
-// cart (progress bar), checkout, and the server checkout (copied to
-// functions/ by tools/build-catalog.js). Family (at-cost) orders keep their
-// own shipping option and don't qualify.
+// free-shipping.js — free shipping on bigger orders. Shared by the cart
+// (progress bar), checkout, and the server checkout (copied to functions/ by
+// tools/build-catalog.js). Family (at-cost) orders keep their own shipping
+// option and don't qualify.
+//
+// The minimum and which option goes free are set on Admin → Pricing
+// (settings/pricing, js/price-book.js). The browser gets them through
+// FreeShipping.configure(); the server passes them to priceFor().
 var FreeShipping = (function () {
-  var MIN = 250;          // order subtotal after discounts, before tax
-  var OPTION = '15';      // the shipping option that becomes free: "2nd Day — $15" (the only option)
-  var PLATINUM_OPTION = '15'; // Platinum rewards members (js/loyalty.js): free 2nd Day
+  var cfg = { min: 250, option: 'std', platinumOption: '2day' };
 
   function round2(n) { return Math.round(n * 100) / 100; }
-  function qualifies(amount) { return Number(amount) >= MIN; }
-  function remaining(amount) { return Math.max(0, round2(MIN - Number(amount || 0))); }
+  function pick(c) { return c || cfg; }
+  function qualifies(amount, c) { c = pick(c); return !!c.option && Number(amount) >= c.min; }
+  function remaining(amount, c) { c = pick(c); return Math.max(0, round2(c.min - Number(amount || 0))); }
   // Shipping price for an option at this order amount.
-  function priceFor(optionValue, basePrice, amount, isFamily, platinum) {
+  function priceFor(optionValue, basePrice, amount, isFamily, platinum, c) {
+    c = pick(c);
     if (isFamily) return basePrice;
     if (platinum) return 0;
-    return String(optionValue) === OPTION && qualifies(amount) ? 0 : basePrice;
+    return c.option && String(optionValue) === String(c.option) && qualifies(amount, c) ? 0 : basePrice;
   }
   function freeLabel(label) { return String(label).replace(/\$\s?[\d,.]+/, 'FREE'); }
 
-  return { MIN: MIN, OPTION: OPTION, PLATINUM_OPTION: PLATINUM_OPTION, qualifies: qualifies, remaining: remaining, priceFor: priceFor, freeLabel: freeLabel };
+  var api = { qualifies: qualifies, remaining: remaining, priceFor: priceFor, freeLabel: freeLabel };
+  function configure(c) {
+    if (!c) return;
+    cfg = { min: Number(c.min) || 0, option: c.option || '', platinumOption: c.platinumOption || '' };
+    api.MIN = cfg.min; api.OPTION = cfg.option; api.PLATINUM_OPTION = cfg.platinumOption;
+  }
+  api.configure = configure;
+  configure(cfg);
+  return api;
 })();
 
 if (typeof module !== 'undefined' && module.exports) module.exports = FreeShipping;
