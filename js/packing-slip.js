@@ -49,8 +49,11 @@
     var name = a.name || o.userName || '';
     var city = [a.city, a.state].filter(Boolean).join(', ') + (a.zip ? ' ' + a.zip : '');
     var ship = String(o.shippingOption || '').replace(/\s*[—-]\s*\$[\d.,]+$/, '');
+    // The store the order came from (js/sites.js): TXBio or TexasBench.
+    var st = window.Sites ? Sites.info(o.site) : { fullName: 'Texas Advanced BioResearch', url: 'https://txbioresearch.com', email: 'orders@txbioresearch.com', logo: 'images/logo-icon.png' };
+    var domain = String(st.url).replace(/^https?:\/\//, '');
     return '<section class="slip">' +
-      '<div class="slip-head"><div class="brand"><img src="images/logo-icon.png" alt=""><div><strong>Texas Advanced BioResearch</strong><span>Dallas, TX · txbioresearch.com</span></div></div>' +
+      '<div class="slip-head"><div class="brand"><img src="' + esc(st.logo) + '" alt=""><div><strong>' + esc(st.fullName) + '</strong><span>Dallas, TX · ' + esc(domain) + '</span></div></div>' +
       '<div class="doc-title"><h1>Packing slip</h1><div>Order #' + esc(o.orderNumber || o.id) + '</div><div>' + esc(date) + '</div></div></div>' +
       '<div class="grid"><div><div class="label">Ship to</div><div class="ship-to">' +
         (name ? '<strong>' + esc(name) + '</strong><br>' : '') +
@@ -68,7 +71,7 @@
       '<tfoot><tr><td></td><td colspan="' + (showLots ? 4 : 3) + '">Total units</td><td class="num">' + units + '</td></tr></tfoot></table>' +
       (o.notes ? '<div class="note"><div class="label">Customer note</div>' + esc(o.notes) + '</div>' : '') +
       reorderQr(o) +
-      '<div class="foot"><p class="thanks">Thank you for your order. Questions? Email orders@txbioresearch.com and include your order number.</p>' +
+      '<div class="foot"><p class="thanks">Thank you for your order. Questions? Email ' + esc(st.email) + ' and include your order number.</p>' +
       '<p>For laboratory research use only. Not for human or animal consumption. Store according to the label; refrigerate after reconstitution.</p></div>' +
     '</section>';
   }

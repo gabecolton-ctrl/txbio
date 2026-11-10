@@ -39,17 +39,16 @@
     });
   });
 
-  function load() {
-    Promise.all([
-      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
-      db.collection('users').get(),
-      db.collection('costs').get().catch(function () { return null; }),
-      db.collection('settings').doc('localDelivery').get().catch(function () { return null; }),
-      db.collection('settings').doc('paymentFees').get().catch(function () { return null; })
-    ]).then(function (r) {
-      paymentFees = r[4] && r[4].exists ? r[4].data() : null;
-      localPrice = LocalDelivery.priceOf(r[3] && r[3].exists ? r[3].data() : null);
-      catalog = r[0];
+  // Store (js/sites.js): TexasBench orders use TexasBench prices (Admin →
+  // Pricing → Budget store), go to the TexasBench cart, and are tagged site: 'budget'.
+  var rawCatalog = null;
+  function store() { return $('no-store') && $('no-store').value === 'budget' ? 'budget' : 'main'; }
+  function buildUnits() {
+    // functions/catalog.json already has TXBio's prices; the budget prices are
+    // worked out from those (PriceBook.priceOf gives the same result either way).
+    (function () {
+      catalog = window.PriceBook ? PriceBook.applyToCatalog(rawCatalog, PriceBook.current(), store()) : rawCatalog;
+      units = []; unitBySlug = {};
       Object.keys(catalog.products).forEach(function (slug) {
         var p = catalog.products[slug];
         var add = function (s, label, price, pack) {
@@ -60,6 +59,22 @@
         else add(slug, '', p.price, p.packSize);
       });
       units.sort(function (a, b) { return a.label.localeCompare(b.label, undefined, { numeric: true }); });
+      if ($('no-lines') && lines.length) { lines.forEach(function (l) { l.price = null; }); drawLines(); }
+    })();
+  }
+
+  function load() {
+    Promise.all([
+      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
+      db.collection('users').get(),
+      db.collection('costs').get().catch(function () { return null; }),
+      db.collection('settings').doc('localDelivery').get().catch(function () { return null; }),
+      db.collection('settings').doc('paymentFees').get().catch(function () { return null; })
+    ]).then(function (r) {
+      paymentFees = r[4] && r[4].exists ? r[4].data() : null;
+      localPrice = LocalDelivery.priceOf(r[3] && r[3].exists ? r[3].data() : null);
+      rawCatalog = r[0];
+      buildUnits();
       r[1].forEach(function (d) {
         var u = d.data();
         if (!u.email) return;
@@ -199,6 +214,7 @@
   }
 
   function wire() {
+    $('no-store').addEventListener('change', buildUnits); // prices follow the store
     $('no-customer').addEventListener('change', pickCustomer);
     $('no-customer').addEventListener('input', function () { if (users.some(function (u) { return u.email === $('no-customer').value.trim().toLowerCase(); })) pickCustomer(); });
     $('no-add').addEventListener('click', function () { addLine(); });
@@ -241,7 +257,8 @@
     var ref = db.collection('quotes').doc();
     var quote = { uid: customer.uid, email: customer.email, name: customer.name || '', lines: items, expiresOn: expiresOn, noTax: !$('no-tax').checked,
       note: $('no-quote-note').value.trim().slice(0, 500), createdAt: new Date().toISOString(), createdBy: me };
-    var cartRef = db.collection('carts').doc(customer.uid);
+    if (store() === 'budget') quote.site = 'budget';
+    var cartRef = db.collection(store() === 'budget' ? 'budgetCarts' : 'carts').doc(customer.uid);
     return ref.set(quote).then(function () {
       return cartRef.get();
     }).then(function (c) {
@@ -253,7 +270,7 @@
       });
       return cartRef.set({ items: cart, updatedAt: new Date().toISOString() });
     }).then(function () {
-      say('Sent to ' + esc(customer.email) + '’s cart' + (expiresOn ? ', good through ' + expiresOn : '') + '. Text them: <code>txbioresearch.com/cart.html</code>', true);
+      say('Sent to ' + esc(customer.email) + '’s cart' + (expiresOn ? ', good through ' + expiresOn : '') + '. Text them: <code>' + Sites.info(store()).url.replace(/^https?:\/\//, '') + '/cart.html</code>', true);
       reset();
       loadQuotes();
     });
@@ -288,8 +305,9 @@
       customerName: name, userName: address.name, customerPhone: $('no-phone').value.trim(),
       status: onTab ? 'confirmed' : $('no-status').value, // fronted: ready to ship, money owed on their tab
       userId: customer ? customer.uid : '', userEmail: email,
-      createdAt: new Date().toISOString(), orderNumber: Account.generateOrderNumber()
+      createdAt: new Date().toISOString(), orderNumber: Sites.info(store()).orderPrefix + Account.generateOrderNumber().replace(/^[A-Z]+/, '')
     };
+    if (store() === 'budget') order.site = 'budget';
     var ref = db.collection('orders').doc();
     return ref.set(order).then(function () {
       if (!$('no-stock').checked) return null;
@@ -338,7 +356,7 @@
     $('no-quotes').innerHTML = quotes.slice(0, 30).map(function (q) {
       var st = quoteStatus(q);
       var total = (q.lines || []).reduce(function (s, l) { return s + l.price * l.qty; }, 0);
-      return '<tr><td data-label="Customer"><strong>' + esc(q.name || q.email) + '</strong><br><span class="field-note">' + esc(q.email) + '</span></td>' +
+      return '<tr><td data-label="Customer"><strong>' + esc(q.name || q.email) + '</strong>' + (q.site === 'budget' ? ' <span class="site-badge">TexasBench</span>' : '') + '<br><span class="field-note">' + esc(q.email) + '</span></td>' +
         '<td data-label="Items">' + (q.lines || []).map(function (l) { return esc(l.name) + ' <span class="field-note">' + esc(l.packSize) + '</span> ×' + l.qty + ' @ ' + money(l.price); }).join('<br>') + '</td>' +
         '<td data-label="Total">' + money(total) + '</td>' +
         '<td data-label="Status">' + st.text + '</td>' +
@@ -349,7 +367,7 @@
         var q = quotes.filter(function (x) { return x.id === b.getAttribute('data-withdraw'); })[0];
         if (!q || !confirm('Withdraw this quote? Its items come out of ' + q.email + '’s cart.')) return;
         b.disabled = true;
-        var cartRef = db.collection('carts').doc(q.uid);
+        var cartRef = db.collection(q.site === 'budget' ? 'budgetCarts' : 'carts').doc(q.uid);
         db.collection('quotes').doc(q.id).update({ cancelled: true, cancelledAt: new Date().toISOString() }).then(function () {
           return cartRef.get();
         }).then(function (c) {

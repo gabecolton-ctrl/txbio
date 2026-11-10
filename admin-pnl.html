@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101327">
+<link rel="stylesheet" href="css/style.css?v=202611101352">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101327"></script>
-<script src="js/splash.js?v=202611101327"></script>
+<script src="js/sites.js?v=202611101352"></script>
+<script src="js/splash.js?v=202611101352"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -131,6 +131,11 @@
 
   <div id="admin-content" style="display:none;">
     <section>
+      <div class="store-tabs" role="tablist" aria-label="Which store" id="store-tabs">
+        <button type="button" class="store-tab is-on" data-store="" role="tab" aria-selected="true">Both stores</button>
+        <button type="button" class="store-tab" data-store="main" role="tab" aria-selected="false">TXBio</button>
+        <button type="button" class="store-tab" data-store="budget" role="tab" aria-selected="false">TexasBench</button>
+      </div>
       <div class="pnl-controls">
         <label for="pnl-period">Period</label>
         <select id="pnl-period"></select>
@@ -188,18 +193,18 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101327"></script>
-<script src="js/paused.js?v=202611101327"></script>
-<script src="js/cart.js?v=202611101327"></script>
-<script src="js/price-book.js?v=202611101327"></script>
-<script src="js/at-cost.js?v=202611101327"></script>
-<script src="js/payment-apps.js?v=202611101327"></script>
-<script src="js/staff.js?v=202611101327"></script>
-<script src="js/nav-auth.js?v=202611101327"></script>
-<script src="js/profile-gate.js?v=202611101327"></script>
-<script src="js/auth-guard.js?v=202611101327"></script>
-<script src="js/main.js?v=202611101327"></script>
-<script src="js/nav-toggle.js?v=202611101327"></script>
+<script src="js/firebase-config.js?v=202611101352"></script>
+<script src="js/paused.js?v=202611101352"></script>
+<script src="js/cart.js?v=202611101352"></script>
+<script src="js/price-book.js?v=202611101352"></script>
+<script src="js/at-cost.js?v=202611101352"></script>
+<script src="js/payment-apps.js?v=202611101352"></script>
+<script src="js/staff.js?v=202611101352"></script>
+<script src="js/nav-auth.js?v=202611101352"></script>
+<script src="js/profile-gate.js?v=202611101352"></script>
+<script src="js/auth-guard.js?v=202611101352"></script>
+<script src="js/main.js?v=202611101352"></script>
+<script src="js/nav-toggle.js?v=202611101352"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var COUNTED = ['confirmed', 'processing', 'label-created', 'shipped', 'delivered'];
@@ -242,10 +247,21 @@
   });
 
   // One row per order line, with net sales and cost worked out.
+  // Store tabs: both stores, TXBio, or TexasBench.
+  var store = '';
+  document.querySelectorAll('#store-tabs .store-tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      store = b.getAttribute('data-store');
+      document.querySelectorAll('#store-tabs .store-tab').forEach(function (x) { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      buildLines(); render();
+    });
+  });
+
   function buildLines() {
     lines = [];
     orders.forEach(function (o) {
       if ((o.status || 'pending') === 'cancelled') return;
+      if (store && (o.site === 'budget' ? 'budget' : 'main') !== store) return; // store tab (js/sites.js)
       var items = o.items || [];
       var subtotal = Number(o.subtotal) || items.reduce(function (n, i) { return n + i.price * i.qty; }, 0);
       var off = (Number(o.discount) || 0) + (Number(o.bogoDiscount) || 0);
@@ -291,7 +307,7 @@
 
   function scopedOrders() {
     var ok = inScope();
-    return orders.filter(function (o) { return (o.status || 'pending') !== 'cancelled' && ok(o.status || 'pending', monthOf(o.createdAt)); });
+    return orders.filter(function (o) { return (o.status || 'pending') !== 'cancelled' && ok(o.status || 'pending', monthOf(o.createdAt)) && (!store || (o.site === 'budget' ? 'budget' : 'main') === store); });
   }
 
   function totalsFor(ordersSet, linesSet) {
@@ -387,7 +403,7 @@
     var csv = rows.map(function (r) { return r.map(function (v) { v = String(v); return /[",\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; }).join(','); }).join('\n');
     var a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = 'txbio-pnl-' + document.getElementById('pnl-period').value + '.csv';
+    a.download = 'txbio-pnl-' + (store === 'budget' ? 'texasbench-' : store === 'main' ? 'txbio-only-' : '') + document.getElementById('pnl-period').value + '.csv';
     document.body.appendChild(a); a.click(); a.remove();
   });
 </script>

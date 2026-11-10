@@ -5,6 +5,8 @@
 // to the cart at today's prices (js/reorder.js) and goes to the cart.
 var ReorderLink = (function () {
   var SITE = 'https://txbioresearch.com';
+  // The store the order came from (js/sites.js), so a TexasBench box links to TexasBench.
+  function siteOf(order) { return typeof Sites !== 'undefined' ? Sites.info(order && order.site).url : SITE; }
 
   // Order → reorder URL, or '' if nothing on it can be reordered.
   function url(order) {
@@ -18,7 +20,7 @@ var ReorderLink = (function () {
       qty[key] = (qty[key] || 0) + Number(it.qty);
     });
     var parts = Object.keys(qty).map(function (k) { return k + '*' + qty[k]; });
-    return parts.length ? SITE + '/reorder.html?i=' + parts.join(',') : '';
+    return parts.length ? siteOf(order) + '/reorder.html?i=' + parts.join(',') : '';
   }
 
   // 'r-3-30mg*2,klow~c*1' → order-like items for Reorder.run().
