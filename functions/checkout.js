@@ -131,7 +131,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   let platinum = false;
   if (!atCost) {
     const mine = await db.collection('orders').where('userId', '==', uid).get();
-    const list = mine.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+    const list = mine.docs.map((d) => Object.assign({ id: d.id }, d.data())).filter((o) => (o.site === 'budget' ? 'budget' : 'main') === site);
     platinum = !!Loyalty.tierFor(Loyalty.lifetime(list)).freeShipping;
   }
 
@@ -157,7 +157,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
 
   const needs = P.stockNeeds(lines);
   const orderRef = db.collection('orders').doc();
-  const creditRef = userEmail ? db.collection('credits').doc(userEmail) : null;
+  const creditRef = userEmail ? db.collection(site === 'budget' ? 'budgetCredits' : 'credits').doc(userEmail) : null;
 
   const order = await db.runTransaction(async (t) => {
     // Reads first (a Firestore transaction rule).

@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101352">
+<link rel="stylesheet" href="css/style.css?v=202611101410">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101352"></script>
-<script src="js/splash.js?v=202611101352"></script>
+<script src="js/sites.js?v=202611101410"></script>
+<script src="js/splash.js?v=202611101410"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -164,7 +164,8 @@
             <p id="cd-sub" style="color:var(--text-light); margin:0;"></p>
           </div>
           <div style="text-align:right;">
-            <p style="color:var(--text-light); margin:0; font-size:0.88rem;">Store credit</p>
+            <p style="color:var(--text-light); margin:0; font-size:0.88rem;">Store credit
+              <select id="cd-credit-store" aria-label="Which store's credit" style="display:none; width:auto; margin:0 0 0 6px; padding:2px 6px; font-size:0.85rem;"><option value="main">TXBio</option><option value="budget">TexasBench</option></select></p>
             <p id="cd-balance" style="font-family:var(--serif); font-size:2rem; margin:0; color:var(--text);">$0.00</p>
           </div>
         </div>
@@ -305,20 +306,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101352"></script>
-<script src="js/paused.js?v=202611101352"></script>
-<script src="js/cart.js?v=202611101352"></script>
-<script src="js/price-book.js?v=202611101352"></script>
-<script src="js/account.js?v=202611101352"></script>
-<script src="js/tabs.js?v=202611101352"></script>
-<script src="js/referral-attribution.js?v=202611101352"></script>
-<script src="js/credits.js?v=202611101352"></script>
-<script src="js/staff.js?v=202611101352"></script>
-<script src="js/nav-auth.js?v=202611101352"></script>
-<script src="js/profile-gate.js?v=202611101352"></script>
-<script src="js/auth-guard.js?v=202611101352"></script>
-<script src="js/main.js?v=202611101352"></script>
-<script src="js/nav-toggle.js?v=202611101352"></script>
+<script src="js/firebase-config.js?v=202611101410"></script>
+<script src="js/paused.js?v=202611101410"></script>
+<script src="js/cart.js?v=202611101410"></script>
+<script src="js/price-book.js?v=202611101410"></script>
+<script src="js/account.js?v=202611101410"></script>
+<script src="js/tabs.js?v=202611101410"></script>
+<script src="js/referral-attribution.js?v=202611101410"></script>
+<script src="js/credits.js?v=202611101410"></script>
+<script src="js/staff.js?v=202611101410"></script>
+<script src="js/nav-auth.js?v=202611101410"></script>
+<script src="js/profile-gate.js?v=202611101410"></script>
+<script src="js/auth-guard.js?v=202611101410"></script>
+<script src="js/main.js?v=202611101410"></script>
+<script src="js/nav-toggle.js?v=202611101410"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -359,7 +360,8 @@
       db.collection('credits').get(),
       staffRole === 'admin' ? Tabs.getAll().catch(function () { return {}; }) : Promise.resolve({}),
       db.collection('referredCustomers').get().catch(function () { return null; }),
-      staffRole === 'admin' ? db.collection('accountDeletions').get().catch(function () { return null; }) : Promise.resolve(null)
+      staffRole === 'admin' ? db.collection('accountDeletions').get().catch(function () { return null; }) : Promise.resolve(null),
+      db.collection('budgetCredits').get().catch(function () { return null; })
     ]).then(function (res) {
       deletions = {};
       if (res[5]) res[5].forEach(function (d) { deletions[d.id] = d.data(); });
@@ -392,6 +394,10 @@
       res[2].forEach(function (d) {
         var c = get(d.id); if (c) c.credit = d.data();
       });
+      // TexasBench's own store credit (js/credits.js).
+      if (res[6]) res[6].forEach(function (d) {
+        var c = get(d.id); if (c) c.budgetCredit = d.data();
+      });
       if (res[4]) res[4].forEach(function (d) { var c = get(d.id); if (c) c.referral = d.data(); });
       Object.keys(res[3] || {}).forEach(function (email) {
         var c = get(email); if (c) c.tab = res[3][email];
@@ -403,6 +409,7 @@
         c.spent = c.orders.filter(function (o) { return o.status !== 'cancelled'; })
           .reduce(function (n, o) { return n + Number(o.total || 0); }, 0);
         c.balanceCents = c.credit ? (c.credit.balanceCents || 0) : 0;
+        c.budgetBalanceCents = c.budgetCredit ? (c.budgetCredit.balanceCents || 0) : 0;
         c.owedCents = c.tab ? (c.tab.owedCents || 0) : 0;
         c.stores = storesOf(c);
         return c;
@@ -451,6 +458,13 @@
     if (!w) return '';
     return ' <span class="site-badge site-badge-ws">Wholesale</span>' + (w.needsReview ? ' <span class="site-badge site-badge-review">Review</span>' : '');
   }
+  // Store credit column: each store's own balance (js/credits.js).
+  function creditCell(c) {
+    if (storeFilter === 'budget') return Credits.formatCents(c.budgetBalanceCents);
+    if (storeFilter === 'main' || !c.budgetBalanceCents) return Credits.formatCents(c.balanceCents);
+    return Credits.formatCents(c.balanceCents) + '<br><span class="field-note">TexasBench ' + Credits.formatCents(c.budgetBalanceCents) + '</span>';
+  }
+  var creditStore = 'main';
   function inStore(c) {
     if (storeFilter === 'wholesale') return !!wholesaleOf(c); return !storeFilter || c.stores.indexOf(storeFilter) !== -1; }
   document.querySelectorAll('.store-tab').forEach(function (b) {
@@ -548,7 +562,7 @@
         '<td>' + fmtDate(c.createdAt) + '</td>' +
         '<td>' + storeOrders(c).length + '</td>' +
         '<td>' + money(storeSpent(c)) + '</td>' +
-        '<td>' + Credits.formatCents(c.balanceCents) + '</td>' +
+        '<td>' + creditCell(c) + '</td>' +
         '<td>' + (c.owedCents ? '<strong style="color:' + (c.owedCents > 0 ? 'var(--danger)' : 'var(--text)') + ';">' + Tabs.money(c.owedCents) + '</strong>' : '') + '</td></tr>';
     }).join('') || '<tr><td colspan="8" style="color:var(--text-light);">' + (q ? 'No customers match &ldquo;' + esc(q) + '&rdquo;.' : 'No customers on this store yet.') + '</td></tr>';
     document.querySelectorAll('.cust-pick').forEach(function (cb) {
@@ -619,7 +633,14 @@
     document.getElementById('customer-detail').style.display = '';
     document.getElementById('cd-name').textContent = c.name || c.email;
     document.getElementById('cd-sub').textContent = [c.institution, c.email, c.stores.length > 1 ? 'TXBio + Budget' : c.stores[0] === 'budget' ? 'Budget store' : 'TXBio'].filter(Boolean).join(' \u00b7 ');
-    document.getElementById('cd-balance').textContent = Credits.formatCents(c.balanceCents);
+    // Which store's credit the panel shows and changes.
+    var csel = document.getElementById('cd-credit-store');
+    var usesBudget = c.stores.indexOf('budget') !== -1 || c.budgetCredit;
+    csel.style.display = usesBudget ? '' : 'none';
+    if (!keepStatus) creditStore = storeFilter === 'budget' || (c.stores.length === 1 && c.stores[0] === 'budget') ? 'budget' : 'main';
+    if (!usesBudget) creditStore = 'main';
+    csel.value = creditStore;
+    document.getElementById('cd-balance').textContent = Credits.formatCents(creditStore === 'budget' ? c.budgetBalanceCents : c.balanceCents);
     var p = c.profile || {};
     var addr = [p.addressLine1, p.addressLine2, [p.city, p.state].filter(Boolean).join(', ') + ' ' + (p.zip || '')]
       .map(function (s) { return (s || '').trim(); }).filter(Boolean).join(', ');
@@ -633,7 +654,8 @@
         (c.referral.expiresAt > new Date().toISOString() ? 'earns on their orders until ' : 'ended ') + fmtDate(c.referral.expiresAt) : 'Nobody'],
       ['Cart reminder emails', p.cartReminders === false ? 'Off' : 'On'],
       ['Orders', c.orders.length + ' (' + money(c.spent) + ' not counting cancelled)'],
-      ['Credit earned / spent', c.credit ? Credits.formatCents(c.credit.earnedCents || 0) + ' / ' + Credits.formatCents(c.credit.spentCents || 0) : 'None']
+      ['TXBio credit earned / spent', c.credit ? Credits.formatCents(c.credit.earnedCents || 0) + ' / ' + Credits.formatCents(c.credit.spentCents || 0) : 'None'],
+      ['TexasBench credit earned / spent', c.budgetCredit ? Credits.formatCents(c.budgetCredit.earnedCents || 0) + ' / ' + Credits.formatCents(c.budgetCredit.spentCents || 0) : 'None']
     ];
     document.getElementById('cd-facts').innerHTML = facts.map(function (f) { return '<tr><td>' + f[0] + '</td><td>' + esc(f[1]) + '</td></tr>'; }).join('');
     drawWholesale(c);
@@ -653,7 +675,7 @@
 
     var creditEl = document.getElementById('cd-credit');
     creditEl.innerHTML = '<p style="color:var(--text-light);">Loading&hellip;</p>';
-    Credits.getEntries(c.email, 100).then(function (entries) {
+    Credits.getEntries(c.email, 100, creditStore).then(function (entries) {
       if (!entries.length) { creditEl.innerHTML = '<p style="color:var(--text-light);">No store credit activity.</p>'; return; }
       creditEl.innerHTML = '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Date</th><th>Activity</th><th>Order</th><th>Amount</th></tr></thead><tbody>' +
         entries.map(function (en) {
@@ -905,6 +927,10 @@
     document.querySelector('#admin-content > section').style.display = '';
   });
 
+  document.getElementById('cd-credit-store').addEventListener('change', function () {
+    creditStore = this.value;
+    if (current) openCustomer(current.email, true);
+  });
   document.getElementById('credit-form').addEventListener('submit', function (e) {
     e.preventDefault();
     if (!current) return;
@@ -914,19 +940,20 @@
     var removing = document.getElementById('credit-direction').value === 'remove';
     var note = document.getElementById('credit-note').value.trim();
     if (!(cents > 0)) { status.style.color = 'var(--danger)'; status.textContent = 'Enter an amount greater than $0.'; return; }
-    if (removing && cents > current.balanceCents) {
+    var bal = creditStore === 'budget' ? current.budgetBalanceCents : current.balanceCents;
+    if (removing && cents > bal) {
       status.style.color = 'var(--danger)';
-      status.textContent = 'That\u2019s more than their ' + Credits.formatCents(current.balanceCents) + ' balance. Enter ' + Credits.formatCents(current.balanceCents) + ' or less.';
+      status.textContent = 'That\u2019s more than their ' + Credits.formatCents(bal) + ' balance. Enter ' + Credits.formatCents(bal) + ' or less.';
       return;
     }
     var delta = removing ? -cents : cents;
     btn.disabled = true;
-    Credits.adminAdjust(current.email, delta, { type: 'adjusted', orderId: '', orderNumber: '', code: '', note: note }).then(function (account) {
+    Credits.adminAdjust(current.email, delta, { type: 'adjusted', orderId: '', orderNumber: '', code: '', note: note }, creditStore).then(function (account) {
       btn.disabled = false;
       document.getElementById('credit-amount').value = '';
       document.getElementById('credit-note').value = '';
       status.style.color = 'var(--text-light)';
-      status.textContent = (removing ? 'Removed ' : 'Added ') + Credits.formatCents(cents) + '. New balance ' + Credits.formatCents(account.balanceCents) + '.';
+      status.textContent = (removing ? 'Removed ' : 'Added ') + Credits.formatCents(cents) + (creditStore === 'budget' ? ' (TexasBench)' : '') + '. New balance ' + Credits.formatCents(account.balanceCents) + '.';
       loadCustomers();
     }).catch(function (err) {
       btn.disabled = false;

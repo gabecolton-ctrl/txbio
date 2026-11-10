@@ -34,8 +34,15 @@ var Credits = (function () {
     return String(email || '').trim().toLowerCase();
   }
 
-  function accountRef(email) {
-    return ensureDb().collection('credits').doc(key(email));
+  // Each store has its own credit (js/sites.js): credits/{email} for TXBio,
+  // budgetCredits/{email} for TexasBench. site: 'main' | 'budget'; left out,
+  // it's the store this page is on.
+  function collectionFor(site) {
+    if (site == null) site = typeof Sites !== 'undefined' ? Sites.current() : 'main';
+    return site === 'budget' ? 'budgetCredits' : 'credits';
+  }
+  function accountRef(email, site) {
+    return ensureDb().collection(collectionFor(site)).doc(key(email));
   }
 
   function toCents(dollars) {
@@ -65,15 +72,15 @@ var Credits = (function () {
   }
 
   // Returns { exists, balanceCents, earnedCents, spentCents }.
-  function getAccount(email) {
+  function getAccount(email, site) {
     if (!key(email)) return Promise.resolve(Object.assign({ exists: false }, emptyAccount()));
-    return accountRef(email).get().then(function (doc) {
+    return accountRef(email, site).get().then(function (doc) {
       return Object.assign({ exists: doc.exists }, normalize(doc.exists ? doc.data() : null));
     });
   }
 
-  function getEntries(email, limit) {
-    return accountRef(email).collection('entries').orderBy('createdAt', 'desc').limit(limit || 50).get()
+  function getEntries(email, limit, site) {
+    return accountRef(email, site).collection('entries').orderBy('createdAt', 'desc').limit(limit || 50).get()
       .then(function (snap) {
         var out = [];
         snap.forEach(function (d) { out.push(Object.assign({ id: d.id }, d.data())); });
@@ -91,8 +98,8 @@ var Credits = (function () {
   // ADMIN ONLY. Changes a balance by deltaCents (positive adds, negative
   // removes) and writes a history entry, in one transaction.
   // entry: { type, orderId, orderNumber, code, note }
-  function adminAdjust(email, deltaCents, entry) {
-    var ref = accountRef(email);
+  function adminAdjust(email, deltaCents, entry, site) {
+    var ref = accountRef(email, site);
     var entryRef = ref.collection('entries').doc();
     var now = new Date().toISOString();
     return ensureDb().runTransaction(function (t) {
@@ -146,9 +153,10 @@ var Credits = (function () {
     fromCents: fromCents,
     formatCents: formatCents,
     commissionCents: commissionCents,
-    getAccount: function (email) { return withTimeout(getAccount(email), 10000, 'Loading store credit is taking too long. Please try again.'); },
-    getEntries: function (email, limit) { return withTimeout(getEntries(email, limit), 10000, 'Loading credit history is taking too long. Please try again.'); },
-    adminAdjust: function (email, deltaCents, entry) { return withTimeout(adminAdjust(email, deltaCents, entry), 15000, 'Updating store credit is taking too long. Please try again.'); },
+    collectionFor: collectionFor,
+    getAccount: function (email, site) { return withTimeout(getAccount(email, site), 10000, 'Loading store credit is taking too long. Please try again.'); },
+    getEntries: function (email, limit, site) { return withTimeout(getEntries(email, limit, site), 10000, 'Loading credit history is taking too long. Please try again.'); },
+    adminAdjust: function (email, deltaCents, entry, site) { return withTimeout(adminAdjust(email, deltaCents, entry, site), 15000, 'Updating store credit is taking too long. Please try again.'); },
     addSpendToBatch: addSpendToBatch
   };
 })();

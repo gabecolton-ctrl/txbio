@@ -173,9 +173,9 @@
     var email = data.promos[code].affiliateEmail;
     btn.disabled = true; btn.textContent = 'Crediting…';
     var c;
-    Credits.getEntries(email, 1000).catch(function () { return []; }).then(function (entries) {
+    Credits.getEntries(email, 1000, Sites.of(order)).catch(function () { return []; }).then(function (entries) {
       c = AffiliateTiers.commissionFor(order, entries);
-      return Credits.adminAdjust(email, c.cents, { type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: c.tier.name + ' · ' + Math.round(c.rate * 100) + '%', saleCents: c.saleCents, rate: c.rate });
+      return Credits.adminAdjust(email, c.cents, { type: 'earned', orderId: order.id, orderNumber: order.orderNumber || '', code: code, note: c.tier.name + ' · ' + Math.round(c.rate * 100) + '%', saleCents: c.saleCents, rate: c.rate }, Sites.of(order));
     }).then(function () {
       var fields = { affiliateEmail: email, affiliateCreditCents: c.cents, affiliateRate: c.rate, affiliateTier: c.tier.name, affiliateSaleCents: c.saleCents, affiliateCreditedAt: new Date().toISOString(), affiliateReversedAt: null };
       Object.assign(order, fields);

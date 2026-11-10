@@ -72,7 +72,8 @@ async function creditAffiliate({ db, orderRef, log }) {
     if (pick.skip) return;
     const affiliate = pick.affiliateEmail;
     // Rate by the affiliate's tier (js/affiliate-tiers.js), from their history so far.
-    const creditRef = db.collection('credits').doc(affiliate);
+    // Into the store credit of the store the order came from (js/sites.js).
+    const creditRef = db.collection(order.site === 'budget' ? 'budgetCredits' : 'credits').doc(affiliate);
     const history = await creditRef.collection('entries').get();
     const tierPick = AffiliateTiers.commissionFor(order, history.docs.map((d) => d.data()));
     const cents = tierPick.cents;

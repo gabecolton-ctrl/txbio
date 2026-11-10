@@ -3,6 +3,8 @@
 // (users/{uid}.favorites = [productSlug]), so they follow the customer
 // across devices. Signed-out shoppers are sent to sign in first.
 var Favorites = (function () {
+  // Each store keeps its own favorites (js/sites.js): users/{uid}.favorites, .budgetFavorites.
+  var FIELD = window.SITE_ID === 'budget' ? 'budgetFavorites' : 'favorites';
   var KEY = 'txbio_favs';
   var user = null, favs = null, waiters = [];
   var base = /\/products\//.test(location.pathname) ? '../' : '';
@@ -21,7 +23,7 @@ var Favorites = (function () {
     var cached = cacheGet();
     if (cached) { favs = cached; flush(); return; }
     firebase.firestore().collection('users').doc(u.uid).get().then(function (d) {
-      favs = (d.exists && Array.isArray(d.data().favorites)) ? d.data().favorites : [];
+      favs = (d.exists && Array.isArray(d.data()[FIELD])) ? d.data()[FIELD] : [];
     }).catch(function () { favs = []; }).then(function () { cacheSet(); flush(); });
   }
   function flush() { paint(); waiters.splice(0).forEach(function (w) { w(favs); }); document.dispatchEvent(new CustomEvent('favoritesReady', { detail: favs })); }
@@ -35,7 +37,7 @@ var Favorites = (function () {
     favs = on ? favs.concat([slug]) : favs.filter(function (s) { return s !== slug; });
     cacheSet(); paint();
     var FV = firebase.firestore.FieldValue;
-    return firebase.firestore().collection('users').doc(user.uid).set({ favorites: on ? FV.arrayUnion(slug) : FV.arrayRemove(slug) }, { merge: true })
+    return firebase.firestore().collection('users').doc(user.uid).set({ [FIELD]: on ? FV.arrayUnion(slug) : FV.arrayRemove(slug) }, { merge: true })
       .catch(function (err) {
         favs = on ? favs.filter(function (s) { return s !== slug; }) : favs.concat([slug]); cacheSet(); paint();
         alert('Could not update favorites: ' + err.message);

@@ -30,11 +30,12 @@ async function deleteOne({ db, auth, req, log }) {
 
   let creditNote = '';
   if (email) {
-    const credit = await db.collection('credits').doc(email).get();
-    if (credit.exists) {
+    for (const col of ['credits', 'budgetCredits']) {
+      const credit = await db.collection(col).doc(email).get();
+      if (!credit.exists) continue;
       if ((credit.data().balanceCents || 0) === 0) {
-        await deleteDocs(await db.collection('credits').doc(email).collection('entries').get());
-        await db.collection('credits').doc(email).delete();
+        await deleteDocs(await db.collection(col).doc(email).collection('entries').get());
+        await db.collection(col).doc(email).delete();
       } else creditNote = ' (kept store credit: balance not $0)';
     }
   }
