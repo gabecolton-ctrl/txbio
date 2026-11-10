@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101132">
+<link rel="stylesheet" href="css/style.css?v=202611101256">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101132"></script>
-<script src="js/splash.js?v=202611101132"></script>
+<script src="js/sites.js?v=202611101256"></script>
+<script src="js/splash.js?v=202611101256"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -136,6 +136,7 @@
         <button type="button" class="store-tab is-on" data-store="" role="tab" aria-selected="true">All</button>
         <button type="button" class="store-tab" data-store="main" role="tab" aria-selected="false">TXBio <span class="store-tab-n" id="store-n-main"></span></button>
         <button type="button" class="store-tab" data-store="budget" role="tab" aria-selected="false">Budget <span class="store-tab-n" id="store-n-budget"></span></button>
+        <button type="button" class="store-tab" data-store="wholesale" role="tab" aria-selected="false">Wholesale <span class="store-tab-n" id="store-n-wholesale"></span></button>
       </div>
       <input type="text" id="customer-search" placeholder="Search by name, institution, or email" autocomplete="off" style="max-width:480px;">
       <div id="customers-loading" class="cart-empty">Loading customers&hellip;</div>
@@ -163,6 +164,7 @@
           </div>
         </div>
         <table class="spec-table" id="cd-facts" style="max-width:560px;"></table>
+        <div id="cd-wholesale" class="cd-wholesale" style="display:none;"></div>
 
         <div id="cd-edit-wrap" style="margin:8px 0 18px;">
           <button type="button" class="btn-outline-light" id="cd-edit-btn">Edit account</button>
@@ -297,20 +299,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101132"></script>
-<script src="js/paused.js?v=202611101132"></script>
-<script src="js/cart.js?v=202611101132"></script>
-<script src="js/price-book.js?v=202611101132"></script>
-<script src="js/account.js?v=202611101132"></script>
-<script src="js/tabs.js?v=202611101132"></script>
-<script src="js/referral-attribution.js?v=202611101132"></script>
-<script src="js/credits.js?v=202611101132"></script>
-<script src="js/staff.js?v=202611101132"></script>
-<script src="js/nav-auth.js?v=202611101132"></script>
-<script src="js/profile-gate.js?v=202611101132"></script>
-<script src="js/auth-guard.js?v=202611101132"></script>
-<script src="js/main.js?v=202611101132"></script>
-<script src="js/nav-toggle.js?v=202611101132"></script>
+<script src="js/firebase-config.js?v=202611101256"></script>
+<script src="js/paused.js?v=202611101256"></script>
+<script src="js/cart.js?v=202611101256"></script>
+<script src="js/price-book.js?v=202611101256"></script>
+<script src="js/account.js?v=202611101256"></script>
+<script src="js/tabs.js?v=202611101256"></script>
+<script src="js/referral-attribution.js?v=202611101256"></script>
+<script src="js/credits.js?v=202611101256"></script>
+<script src="js/staff.js?v=202611101256"></script>
+<script src="js/nav-auth.js?v=202611101256"></script>
+<script src="js/profile-gate.js?v=202611101256"></script>
+<script src="js/auth-guard.js?v=202611101256"></script>
+<script src="js/main.js?v=202611101256"></script>
+<script src="js/nav-toggle.js?v=202611101256"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -431,9 +433,17 @@
     return c.stores[0] === 'budget' ? ' <span class="site-badge">Budget</span>' : '';
   }
   // On a store tab, the Orders and Spent columns count that store's orders only.
-  function storeOrders(c) { return storeFilter ? c.orders.filter(function (o) { return (o.site === 'budget' ? 'budget' : 'main') === storeFilter; }) : c.orders; }
+  function storeOrders(c) { return storeFilter && storeFilter !== 'wholesale' ? c.orders.filter(function (o) { return (o.site === 'budget' ? 'budget' : 'main') === storeFilter; }) : c.orders; }
   function storeSpent(c) { return storeOrders(c).filter(function (o) { return o.status !== 'cancelled'; }).reduce(function (n, o) { return n + Number(o.total || 0); }, 0); }
-  function inStore(c) { return !storeFilter || c.stores.indexOf(storeFilter) !== -1; }
+  // Wholesale (TexasBench sign-up checkbox): approved at once, flagged for review.
+  function wholesaleOf(c) { var w = c.profile && c.profile.wholesale; return w && w.status === 'approved' ? w : null; }
+  function wholesaleBadge(c) {
+    var w = wholesaleOf(c);
+    if (!w) return '';
+    return ' <span class="site-badge site-badge-ws">Wholesale</span>' + (w.needsReview ? ' <span class="site-badge site-badge-review">Review</span>' : '');
+  }
+  function inStore(c) {
+    if (storeFilter === 'wholesale') return !!wholesaleOf(c); return !storeFilter || c.stores.indexOf(storeFilter) !== -1; }
   document.querySelectorAll('.store-tab').forEach(function (b) {
     b.addEventListener('click', function () {
       storeFilter = b.getAttribute('data-store');
@@ -447,6 +457,8 @@
     var q = document.getElementById('customer-search').value.trim().toLowerCase();
     document.getElementById('store-n-main').textContent = customers.filter(function (c) { return c.stores.indexOf('main') !== -1; }).length;
     document.getElementById('store-n-budget').textContent = customers.filter(function (c) { return c.stores.indexOf('budget') !== -1; }).length;
+    var toReview = customers.filter(function (c) { var w = wholesaleOf(c); return w && w.needsReview; }).length;
+    document.getElementById('store-n-wholesale').textContent = customers.filter(function (c) { return !!wholesaleOf(c); }).length + (toReview ? ' · ' + toReview + ' to review' : '');
     var all = customers;
     var shown = all.filter(inStore); // totals and list follow the store tab
     var list = shown.filter(function (c) {
@@ -466,7 +478,7 @@
     document.getElementById('customers-wrap').style.display = all.length ? 'block' : 'none';
     document.getElementById('customer-rows').innerHTML = list.map(function (c) {
       return '<tr class="customer-row" data-email="' + esc(c.email) + '" tabindex="0" style="cursor:pointer;">' +
-        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + storeBadge(c) + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
+        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + storeBadge(c) + wholesaleBadge(c) + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
         '<td>' + esc(c.email) + '</td>' +
         '<td>' + fmtDate(c.createdAt) + '</td>' +
         '<td>' + storeOrders(c).length + '</td>' +
@@ -490,6 +502,41 @@
     spent: 'Used at checkout',
     refunded: 'Returned (order cancelled)'
   };
+
+  // Wholesale box on a customer's details: final approval, or remove.
+  function drawWholesale(c) {
+    var box = document.getElementById('cd-wholesale');
+    var w = c.profile && c.profile.wholesale;
+    if (!w || !c.uid) { box.style.display = 'none'; return; }
+    box.style.display = '';
+    var when = fmtDate(w.requestedAt);
+    if (w.status === 'approved' && w.needsReview) {
+      box.innerHTML = '<strong>Wholesale: approved automatically, needs your review</strong>' +
+        '<p>Requested at sign-up on TexasBench ' + when + '. They can already order.</p>' +
+        (staffRole === 'admin' ? '<button type="button" class="btn" data-ws="final">Give final approval</button> <button type="button" class="btn-outline-light" data-ws="remove">Remove wholesale</button>' : '') +
+        '<span class="tracking-status" id="cd-ws-status"></span>';
+    } else if (w.status === 'approved') {
+      box.innerHTML = '<strong>Wholesale: approved</strong><p>Requested ' + when + (w.reviewedAt ? ', final approval ' + fmtDate(w.reviewedAt) : '') + '.</p>' +
+        (staffRole === 'admin' ? '<button type="button" class="btn-outline-light" data-ws="remove">Remove wholesale</button>' : '') + '<span class="tracking-status" id="cd-ws-status"></span>';
+    } else {
+      box.innerHTML = '<strong>Wholesale: removed</strong><p>Requested ' + when + (w.reviewedAt ? ', removed ' + fmtDate(w.reviewedAt) : '') + '.</p>' +
+        (staffRole === 'admin' ? '<button type="button" class="btn-outline-light" data-ws="final">Approve wholesale</button>' : '') + '<span class="tracking-status" id="cd-ws-status"></span>';
+    }
+    box.querySelectorAll('[data-ws]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var approve = b.getAttribute('data-ws') === 'final';
+        var next = Object.assign({}, w, { status: approve ? 'approved' : 'removed', needsReview: false, reviewedAt: new Date().toISOString(), reviewedBy: ADMIN_EMAIL });
+        box.querySelectorAll('button').forEach(function (x) { x.disabled = true; });
+        firebase.firestore().collection('users').doc(c.uid).update({ wholesale: next }).then(function () {
+          c.profile.wholesale = next;
+          drawWholesale(c); renderList();
+        }).catch(function (err) {
+          box.querySelectorAll('button').forEach(function (x) { x.disabled = false; });
+          document.getElementById('cd-ws-status').textContent = 'Could not save: ' + err.message;
+        });
+      });
+    });
+  }
 
   function openCustomer(email, keepStatus) {
     var c = customers.find(function (x) { return x.email === email; });
@@ -516,6 +563,7 @@
       ['Credit earned / spent', c.credit ? Credits.formatCents(c.credit.earnedCents || 0) + ' / ' + Credits.formatCents(c.credit.spentCents || 0) : 'None']
     ];
     document.getElementById('cd-facts').innerHTML = facts.map(function (f) { return '<tr><td>' + f[0] + '</td><td>' + esc(f[1]) + '</td></tr>'; }).join('');
+    drawWholesale(c);
 
     document.getElementById('cd-orders').innerHTML = c.orders.length
       ? '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Items</th><th>Total</th></tr></thead><tbody>' +

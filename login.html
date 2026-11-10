@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101132">
+<link rel="stylesheet" href="css/style.css?v=202611101256">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101132"></script>
-<script src="js/splash.js?v=202611101132"></script>
+<script src="js/sites.js?v=202611101256"></script>
+<script src="js/splash.js?v=202611101256"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -158,6 +158,11 @@
       <label for="signup-password">Password</label>
       <input type="password" id="signup-password" required minlength="6" autocomplete="new-password">
       <p class="field-hint">At least 6 characters.</p>
+      <!-- TexasBench only (js/sites.js): shown by the script below. -->
+      <div class="checkbox-row" id="signup-wholesale-row" style="margin-bottom:12px; display:none;">
+        <input type="checkbox" id="signup-wholesale">
+        <label for="signup-wholesale">Requesting access to wholesale</label>
+      </div>
       <div class="checkbox-row" style="margin-bottom:18px;">
         <input type="checkbox" id="signup-confirm" required>
         <label for="signup-confirm">I certify that I am 21 years of age or older and am registering on behalf of a laboratory, research institution, or qualified researcher, for research use only, and I agree to the <a href="terms.html" target="_blank">Terms &amp; Conditions</a> and <a href="privacy.html" target="_blank">Privacy Policy</a>.</label>
@@ -201,13 +206,13 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101132"></script>
-<script src="js/analytics.js?v=202611101132"></script>
-<script src="js/referral.js?v=202611101132"></script>
-<script src="js/main.js?v=202611101132"></script>
-<script src="js/nav-toggle.js?v=202611101132"></script>
-<script src="js/attestation.js?v=202611101132"></script>
-<script src="js/profile-gate.js?v=202611101132"></script>
+<script src="js/firebase-config.js?v=202611101256"></script>
+<script src="js/analytics.js?v=202611101256"></script>
+<script src="js/referral.js?v=202611101256"></script>
+<script src="js/main.js?v=202611101256"></script>
+<script src="js/nav-toggle.js?v=202611101256"></script>
+<script src="js/attestation.js?v=202611101256"></script>
+<script src="js/profile-gate.js?v=202611101256"></script>
 <script>
   firebase.initializeApp(firebaseConfig);
 
@@ -353,6 +358,8 @@
       .then(function (cred) {
         // Save a customer record so the account shows on the admin Customers page.
         var now = new Date().toISOString();
+        var wb = document.getElementById('signup-wholesale');
+        var wantsWholesale = !!(window.Sites && Sites.isBudget() && wb && wb.checked);
         return Promise.all([
           cred.user.updateProfile({ displayName: name + ' — ' + org }),
           firebase.firestore().collection('users').doc(cred.user.uid).set({
@@ -367,6 +374,9 @@
             createdAt: now,
             lastSignInAt: now,
             signupSite: window.Sites ? Sites.current() : 'main', // which store they signed up on (js/sites.js)
+            // Wholesale request (TexasBench): approved right away so they can
+            // order now; flagged for the admin's final review (Admin → To-do / Customers).
+            wholesale: wantsWholesale ? { status: 'approved', needsReview: true, requestedAt: now, site: 'budget' } : null,
             signupAttestation: window.Attestation ? Attestation.record('signup', now) : null
           }, { merge: true }).catch(function (err) { console.error('Could not save customer record:', err); })
         ]);
@@ -388,6 +398,10 @@
       window.location.href = getRedirectTarget();
     }
   });
+</script>
+<script>
+  // The wholesale checkbox is a TexasBench sign-up option.
+  if (window.Sites && Sites.isBudget()) document.getElementById('signup-wholesale-row').style.display = '';
 </script>
 </body>
 </html>
