@@ -2,7 +2,7 @@
 // right now (carts/{uid}), newest first. Carts empty out when an order is placed,
 // so anything here hasn't been ordered yet.
 (function () {
-  var IDLE_HOURS = 24;
+  var IDLE_HOURS = 3; // same as tools/shipment-tracker/cart-reminders-core.js
   var rows = [];
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
