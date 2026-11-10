@@ -255,6 +255,14 @@ service cloud.firestore {
       allow delete: if isAdmin();
     }
 
+    // The budget store's visits (js/analytics.js on TexasBench), same rules.
+    match /trafficBudget/{day} {
+      allow read: if isAdmin();
+      allow create: if day.matches('^20[0-9][0-9]-[01][0-9]-[0-3][0-9]$') && trafficShape() && request.resource.data.views == 1;
+      allow update: if trafficShape() && request.resource.data.views == resource.data.views + 1;
+      allow delete: if isAdmin();
+    }
+
     // Lot numbers / expiration dates (js/lots.js). Admin only.
     match /lots/{id} {
       allow read, write: if isStaff(); // managers ship orders, which assigns lots

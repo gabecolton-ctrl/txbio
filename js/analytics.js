@@ -74,7 +74,8 @@
       store('localStorage', 'txbio_seen_day', day);
       data.visitors = inc;
     }
-    firebase.firestore().collection('traffic').doc(day).set(data, { merge: true }).catch(function () {});
+    // Each store counts its own visits (js/sites.js): traffic/{day}, trafficBudget/{day}.
+    firebase.firestore().collection(window.SITE_ID === 'budget' ? 'trafficBudget' : 'traffic').doc(day).set(data, { merge: true }).catch(function () {});
   }
 
   document.addEventListener('DOMContentLoaded', function () {

@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101047">
+<link rel="stylesheet" href="css/style.css?v=202611101059">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101047"></script>
-<script src="js/splash.js?v=202611101047"></script>
+<script src="js/sites.js?v=202611101059"></script>
+<script src="js/splash.js?v=202611101059"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -131,6 +131,11 @@
 
   <div id="admin-content" style="display:none;">
     <section>
+      <div class="store-tabs" role="tablist" aria-label="Which store">
+        <button type="button" class="store-tab is-on" data-store="" role="tab" aria-selected="true">Both stores</button>
+        <button type="button" class="store-tab" data-store="main" role="tab" aria-selected="false">TXBio</button>
+        <button type="button" class="store-tab" data-store="budget" role="tab" aria-selected="false">TexasBench</button>
+      </div>
       <div class="pnl-controls" role="group" aria-label="Time range">
         <span class="range-label">Show</span>
         <div class="range-buttons">
@@ -201,20 +206,44 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101047"></script>
-<script src="js/paused.js?v=202611101047"></script>
-<script src="js/cart.js?v=202611101047"></script>
-<script src="js/price-book.js?v=202611101047"></script>
-<script src="js/products.js?v=202611101047"></script>
-<script src="js/staff.js?v=202611101047"></script>
-<script src="js/nav-auth.js?v=202611101047"></script>
-<script src="js/profile-gate.js?v=202611101047"></script>
-<script src="js/auth-guard.js?v=202611101047"></script>
-<script src="js/main.js?v=202611101047"></script>
-<script src="js/nav-toggle.js?v=202611101047"></script>
+<script src="js/firebase-config.js?v=202611101059"></script>
+<script src="js/paused.js?v=202611101059"></script>
+<script src="js/cart.js?v=202611101059"></script>
+<script src="js/price-book.js?v=202611101059"></script>
+<script src="js/products.js?v=202611101059"></script>
+<script src="js/staff.js?v=202611101059"></script>
+<script src="js/nav-auth.js?v=202611101059"></script>
+<script src="js/profile-gate.js?v=202611101059"></script>
+<script src="js/auth-guard.js?v=202611101059"></script>
+<script src="js/main.js?v=202611101059"></script>
+<script src="js/nav-toggle.js?v=202611101059"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var days = {}, orders = [], productNames = {}, range = 7;
+  // Per store (js/sites.js): traffic/{day} is TXBio, trafficBudget/{day} TexasBench.
+  var storeDays = { main: {}, budget: {} }, allOrders = [], store = '';
+  function addInto(out, d) {
+    Object.keys(d).forEach(function (k) {
+      var v = d[k];
+      if (typeof v === 'number') out[k] = (out[k] || 0) + v;
+      else if (v && typeof v === 'object') { out[k] = out[k] || {}; Object.keys(v).forEach(function (x) { if (typeof v[x] === 'number') out[k][x] = (out[k][x] || 0) + v[x]; }); }
+    });
+    return out;
+  }
+  function pickStore() {
+    days = {};
+    (store ? [store] : ['main', 'budget']).forEach(function (s) {
+      Object.keys(storeDays[s]).forEach(function (day) { days[day] = addInto(days[day] || {}, storeDays[s][day]); });
+    });
+    orders = allOrders.filter(function (o) { return !store || (o.site === 'budget' ? 'budget' : 'main') === store; });
+  }
+  document.querySelectorAll('.store-tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      store = b.getAttribute('data-store');
+      document.querySelectorAll('.store-tab').forEach(function (x) { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      pickStore(); render();
+    });
+  });
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function n(v) { return Number(v || 0).toLocaleString('en-US'); }
   function money(v) { return '$' + Number(v || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -242,9 +271,11 @@
     document.getElementById('admin-content').style.display = 'block';
     var db = firebase.firestore();
     if (window.PRODUCTS) PRODUCTS.forEach(function (p) { productNames[p.slug.replace(/[^a-z0-9-]+/g, '_')] = p.name; });
-    Promise.all([db.collection('traffic').get(), db.collection('orders').get()]).then(function (res) {
-      res[0].forEach(function (d) { days[d.id] = d.data(); });
-      res[1].forEach(function (d) { var o = d.data(); if ((o.status || 'pending') !== 'cancelled') orders.push(o); });
+    Promise.all([db.collection('traffic').get(), db.collection('orders').get(), db.collection('trafficBudget').get().catch(function () { return null; })]).then(function (res) {
+      res[0].forEach(function (d) { storeDays.main[d.id] = d.data(); });
+      if (res[2]) res[2].forEach(function (d) { storeDays.budget[d.id] = d.data(); });
+      res[1].forEach(function (d) { var o = d.data(); if ((o.status || 'pending') !== 'cancelled') allOrders.push(o); });
+      pickStore();
       document.getElementById('tr-loading').style.display = 'none';
       document.getElementById('tr-body').style.display = '';
       render();
