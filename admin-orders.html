@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611091842">
+<link rel="stylesheet" href="css/style.css?v=202611101010">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611091842"></script>
+<script src="js/sites.js?v=202611101010"></script>
+<script src="js/splash.js?v=202611101010"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -132,6 +133,11 @@
     <section>
       <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
         <input type="text" id="order-search-input" placeholder="Search by order #, email, or status" style="flex:1; min-width:220px; margin-bottom:0;">
+        <select id="order-site-filter" aria-label="Which store" style="width:auto; margin-bottom:0;">
+          <option value="">Both stores</option>
+          <option value="main">TXBioResearch</option>
+          <option value="budget">Budget store</option>
+        </select>
       </div>
       <div id="orders-loading" class="cart-empty">Loading orders&hellip;</div>
       <div id="orders-empty" class="cart-empty" style="display:none;">
@@ -176,29 +182,29 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611091842"></script>
-<script src="js/paused.js?v=202611091842"></script>
-<script src="js/cart.js?v=202611091842"></script>
-<script src="js/price-book.js?v=202611091842"></script>
-<script src="js/site-config.js?v=202611091842"></script>
-<script src="js/payment-apps.js?v=202611091842"></script>
-<script src="js/account.js?v=202611091842"></script>
-<script src="js/inventory.js?v=202611091842"></script>
-<script src="js/promos.js?v=202611091842"></script>
-<script src="js/tabs.js?v=202611091842"></script>
-<script src="js/referral-attribution.js?v=202611091842"></script>
-<script src="js/credits.js?v=202611091842"></script>
-<script src="js/affiliate-tiers.js?v=202611091842"></script>
-<script src="js/loyalty.js?v=202611091842"></script>
-<script src="js/lots.js?v=202611091842"></script>
-<script src="js/order-emails.js?v=202611091842"></script>
-<script src="js/gift-cards.js?v=202611091842"></script>
-<script src="js/staff.js?v=202611091842"></script>
-<script src="js/nav-auth.js?v=202611091842"></script>
-<script src="js/profile-gate.js?v=202611091842"></script>
-<script src="js/auth-guard.js?v=202611091842"></script>
-<script src="js/main.js?v=202611091842"></script>
-<script src="js/nav-toggle.js?v=202611091842"></script>
+<script src="js/firebase-config.js?v=202611101010"></script>
+<script src="js/paused.js?v=202611101010"></script>
+<script src="js/cart.js?v=202611101010"></script>
+<script src="js/price-book.js?v=202611101010"></script>
+<script src="js/site-config.js?v=202611101010"></script>
+<script src="js/payment-apps.js?v=202611101010"></script>
+<script src="js/account.js?v=202611101010"></script>
+<script src="js/inventory.js?v=202611101010"></script>
+<script src="js/promos.js?v=202611101010"></script>
+<script src="js/tabs.js?v=202611101010"></script>
+<script src="js/referral-attribution.js?v=202611101010"></script>
+<script src="js/credits.js?v=202611101010"></script>
+<script src="js/affiliate-tiers.js?v=202611101010"></script>
+<script src="js/loyalty.js?v=202611101010"></script>
+<script src="js/lots.js?v=202611101010"></script>
+<script src="js/order-emails.js?v=202611101010"></script>
+<script src="js/gift-cards.js?v=202611101010"></script>
+<script src="js/staff.js?v=202611101010"></script>
+<script src="js/nav-auth.js?v=202611101010"></script>
+<script src="js/profile-gate.js?v=202611101010"></script>
+<script src="js/auth-guard.js?v=202611101010"></script>
+<script src="js/main.js?v=202611101010"></script>
+<script src="js/nav-toggle.js?v=202611101010"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -294,7 +300,7 @@
   // Sends the shipped email with the tracking number currently in the field.
   function sendShippedEmail(order) {
     var tracking = trackingInputValue(order.id);
-    if (!window.OrderEmails || !OrderEmails.isConfigured()) {
+    if (!window.OrderEmails || !OrderEmails.isConfigured(order)) {
       setShipStatus(order.id, 'Buyer emails aren’t set up, so no email was sent.', true);
       return Promise.resolve();
     }
@@ -420,7 +426,7 @@
         errors.push('Store credit was not adjusted (' + err.message + '); fix it before re-crediting.');
       });
     }).then(function () {
-      if (!window.OrderEmails || !OrderEmails.canSendCancelled()) {
+      if (!window.OrderEmails || !OrderEmails.canSendCancelled(order)) {
         errors.push('No cancellation email was sent because the cancellation template isn’t set up yet.');
         return;
       }
@@ -750,6 +756,9 @@
   }
 
   function renderOrders(orders) {
+    // Store filter (js/sites.js): TXBio, budget, or both.
+    var siteSel = document.getElementById('order-site-filter');
+    if (siteSel && siteSel.value && window.Sites) orders = orders.filter(function (o) { return Sites.of(o) === siteSel.value; });
     var listEl = document.getElementById('orders-list');
     var emptyEl = document.getElementById('orders-empty');
     listEl.innerHTML = '';
@@ -794,7 +803,8 @@
       box.innerHTML =
         '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">' +
           '<div>' +
-            '<strong>Order #' + (order.orderNumber || order.id) + '</strong><br>' +
+            '<strong>Order #' + (order.orderNumber || order.id) + '</strong>' +
+            (order.site === 'budget' ? ' <span class="site-badge">' + (window.Sites ? Sites.info('budget').badge : 'Budget') + '</span>' : '') + '<br>' +
             '<span style="color:var(--text-light); font-size:0.9rem;">' + date + '</span>' +
           '</div>' +
           '<div style="text-align:right;">' +
@@ -866,7 +876,7 @@
       btn.addEventListener('click', function () {
         var id = btn.getAttribute('data-resend-cancel-for');
         var order = allOrders.find(function (o) { return o.id === id; });
-        if (!order || !window.OrderEmails || !OrderEmails.canSendCancelled()) return;
+        if (!order || !window.OrderEmails || !OrderEmails.canSendCancelled(order)) return;
         btn.disabled = true;
         var reason = cancelReasonValue(id) || order.cancelReason || '';
         OrderEmails.sendCancelled(order, reason).then(function () {
@@ -955,7 +965,7 @@
           if (order) order.status = newStatus;
           if (order && newStatus === 'shipped') { sendShippedEmail(order); creditAffiliate(order); creditLoyalty(order); allocateLots(order); }
           if (order && PAID_STATUSES.indexOf(newStatus) !== -1) issueGifts(order);
-          if (order && newStatus === 'delivered' && !order.deliveredEmailSentAt && window.OrderEmails && OrderEmails.canSendDelivered() && order.userEmail) {
+          if (order && newStatus === 'delivered' && !order.deliveredEmailSentAt && window.OrderEmails && OrderEmails.canSendDelivered(order) && order.userEmail) {
             order.deliveredAt = order.deliveredAt || new Date().toISOString();
             OrderEmails.sendDelivered(order).then(function () {
               order.deliveredEmailSentAt = new Date().toISOString();
@@ -977,6 +987,9 @@
     });
   }
 
+  document.getElementById('order-site-filter').addEventListener('change', function () {
+    document.getElementById('order-search-input').dispatchEvent(new Event('input'));
+  });
   document.getElementById('order-search-input').addEventListener('input', function () {
     var query = this.value.trim().toLowerCase();
     if (!query) {
@@ -984,7 +997,7 @@
       return;
     }
     var filtered = allOrders.filter(function (order) {
-      var searchText = [order.orderNumber, order.userEmail, order.status].filter(Boolean).join(' ').toLowerCase();
+      var searchText = [order.orderNumber, order.userEmail, order.status, order.site === 'budget' ? 'budget' : ''].filter(Boolean).join(' ').toLowerCase();
       return searchText.indexOf(query) !== -1;
     });
     renderOrders(filtered);

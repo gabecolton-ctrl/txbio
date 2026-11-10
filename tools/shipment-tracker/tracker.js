@@ -37,8 +37,10 @@ const INCOMING_WATCH_DAYS = 60; // supplier shipments: stop checking after this 
 function nowIso() { return new Date().toISOString(); }
 
 async function sendShippedEmail({ email, order }) {
+  const cfg = OrderEmails.configFor(order);
+  if (!cfg.serviceId || !cfg.shippedTemplateId) return; // that store's emails aren't set up yet
   const params = OrderEmails.shippedParams(order, order.trackingNumber);
-  await email.send(OrderEmails.CONFIG.shippedTemplateId, params);
+  await email.send(cfg.shippedTemplateId, params, cfg);
 }
 
 // Same rule as admin-orders.html creditAffiliate(): 10% of subtotal after
@@ -132,11 +134,12 @@ async function checkLabelCreated({ db, carrier, email, doc, log }) {
 // Delivered email: once per order, only for orders that become delivered
 // while the template is set up (so turning it on doesn't email old orders).
 async function sendDeliveredEmail({ email, ref, log }) {
-  if (!OrderEmails.CONFIG.deliveredTemplateId) return;
   const order = (await ref.get()).data();
   if (!order || order.deliveredEmailSentAt || !order.userEmail || order.status !== 'delivered') return;
+  const cfg = OrderEmails.configFor(order);
+  if (!cfg.serviceId || !cfg.deliveredTemplateId) return; // that store's emails aren't set up yet
   try {
-    await email.send(OrderEmails.CONFIG.deliveredTemplateId, OrderEmails.deliveredParams(order));
+    await email.send(cfg.deliveredTemplateId, OrderEmails.deliveredParams(order), cfg);
     await ref.update({ deliveredEmailSentAt: nowIso(), deliveredEmailPending: false, deliveredEmailError: null });
     log('  delivered email sent to ' + order.userEmail);
   } catch (err) {

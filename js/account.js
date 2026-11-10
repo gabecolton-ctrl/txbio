@@ -52,7 +52,8 @@ var Account = (function () {
     for (var i = 0; i < 6; i++) {
       random += chars.charAt(Math.floor(Math.random() * chars.length));
     }
-    return 'TXB-' + random;
+    var prefix = window.Sites ? Sites.info(Sites.current()).orderPrefix : 'TXB';
+    return prefix + '-' + random;
   }
 
   // options.creditSpendCents / options.creditAccount: when the buyer applies
@@ -65,6 +66,7 @@ var Account = (function () {
     order.userEmail = user.email || '';
     order.createdAt = new Date().toISOString();
     order.orderNumber = generateOrderNumber();
+    if (window.Sites && Sites.isBudget()) order.site = 'budget'; // which store (js/sites.js)
     var spend = options && options.creditSpendCents > 0 ? options.creditSpendCents : 0;
     if (spend && window.Credits) {
       var ref = ensureDb().collection('orders').doc();
@@ -83,9 +85,7 @@ var Account = (function () {
   function isFirstOrder() {
     var user = getCurrentUser();
     if (!user) return Promise.resolve(true);
-    return ensureDb().collection('orders').where('userId', '==', user.uid).limit(1).get().then(function (snapshot) {
-      return snapshot.empty;
-    });
+    return getOrderHistory().then(function (orders) { return !orders.length; });
   }
 
   function getOrderHistory() {
@@ -96,8 +96,12 @@ var Account = (function () {
       .get()
       .then(function (snapshot) {
         var orders = [];
+        // Only this store's orders (js/sites.js); the other store's stay hidden.
+        var here = window.Sites ? Sites.current() : 'main';
         snapshot.forEach(function (doc) {
-          orders.push(Object.assign({ id: doc.id }, doc.data()));
+          var o = doc.data();
+          if (window.Sites && Sites.of(o) !== here) return;
+          orders.push(Object.assign({ id: doc.id }, o));
         });
         // Sort newest first (client-side, avoids needing a composite index)
         orders.sort(function (a, b) {

@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611091842">
+<link rel="stylesheet" href="css/style.css?v=202611101010">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,7 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611091842"></script>
+<script src="js/sites.js?v=202611101010"></script>
+<script src="js/splash.js?v=202611101010"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -284,22 +285,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611091842"></script>
-<script src="js/analytics.js?v=202611091842"></script>
-<script src="js/referral.js?v=202611091842"></script>
-<script src="js/paused.js?v=202611091842"></script>
-<script src="js/cart.js?v=202611091842"></script>
-<script src="js/price-book.js?v=202611091842"></script>
-<script src="js/account.js?v=202611091842"></script>
-<script src="js/tabs.js?v=202611091842"></script>
-<script src="js/credits.js?v=202611091842"></script>
-<script src="js/loyalty.js?v=202611091842"></script>
-<script src="js/staff.js?v=202611091842"></script>
-<script src="js/nav-auth.js?v=202611091842"></script>
-<script src="js/profile-gate.js?v=202611091842"></script>
-<script src="js/auth-guard.js?v=202611091842"></script>
-<script src="js/main.js?v=202611091842"></script>
-<script src="js/nav-toggle.js?v=202611091842"></script>
+<script src="js/firebase-config.js?v=202611101010"></script>
+<script src="js/analytics.js?v=202611101010"></script>
+<script src="js/referral.js?v=202611101010"></script>
+<script src="js/paused.js?v=202611101010"></script>
+<script src="js/cart.js?v=202611101010"></script>
+<script src="js/price-book.js?v=202611101010"></script>
+<script src="js/account.js?v=202611101010"></script>
+<script src="js/tabs.js?v=202611101010"></script>
+<script src="js/credits.js?v=202611101010"></script>
+<script src="js/loyalty.js?v=202611101010"></script>
+<script src="js/staff.js?v=202611101010"></script>
+<script src="js/nav-auth.js?v=202611101010"></script>
+<script src="js/profile-gate.js?v=202611101010"></script>
+<script src="js/auth-guard.js?v=202611101010"></script>
+<script src="js/main.js?v=202611101010"></script>
+<script src="js/nav-toggle.js?v=202611101010"></script>
 <script>
   var currentProfile = {};
 
@@ -497,7 +498,7 @@
           var tier = Loyalty.tierFor(spend), next = Loyalty.nextTier(spend);
           document.getElementById('loyalty-badge').textContent = tier.name;
           document.getElementById('loyalty-badge').className = 'loyalty-badge tier-' + tier.name.toLowerCase();
-          document.getElementById('loyalty-rate').textContent = tier.pct ? Math.round(tier.pct * 100) + '% back on every order' + (tier.freeShipping ? ' + free 2nd Day shipping' : '') : 'Start earning at ' + money(Loyalty.TIERS[1].min);
+          document.getElementById('loyalty-rate').textContent = tier.pct ? Math.round(tier.pct * 100) + '% back on every order' + (tier.freeShipping ? ' + free shipping' : '') : 'Start earning at ' + money(Loyalty.TIERS[1].min);
           document.getElementById('loyalty-spend').textContent = money(spend);
           var lo = tier.min, hi = next ? next.min : tier.min;
           document.getElementById('loyalty-fill').style.width = next ? Math.min(100, (spend - lo) / (hi - lo) * 100) + '%' : '100%';
@@ -572,7 +573,7 @@
       var user = firebase.auth().currentUser;
       if (!user || !user.email) return;
       var done = function () { show('We sent a reset link to ' + user.email + '. Check your inbox (and spam folder).', true); };
-      firebase.auth().sendPasswordResetEmail(user.email, { url: window.location.origin + '/login.html' })
+      firebase.auth().sendPasswordResetEmail(user.email, { url: new URL('login.html', window.location.href).href })
         .then(done)
         .catch(function (err) {
           if (err && (err.code === 'auth/unauthorized-continue-uri' || err.code === 'auth/invalid-continue-uri')) {

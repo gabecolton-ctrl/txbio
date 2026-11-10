@@ -196,6 +196,7 @@ var GiftCards = (function () {
         orderId: order.id || '', orderNumber: order.orderNumber || '', buyerEmail: order.userEmail || '',
         createdAt: now, createdBy: by || '', void: false, redeemedBy: ''
       };
+      if (order.site === 'budget') card.site = 'budget'; // its email comes from the budget store
       return db.collection('giftCards').doc(code).set(card).then(function () {
         line.giftCode = code; line.giftIssuedAt = now;
         made.push({ code: code, line: line, card: card });

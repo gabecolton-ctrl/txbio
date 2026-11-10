@@ -11,6 +11,9 @@
 // keeps its previous behavior.
 
 var OrderEmails = (function () {
+  var SitesRef = typeof Sites !== 'undefined' ? Sites : (typeof require === 'function' ? require('./sites.js') : null);
+
+  // TXBioResearch (main site).
   var CONFIG = {
     publicKey: 'mCHNzwcAKKJCasPJ9',              // Account → General → Public Key
     serviceId: 'service_l76oqmw',              // Email Services → your Private Email service → Service ID
@@ -22,11 +25,30 @@ var OrderEmails = (function () {
     cartReminderTemplateId: 'template_pyl2lcv'                // Email Templates → "Cart reminder" → Template ID (hourly job, tools/shipment-tracker/cart-reminders.js)
   };
 
+  // Budget site (js/sites.js). Its emails come from its own mailbox and
+  // templates, so nothing says TXBio. Until these are filled in, budget orders
+  // get no EmailJS emails (the site's FormSubmit order notice still works).
+  var BUDGET_CONFIG = {
+    publicKey: 'mCHNzwcAKKJCasPJ9',  // same EmailJS account
+    serviceId: '',                   // Email Services → the budget mailbox's service → Service ID
+    confirmationTemplateId: '',
+    shippedTemplateId: '',
+    cancelledTemplateId: '',
+    deliveredTemplateId: '',
+    giftCardTemplateId: '',
+    cartReminderTemplateId: ''
+  };
+
+  // The settings for the store an order (or gift card) belongs to.
+  function cfgFor(thing) { return thing && thing.site === 'budget' ? BUDGET_CONFIG : CONFIG; }
+  function siteUrl(thing) { return SitesRef ? SitesRef.info(thing && thing.site).url : 'https://txbioresearch.com'; }
+
   var SDK_URL = 'https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js';
   var sdkPromise = null;
 
-  function isConfigured() {
-    return !!(CONFIG.publicKey && CONFIG.serviceId && CONFIG.confirmationTemplateId && CONFIG.shippedTemplateId);
+  function isConfigured(thing) {
+    var c = cfgFor(thing);
+    return !!(c.publicKey && c.serviceId && c.confirmationTemplateId && c.shippedTemplateId);
   }
 
   function loadSdk() {
@@ -72,9 +94,8 @@ var OrderEmails = (function () {
   }
 
   // Link to the buyer's order on the website (orders.html scrolls to it).
-  var SITE_URL = 'https://txbioresearch.com';
   function orderUrl(order) {
-    return SITE_URL + '/orders.html' + (order.orderNumber ? '#order-' + order.orderNumber : '');
+    return siteUrl(order) + '/orders.html' + (order.orderNumber ? '#order-' + order.orderNumber : '');
   }
 
   // No dollar amounts, handles, app names or "Bitcoin" here: "send $X on
@@ -109,9 +130,10 @@ var OrderEmails = (function () {
 
   // Order confirmation, sent to the buyer right after checkout.
   function sendConfirmation(order, toEmail) {
-    if (!isConfigured() || !toEmail) return Promise.resolve(false);
+    var c = cfgFor(order);
+    if (!isConfigured(order) || !toEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(CONFIG.serviceId, CONFIG.confirmationTemplateId, {
+      return emailjs.send(c.serviceId, c.confirmationTemplateId, {
         to_email: toEmail,
         order_number: order.orderNumber || '',
         items: itemsText(order.items),
@@ -146,15 +168,16 @@ var OrderEmails = (function () {
   }
 
   function sendShipped(order, trackingNumber) {
-    if (!isConfigured() || !order.userEmail) return Promise.resolve(false);
+    var c = cfgFor(order);
+    if (!isConfigured(order) || !order.userEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(CONFIG.serviceId, CONFIG.shippedTemplateId, shippedParams(order, trackingNumber));
+      return emailjs.send(c.serviceId, c.shippedTemplateId, shippedParams(order, trackingNumber));
     }).then(function () { return true; });
   }
 
   // Delivered notice: sent once, when the carrier reports delivery (the
   // tracker) or the admin marks the order Delivered.
-  function canSendDelivered() { return isConfigured() && !!CONFIG.deliveredTemplateId; }
+  function canSendDelivered(order) { return isConfigured(order) && !!cfgFor(order).deliveredTemplateId; }
   function deliveredParams(order) {
     var d = order.deliveredAt ? new Date(/^\d{4}-\d{2}-\d{2}$/.test(order.deliveredAt) ? order.deliveredAt + 'T12:00:00' : order.deliveredAt) : null;
     return {
@@ -167,21 +190,23 @@ var OrderEmails = (function () {
     };
   }
   function sendDelivered(order) {
-    if (!canSendDelivered() || !order.userEmail) return Promise.resolve(false);
+    var c = cfgFor(order);
+    if (!canSendDelivered(order) || !order.userEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(CONFIG.serviceId, CONFIG.deliveredTemplateId, deliveredParams(order));
+      return emailjs.send(c.serviceId, c.deliveredTemplateId, deliveredParams(order));
     }).then(function () { return true; });
   }
 
   // Cancellation notice, sent when the admin cancels an order.
-  function canSendCancelled() {
-    return isConfigured() && !!CONFIG.cancelledTemplateId;
+  function canSendCancelled(order) {
+    return isConfigured(order) && !!cfgFor(order).cancelledTemplateId;
   }
 
   function sendCancelled(order, reason) {
-    if (!canSendCancelled() || !order.userEmail) return Promise.resolve(false);
+    var c = cfgFor(order);
+    if (!canSendCancelled(order) || !order.userEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
-      return emailjs.send(CONFIG.serviceId, CONFIG.cancelledTemplateId, {
+      return emailjs.send(c.serviceId, c.cancelledTemplateId, {
         to_email: order.userEmail,
         order_number: order.orderNumber || '',
         items: itemsText(order.items),
@@ -196,17 +221,18 @@ var OrderEmails = (function () {
   // Gift card bought for a friend: emailed to them when the order's payment
   // is confirmed (js/gift-cards.js). Needs the "Gift card" template.
   function sendGiftCard(card, code) {
-    if (!CONFIG.publicKey || !CONFIG.serviceId || !CONFIG.giftCardTemplateId || !card.toEmail) return Promise.resolve(false);
+    var c = cfgFor(card);
+    if (!c.publicKey || !c.serviceId || !c.giftCardTemplateId || !card.toEmail) return Promise.resolve(false);
     return loadSdk().then(function (emailjs) {
       var amount = '$' + ((card.amountCents || 0) / 100).toFixed((card.amountCents || 0) % 100 ? 2 : 0);
-      return emailjs.send(CONFIG.serviceId, CONFIG.giftCardTemplateId, {
+      return emailjs.send(c.serviceId, c.giftCardTemplateId, {
         to_email: card.toEmail,
         to_name: card.toName || 'there',
         from_name: card.from || 'A friend',
         amount: amount,
         message: card.message || '',
         gift_code: code,
-        redeem_url: SITE_URL + '/gift.html?code=' + encodeURIComponent(code)
+        redeem_url: siteUrl(card) + '/gift.html?code=' + encodeURIComponent(code)
       });
     }).then(function () { return true; });
   }
@@ -222,7 +248,9 @@ var OrderEmails = (function () {
     canSendDelivered: canSendDelivered,
     deliveredParams: deliveredParams,
     sendDelivered: sendDelivered,
-    CONFIG: CONFIG
+    CONFIG: CONFIG,
+    BUDGET_CONFIG: BUDGET_CONFIG,
+    configFor: cfgFor
   };
 })();
 

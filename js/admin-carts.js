@@ -27,17 +27,22 @@
 
   function load() {
     var db = firebase.firestore();
-    Promise.all([db.collection('carts').get(), db.collection('users').get()]).then(function (r) {
+    // TXBio carts and budget-store carts (js/sites.js).
+    Promise.all([db.collection('carts').get(), db.collection('users').get(), db.collection('budgetCarts').get().catch(function () { return null; })]).then(function (r) {
       var users = {};
       r[1].forEach(function (d) { users[d.id] = d.data(); });
       rows = [];
-      r[0].forEach(function (d) {
+      var docs = [];
+      r[0].forEach(function (d) { docs.push({ d: d, budget: false }); });
+      if (r[2]) r[2].forEach(function (d) { docs.push({ d: d, budget: true }); });
+      docs.forEach(function (x) {
+        var d = x.d;
         var items = (d.data().items || []).filter(function (i) { return Number(i.qty) > 0; });
         if (!items.length) return;
         var u = users[d.id] || {};
         var dn = String(u.displayName || '').split(' — ');
         rows.push({
-          uid: d.id, items: items, updatedAt: d.data().updatedAt || '',
+          uid: d.id, budget: x.budget, items: items, updatedAt: d.data().updatedAt || '',
           email: u.email || '', name: u.name || dn[0] || '', institution: u.institution || dn[1] || '',
           remindedAt: u.cartReminderAt || '', optedOut: u.cartReminders === false,
           value: items.reduce(function (s, i) { return s + Number(i.price) * Number(i.qty); }, 0),
@@ -69,11 +74,11 @@
     $('carts-rows').innerHTML = list.map(function (c) {
       var idle = hoursSince(c.updatedAt) >= IDLE_HOURS;
       var items = c.items.map(function (i) { return esc(i.name) + ' <span class="cart-pack">' + esc(i.packSize || '') + '</span> ×' + esc(i.qty); }).join('<br>');
-      var mail = c.email ? '<a class="btn-outline-light todo-btn" href="mailto:' + encodeURIComponent(c.email) +
+      var mail = c.email && !c.budget ? '<a class="btn-outline-light todo-btn" href="mailto:' + encodeURIComponent(c.email) +
         '?subject=' + encodeURIComponent('Your TXBioResearch cart') +
         '&body=' + encodeURIComponent('Hi' + (c.name ? ' ' + c.name.split(' ')[0] : '') + ',\n\nYou left a few items in your cart at txbioresearch.com. They\'re saved whenever you\'re ready: https://txbioresearch.com/cart.html\n\nAny questions, just reply here.\n') + '">Email</a>' : '';
       return '<tr' + (idle ? ' class="cart-idle"' : '') + '>' +
-        '<td data-label="Customer"><strong>' + esc(c.name || '(no name yet)') + '</strong><br><span class="cart-sub">' + esc(c.email || c.uid) + '</span></td>' +
+        '<td data-label="Customer"><strong>' + esc(c.name || '(no name yet)') + '</strong>' + (c.budget ? ' <span class="site-badge">Budget</span>' : '') + '<br><span class="cart-sub">' + esc(c.email || c.uid) + '</span></td>' +
         '<td data-label="Items">' + items + '</td>' +
         '<td data-label="Value"><strong>' + money(c.value) + '</strong><br><span class="cart-sub">' + c.units + ' unit' + (c.units === 1 ? '' : 's') + '</span></td>' +
         '<td data-label="Last change">' + esc(age(c.updatedAt)) + (c.optedOut ? '<br><span class="cart-sub">reminders off</span>' : c.remindedAt && c.remindedAt >= c.updatedAt ? '<br><span class="cart-sub">&#10003; reminder emailed ' + esc(age(c.remindedAt)) + '</span>' : '') + '</td>' +

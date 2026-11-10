@@ -42,7 +42,8 @@ var Cart = (function () {
   }
 
   function getCartRef(uid) {
-    return ensureDb().collection('carts').doc(uid);
+    // Each store keeps its own cart (js/sites.js): carts/{uid}, budgetCarts/{uid}.
+    return ensureDb().collection(window.Sites && Sites.isBudget() ? 'budgetCarts' : 'carts').doc(uid);
   }
 
   function getCart() {

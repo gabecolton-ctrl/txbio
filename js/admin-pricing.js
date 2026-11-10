@@ -18,7 +18,11 @@
     var sh = PriceBook.shippingOf(doc);
     var prices = {};
     Object.keys((doc && doc.prices) || {}).forEach(function (k) { if (typeof doc.prices[k] === 'number') prices[k] = doc.prices[k]; });
-    return { prices: prices, shipping: { options: sh.options, freeMin: sh.freeMin, freeOption: sh.freeOption, platinumOption: sh.platinumOption } };
+    var bp = {};
+    var bsrc = (doc && doc.budget && doc.budget.prices) || {};
+    Object.keys(bsrc).forEach(function (k) { if (typeof bsrc[k] === 'number') bp[k] = bsrc[k]; });
+    return { prices: prices, shipping: { options: sh.options, freeMin: sh.freeMin, freeOption: sh.freeOption, platinumOption: sh.platinumOption },
+      budget: { percentOff: PriceBook.budgetPercent(doc), prices: bp } };
   }
   function clone(o) { return JSON.parse(JSON.stringify(o)); }
   function dirty() { return JSON.stringify(draft) !== JSON.stringify(saved); }
@@ -37,6 +41,7 @@
       catalog = r[1];
       if (r[2]) r[2].forEach(function (d) { var c = Number(d.data().perVialCost); if (c > 0) costs[d.id] = c; });
       buildRows();
+      $('budget-pct').value = draft.budget.percentOff;
       drawShipping();
       drawPrices();
       status();
@@ -126,6 +131,11 @@
   });
   $('free-option').addEventListener('change', function () { draft.shipping.freeOption = this.value; drawPicks(); status(); });
   $('platinum-option').addEventListener('change', function () { draft.shipping.platinumOption = this.value; status(); });
+  $('budget-pct').addEventListener('input', function () {
+    draft.budget.percentOff = this.value === '' ? NaN : Number(this.value);
+    if (draft.budget.percentOff >= 0 && draft.budget.percentOff < 100) drawPrices();
+    status();
+  });
   $('free-min').addEventListener('input', function () { draft.shipping.freeMin = this.value === '' ? NaN : round2(Number(this.value)); status(); });
 
   // ---------- Product prices ----------
@@ -134,7 +144,7 @@
     var q = $('pr-search').value.trim().toLowerCase();
     var changedOnly = $('pr-changed-only').checked;
     return rows.filter(function (r) {
-      if (changedOnly && typeof draft.prices[r.slug] !== 'number') return false;
+      if (changedOnly && typeof draft.prices[r.slug] !== 'number' && typeof draft.budget.prices[r.slug] !== 'number') return false;
       return !q || r.name.toLowerCase().indexOf(q) !== -1 || r.slug.indexOf(q) !== -1;
     });
   }
@@ -142,13 +152,19 @@
     if (!r.caseEligible || !catalog) return '<span class="pr-muted">vials only</span>';
     return money(priceOf(r) * (catalog.caseSize - catalog.freeVials));
   }
+  // Budget store price (js/price-book.js: TXBio price minus the percent, or its own).
+  function budgetPriceOf(r) { return PriceBook.priceOf(draft, r.slug, r.def, 'budget'); }
+  function budgetAuto(r) { return PriceBook.priceOf({ prices: draft.prices, budget: { percentOff: draft.budget.percentOff, prices: {} } }, r.slug, r.def, 'budget'); }
+  function marginOf(p, cost) {
+    var m = p - cost, pct = p > 0 ? Math.round(m / p * 100) : 0;
+    return '<span class="' + (m < 0 ? 'pr-loss' : m / Math.max(p, 0.01) < 0.3 ? 'pr-thin' : '') + '">' + money(m) + ' (' + pct + '%)</span>';
+  }
   function marginText(r) {
     var unitSlug = r.slug;
     var cost = costs[unitSlug] != null ? costs[unitSlug] : costs[r.product];
-    if (cost == null) return { cost: '<span class="pr-muted">&mdash;</span>', margin: '<span class="pr-muted">&mdash;</span>' };
-    var p = priceOf(r), m = p - cost;
-    var pct = p > 0 ? Math.round(m / p * 100) : 0;
-    return { cost: money(cost), margin: '<span class="' + (m < 0 ? 'pr-loss' : m / Math.max(p, 0.01) < 0.3 ? 'pr-thin' : '') + '">' + money(m) + ' (' + pct + '%)</span>' };
+    var none = '<span class="pr-muted">&mdash;</span>';
+    if (cost == null) return { cost: none, margin: none, budget: none };
+    return { cost: money(cost), margin: marginOf(priceOf(r), cost), budget: marginOf(budgetPriceOf(r), cost) };
   }
   function rowHtml(r) {
     var o = draft.prices[r.slug];
@@ -159,11 +175,13 @@
       '<td class="pr-def" data-label="Site">' + money(r.def) + '</td>' +
       '<td><span class="pr-money"><span>$</span><input type="number" class="pr-input pr-price" min="0" step="0.01" inputmode="decimal" placeholder="' + r.def + '" value="' + (changed ? o : '') + '" aria-label="Price for ' + esc(r.name + ' ' + r.size) + '"></span></td>' +
       '<td class="pr-case" data-label="Case">' + caseText(r) + '</td>' +
-      '<td class="pr-cost" data-label="Cost">' + mt.cost + '</td><td class="pr-margin" data-label="Margin">' + mt.margin + '</td></tr>';
+      '<td class="pr-cost" data-label="Cost">' + mt.cost + '</td><td class="pr-margin" data-label="Margin">' + mt.margin + '</td>' +
+      '<td class="pr-budget-cell"><span class="pr-money"><span>$</span><input type="number" class="pr-input pr-bprice" min="0" step="0.01" inputmode="decimal" placeholder="' + budgetAuto(r) + '" value="' + (typeof draft.budget.prices[r.slug] === 'number' ? draft.budget.prices[r.slug] : '') + '" aria-label="Budget store price for ' + esc(r.name + ' ' + r.size) + '"></span></td>' +
+      '<td class="pr-bmargin" data-label="Budget margin">' + mt.budget + '</td></tr>';
   }
   function drawPrices() {
     var list = visibleRows();
-    $('price-rows').innerHTML = list.length ? list.map(rowHtml).join('') : '<tr><td colspan="7">No products match.</td></tr>';
+    $('price-rows').innerHTML = list.length ? list.map(rowHtml).join('') : '<tr><td colspan="9">No products match.</td></tr>';
   }
   function refreshRow(tr) {
     var r = rows.filter(function (x) { return x.slug === tr.getAttribute('data-slug'); })[0];
@@ -173,9 +191,21 @@
     var mt = marginText(r);
     tr.querySelector('.pr-cost').innerHTML = mt.cost;
     tr.querySelector('.pr-margin').innerHTML = mt.margin;
+    tr.querySelector('.pr-bmargin').innerHTML = mt.budget;
+    tr.querySelector('.pr-bprice').placeholder = budgetAuto(r);
+    tr.classList.toggle('pr-bchanged', typeof draft.budget.prices[r.slug] === 'number');
   }
 
   $('price-rows').addEventListener('input', function (e) {
+    if (e.target.classList.contains('pr-bprice')) {
+      var btr = e.target.closest('tr'), bslug = btr.getAttribute('data-slug');
+      var bv = e.target.value.trim();
+      if (bv === '' || !(Number(bv) >= 0)) delete draft.budget.prices[bslug];
+      else draft.budget.prices[bslug] = round2(Number(bv));
+      refreshRow(btr);
+      status();
+      return;
+    }
     if (!e.target.classList.contains('pr-price')) return;
     var tr = e.target.closest('tr');
     var slug = tr.getAttribute('data-slug');
@@ -211,6 +241,7 @@
       if (!(o.price >= 0)) out.push('Give ' + (o.label || 'each shipping option') + ' a price.');
     });
     if (sh.freeOption && !(sh.freeMin >= 0)) out.push('Set the free shipping minimum.');
+    if (!(draft.budget.percentOff >= 0 && draft.budget.percentOff < 100)) out.push('Set the budget store percent (0\u201399).');
     return out.filter(function (x, i) { return out.indexOf(x) === i; });
   }
   function status(note) {
@@ -222,7 +253,7 @@
     var changedCount = Object.keys(draft.prices).length;
     $('pr-status').textContent = note || (p.length ? p[0] : d ? 'Unsaved changes.' : changedCount ? changedCount + ' price' + (changedCount === 1 ? '' : 's') + ' changed from the site price. Saved.' : 'No changes.');
   }
-  $('pr-undo').addEventListener('click', function () { draft = clone(saved); drawShipping(); drawPrices(); status(); });
+  $('pr-undo').addEventListener('click', function () { draft = clone(saved); $('budget-pct').value = draft.budget.percentOff; drawShipping(); drawPrices(); status(); });
   $('pr-save').addEventListener('click', function () {
     var btn = this;
     btn.disabled = true;
@@ -231,6 +262,7 @@
     var doc = {
       prices: draft.prices,
       shipping: draft.shipping,
+      budget: draft.budget,
       updatedAt: new Date().toISOString(),
       updatedBy: firebase.auth().currentUser.email
     };

@@ -1,0 +1,67 @@
+/* BenchBasics (budget store) — light, clinical look on top of css/style.css.
+   Copied to css/theme-budget.css by tools/build-budget.py. */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+:root {
+  --ink: #ffffff;
+  --ink-deep: #f4f7fb;
+  --surface: #ffffff;
+  --raised: #f6f8fc;
+  --line: #d6dee9;
+  --line-soft: #e6ecf3;
+  --frost: #0f1d33;
+  --muted: #4b5b72;
+  --faint: #6b7a90;
+  --mint: #1756d1;
+  --mint-press: #1046b0;
+  --mint-wash: rgba(23, 86, 209, 0.07);
+  --alert: #c2362b;
+  --alert-wash: rgba(194, 54, 43, 0.07);
+  --serif: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --sans: 'Inter', 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --radius-sm: 4px;
+  --radius: 6px;
+  --radius-lg: 10px;
+}
+
+html { color-scheme: light; background: var(--ink-deep); }
+body { background: var(--ink); color: var(--frost); }
+
+/* Headings: tight sans instead of the TXBio serif */
+h1, h2, .page-head h1, .hero h1 { font-weight: 700; letter-spacing: -0.02em; }
+
+/* Header: white bar with a hairline */
+header, .site-header { background: #ffffff; border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgba(15, 29, 51, 0.03); }
+.logo-text { font-family: var(--sans); font-weight: 800; letter-spacing: -0.01em; color: var(--frost); }
+
+/* Buttons: solid blue, white text */
+.btn, button.btn, a.btn { background: var(--mint); color: #ffffff; border-color: var(--mint); }
+.btn:hover, a.btn:hover, button.btn:hover { background: var(--mint-press); color: #ffffff; }
+.btn-outline-light { color: var(--frost); border-color: var(--line); background: #ffffff; }
+.btn-outline-light:hover { border-color: var(--mint); color: var(--mint); }
+
+/* Cards and panels: white with a soft border and shadow */
+.product-card, .card, .notice, .cart-summary, .order-summary-box, .checkout-box, .account-card {
+  background: #ffffff; border-color: var(--line); box-shadow: 0 1px 2px rgba(15, 29, 51, 0.05);
+}
+.product-card:hover { border-color: var(--mint); box-shadow: 0 6px 18px rgba(23, 86, 209, 0.10); }
+.product-card-price, .product-price, #selected-price { color: var(--mint); font-weight: 800; }
+
+/* Forms */
+input, select, textarea { background: #ffffff; color: var(--frost); border-color: var(--line); }
+input:focus, select:focus, textarea:focus { border-color: var(--mint); box-shadow: 0 0 0 3px var(--mint-wash); }
+
+/* Footer: pale gray band */
+footer, .site-footer { background: var(--ink-deep); border-top: 1px solid var(--line); color: var(--muted); }
+
+/* Prices fill in once the budget prices load (js/price-book.js) */
+html:not(.prices-ready) .product-card-price,
+html:not(.prices-ready) .product-info .product-price,
+html:not(.prices-ready) #selected-price { visibility: hidden; }
+
+/* Hero art and product photos on a light page */
+.bb-hero-mark svg { width: 100%; max-width: 420px; height: auto; }
+.logo-icon { filter: none !important; }
+.hero { background: radial-gradient(60% 80% at 78% 40%, rgba(23, 86, 209, 0.06), transparent 70%), #ffffff; }
+.product-card-top { background: radial-gradient(circle at 50% 45%, #ffffff, #eef3fa 75%); }
+.product-media { background: radial-gradient(circle at 50% 42%, #ffffff, #eef3fa 72%); }

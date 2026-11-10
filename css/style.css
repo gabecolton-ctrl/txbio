@@ -1589,3 +1589,8 @@ html.season-autumn .egg-hint { color: #f2c14e; }
   .pr-savebar #pr-status { flex-basis: 100%; }
   .pr-savebar .btn, .pr-savebar .btn-outline-light { flex: 1; padding: 10px 12px; }
 }
+
+/* Budget-store orders on Admin → Orders (js/sites.js) */
+.site-badge { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #dbeafe; color: #1e3a8a; font-size: 0.72rem; font-weight: 700; vertical-align: 2px; }
+#budget-pct { width: 72px; margin: 0; }
+.pr-bchanged .pr-budget-cell input { border-color: var(--mint); }

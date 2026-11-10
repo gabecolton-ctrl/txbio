@@ -1,0 +1,13 @@
+{
+  "_readme": "The budget store. Change the name and domain here (and in js/sites.js), then rebuild: python3 tools/build-budget.py. Prices are set on Admin -> Pricing.",
+  "name": "BenchBasics",
+  "longName": "BenchBasics Research Supply",
+  "shortName": "BenchBasics",
+  "domain": "",
+  "previewUrl": "https://gabecolton-ctrl.github.io/budget-store",
+  "infoEmail": "info@benchbasics.example",
+  "ordersEmail": "orders@benchbasics.example",
+  "mainSiteUrl": "https://txbioresearch.com",
+  "noindex": true,
+  "themeColor": "#ffffff"
+}

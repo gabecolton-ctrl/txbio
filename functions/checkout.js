@@ -8,15 +8,16 @@ const FreeShipping = require('./free-shipping');
 const Loyalty = require('./loyalty');
 const Attestation = require('./attestation');
 const PriceBook = require('./price-book');
+const Sites = require('./sites');
 
 const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank', 'venmo', 'cashapp'];
 const PaymentApps = require('./payment-apps');
 
-function generateOrderNumber() {
+function generateOrderNumber(prefix) {
   const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
   let random = '';
   for (let i = 0; i < 6; i++) random += chars.charAt(Math.floor(Math.random() * chars.length));
-  return 'TXB-' + random;
+  return (prefix || 'TXB') + '-' + random;
 }
 
 // The checkout logic, with the database passed in so tests can supply their own.
@@ -29,7 +30,10 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   // Prices and shipping options set on Admin → Pricing (settings/pricing).
   const pricingSnap = await db.collection('settings').doc('pricing').get();
   const pricing = pricingSnap.exists ? pricingSnap.data() : null;
-  catalog = PriceBook.applyToCatalog(catalog, pricing);
+  // Which store (js/sites.js): the budget store has its own prices and cart.
+  const site = data.site === 'budget' ? 'budget' : 'main';
+  const cartsCollection = site === 'budget' ? 'budgetCarts' : 'carts';
+  catalog = PriceBook.applyToCatalog(catalog, pricing, site);
   const freeShipping = PriceBook.freeShippingConfig(pricing);
 
   const familyShipping = String(data.shippingValue) === AtCost.FAMILY_SHIPPING_VALUE;
@@ -62,7 +66,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   const useCredit = data.useCredit === true && !!userEmail;
 
   // Price the cart as saved in the database, not as the browser describes it.
-  const cartSnap = await db.collection('carts').doc(uid).get();
+  const cartSnap = await db.collection(cartsCollection).doc(uid).get();
   const cartItems = cartSnap.exists ? (cartSnap.data().items || []) : [];
   const quoteIds = [...new Set(cartItems.filter((i) => i && i.quoteId).map((i) => String(i.quoteId)))];
   const quoteSnaps = await Promise.all(quoteIds.map((id) => db.collection('quotes').doc(id).get()));
@@ -206,7 +210,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       return item;
     });
 
-    const orderNumber = generateOrderNumber();
+    const orderNumber = generateOrderNumber(site === 'budget' ? Sites.info('budget').orderPrefix : 'TXB');
     const orderDoc = {
       items,
       subtotal: totals.subtotal,
@@ -234,6 +238,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       userEmail,
       createdAt: nowIso,
       orderNumber,
+      ...(site === 'budget' ? { site: 'budget' } : {}),
       placedBy: 'server',
       attestation: Attestation.record('order', nowIso)
     };
@@ -270,7 +275,7 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       t.update(db.collection('promoCodes').doc(affiliateCode), { timesUsed: FieldValue.increment(1) });
     }
     t.set(orderRef, orderDoc);
-    t.set(db.collection('carts').doc(uid), { items: [], updatedAt: nowIso });
+    t.set(db.collection(cartsCollection).doc(uid), { items: [], updatedAt: nowIso });
     return orderDoc;
   });
 
