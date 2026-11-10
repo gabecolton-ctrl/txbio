@@ -3,11 +3,11 @@
   "name": "TexasBench",
   "longName": "TexasBench Research Supply",
   "shortName": "TexasBench",
-  "domain": "",
+  "domain": "texasbench.com",
   "previewUrl": "https://gabecolton-ctrl.github.io/budget-store",
-  "infoEmail": "info@texasbench.example",
-  "ordersEmail": "orders@texasbench.example",
+  "infoEmail": "info@texasbench.com",
+  "ordersEmail": "orders@texasbench.com",
   "mainSiteUrl": "https://txbioresearch.com",
-  "noindex": true,
+  "noindex": false,
   "themeColor": "#ffffff"
 }
