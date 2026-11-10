@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101026">
+<link rel="stylesheet" href="css/style.css?v=202611101033">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101026"></script>
-<script src="js/splash.js?v=202611101026"></script>
+<script src="js/sites.js?v=202611101033"></script>
+<script src="js/splash.js?v=202611101033"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -132,6 +132,11 @@
   <div id="admin-content" style="display:none;">
     <section>
       <div id="customer-stats" class="carts-stats"></div>
+      <div class="store-tabs" role="tablist" aria-label="Which store">
+        <button type="button" class="store-tab is-on" data-store="" role="tab" aria-selected="true">All</button>
+        <button type="button" class="store-tab" data-store="main" role="tab" aria-selected="false">TXBio <span class="store-tab-n" id="store-n-main"></span></button>
+        <button type="button" class="store-tab" data-store="budget" role="tab" aria-selected="false">Budget <span class="store-tab-n" id="store-n-budget"></span></button>
+      </div>
       <input type="text" id="customer-search" placeholder="Search by name, institution, or email" autocomplete="off" style="max-width:480px;">
       <div id="customers-loading" class="cart-empty">Loading customers&hellip;</div>
       <div id="customers-empty" class="cart-empty" style="display:none;"><p>No customers yet.</p></div>
@@ -292,20 +297,20 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101026"></script>
-<script src="js/paused.js?v=202611101026"></script>
-<script src="js/cart.js?v=202611101026"></script>
-<script src="js/price-book.js?v=202611101026"></script>
-<script src="js/account.js?v=202611101026"></script>
-<script src="js/tabs.js?v=202611101026"></script>
-<script src="js/referral-attribution.js?v=202611101026"></script>
-<script src="js/credits.js?v=202611101026"></script>
-<script src="js/staff.js?v=202611101026"></script>
-<script src="js/nav-auth.js?v=202611101026"></script>
-<script src="js/profile-gate.js?v=202611101026"></script>
-<script src="js/auth-guard.js?v=202611101026"></script>
-<script src="js/main.js?v=202611101026"></script>
-<script src="js/nav-toggle.js?v=202611101026"></script>
+<script src="js/firebase-config.js?v=202611101033"></script>
+<script src="js/paused.js?v=202611101033"></script>
+<script src="js/cart.js?v=202611101033"></script>
+<script src="js/price-book.js?v=202611101033"></script>
+<script src="js/account.js?v=202611101033"></script>
+<script src="js/tabs.js?v=202611101033"></script>
+<script src="js/referral-attribution.js?v=202611101033"></script>
+<script src="js/credits.js?v=202611101033"></script>
+<script src="js/staff.js?v=202611101033"></script>
+<script src="js/nav-auth.js?v=202611101033"></script>
+<script src="js/profile-gate.js?v=202611101033"></script>
+<script src="js/auth-guard.js?v=202611101033"></script>
+<script src="js/main.js?v=202611101033"></script>
+<script src="js/nav-toggle.js?v=202611101033"></script>
 <script>
   // Customers: built from three sources, keyed by lowercased email.
   //   users/{uid}   name, institution, address (saved at sign-up / sign-in / profile)
@@ -388,6 +393,7 @@
           .reduce(function (n, o) { return n + Number(o.total || 0); }, 0);
         c.balanceCents = c.credit ? (c.credit.balanceCents || 0) : 0;
         c.owedCents = c.tab ? (c.tab.owedCents || 0) : 0;
+        c.stores = storesOf(c);
         return c;
       }).filter(function (c) { return c.email !== ADMIN_EMAIL; });
       customers.sort(function (a, b) { return (b.createdAt || '') < (a.createdAt || '') ? -1 : 1; });
@@ -408,34 +414,66 @@
     });
   }
 
+  // Which store(s) a customer uses (js/sites.js): where they signed up, stores
+  // they've signed in to, and where they've ordered. Older accounts: TXBio.
+  var storeFilter = '';
+  function storesOf(c) {
+    var s = {};
+    var p = c.profile || {};
+    if (p.signupSite) s[p.signupSite === 'budget' ? 'budget' : 'main'] = 1;
+    (p.stores || []).forEach(function (x) { s[x === 'budget' ? 'budget' : 'main'] = 1; });
+    c.orders.forEach(function (o) { s[o.site === 'budget' ? 'budget' : 'main'] = 1; });
+    var out = Object.keys(s);
+    return out.length ? out.sort().reverse() : ['main']; // ['main', 'budget'] order
+  }
+  function storeBadge(c) {
+    if (c.stores.length > 1) return ' <span class="site-badge site-badge-both">Both</span>';
+    return c.stores[0] === 'budget' ? ' <span class="site-badge">Budget</span>' : '';
+  }
+  // On a store tab, the Orders and Spent columns count that store's orders only.
+  function storeOrders(c) { return storeFilter ? c.orders.filter(function (o) { return (o.site === 'budget' ? 'budget' : 'main') === storeFilter; }) : c.orders; }
+  function storeSpent(c) { return storeOrders(c).filter(function (o) { return o.status !== 'cancelled'; }).reduce(function (n, o) { return n + Number(o.total || 0); }, 0); }
+  function inStore(c) { return !storeFilter || c.stores.indexOf(storeFilter) !== -1; }
+  document.querySelectorAll('.store-tab').forEach(function (b) {
+    b.addEventListener('click', function () {
+      storeFilter = b.getAttribute('data-store');
+      document.querySelectorAll('.store-tab').forEach(function (x) { x.classList.toggle('is-on', x === b); x.setAttribute('aria-selected', x === b ? 'true' : 'false'); });
+      renderList();
+    });
+  });
+
   function stat(v, label) { return '<div class="carts-stat"><span class="carts-stat-v">' + v + '</span><span class="carts-stat-l">' + label + '</span></div>'; }
   function renderList() {
     var q = document.getElementById('customer-search').value.trim().toLowerCase();
-    var list = customers.filter(function (c) {
+    document.getElementById('store-n-main').textContent = customers.filter(function (c) { return c.stores.indexOf('main') !== -1; }).length;
+    document.getElementById('store-n-budget').textContent = customers.filter(function (c) { return c.stores.indexOf('budget') !== -1; }).length;
+    var all = customers;
+    var shown = all.filter(inStore); // totals and list follow the store tab
+    var list = shown.filter(function (c) {
       return !q || [c.name, c.institution, c.email].join(' ').toLowerCase().indexOf(q) !== -1;
     });
     // Totals: everyone, who has bought (a non-cancelled order), and new this month.
     var monthAgo = new Date(Date.now() - 30 * 864e5).toISOString();
-    var buyers = customers.filter(function (c) { return c.orders.some(function (o) { return o.status !== 'cancelled'; }); }).length;
-    var recent = customers.filter(function (c) { return c.createdAt && c.createdAt >= monthAgo; }).length;
+    var buyers = shown.filter(function (c) { return storeOrders(c).some(function (o) { return o.status !== 'cancelled'; }); }).length;
+    var recent = shown.filter(function (c) { return c.createdAt && c.createdAt >= monthAgo; }).length;
     document.getElementById('customer-stats').innerHTML =
-      stat(customers.length.toLocaleString(), 'total customer' + (customers.length === 1 ? '' : 's')) +
+      stat(shown.length.toLocaleString(), 'total customer' + (shown.length === 1 ? '' : 's')) +
       stat(buyers.toLocaleString(), 'have ordered') +
       stat(recent.toLocaleString(), 'new in 30 days') +
-      (staffRole === 'admin' ? stat(Tabs.money(customers.reduce(function (n, c) { return n + Math.max(0, c.owedCents); }, 0)), 'owed to you on tabs') : '') +
+      (staffRole === 'admin' ? stat(Tabs.money(shown.reduce(function (n, c) { return n + Math.max(0, c.owedCents); }, 0)), 'owed to you on tabs') : '') +
       (q ? stat(list.length.toLocaleString(), 'match your search') : '');
-    document.getElementById('customers-empty').style.display = customers.length ? 'none' : 'block';
-    document.getElementById('customers-wrap').style.display = customers.length ? 'block' : 'none';
+    document.getElementById('customers-empty').style.display = all.length ? 'none' : 'block';
+    document.getElementById('customers-wrap').style.display = all.length ? 'block' : 'none';
     document.getElementById('customer-rows').innerHTML = list.map(function (c) {
       return '<tr class="customer-row" data-email="' + esc(c.email) + '" tabindex="0" style="cursor:pointer;">' +
-        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
+        '<td><strong>' + esc(c.name || '(no name yet)') + '</strong>' + storeBadge(c) + (c.institution ? '<br><span style="color:var(--text-light); font-size:0.85rem;">' + esc(c.institution) + '</span>' : '') + '</td>' +
         '<td>' + esc(c.email) + '</td>' +
         '<td>' + fmtDate(c.createdAt) + '</td>' +
-        '<td>' + c.orders.length + '</td>' +
-        '<td>' + money(c.spent) + '</td>' +
+        '<td>' + storeOrders(c).length + '</td>' +
+        '<td>' + money(storeSpent(c)) + '</td>' +
         '<td>' + Credits.formatCents(c.balanceCents) + '</td>' +
         '<td>' + (c.owedCents ? '<strong style="color:' + (c.owedCents > 0 ? 'var(--danger)' : 'var(--text)') + ';">' + Tabs.money(c.owedCents) + '</strong>' : '') + '</td></tr>';
-    }).join('') || '<tr><td colspan="7" style="color:var(--text-light);">No customers match &ldquo;' + esc(q) + '&rdquo;.</td></tr>';
+    }).join('') || '<tr><td colspan="7" style="color:var(--text-light);">' + (q ? 'No customers match &ldquo;' + esc(q) + '&rdquo;.' : 'No customers on this store yet.') + '</td></tr>';
     document.querySelectorAll('.customer-row').forEach(function (tr) {
       var open = function () { openCustomer(tr.getAttribute('data-email')); };
       tr.addEventListener('click', open);
@@ -460,7 +498,7 @@
     document.querySelector('#admin-content > section').style.display = 'none';
     document.getElementById('customer-detail').style.display = '';
     document.getElementById('cd-name').textContent = c.name || c.email;
-    document.getElementById('cd-sub').textContent = [c.institution, c.email].filter(Boolean).join(' \u00b7 ');
+    document.getElementById('cd-sub').textContent = [c.institution, c.email, c.stores.length > 1 ? 'TXBio + Budget' : c.stores[0] === 'budget' ? 'Budget store' : 'TXBio'].filter(Boolean).join(' \u00b7 ');
     document.getElementById('cd-balance').textContent = Credits.formatCents(c.balanceCents);
     var p = c.profile || {};
     var addr = [p.addressLine1, p.addressLine2, [p.city, p.state].filter(Boolean).join(', ') + ' ' + (p.zip || '')]
@@ -483,7 +521,7 @@
       ? '<div class="catalog-wrap"><table class="catalog-table"><thead><tr><th>Order</th><th>Date</th><th>Status</th><th>Items</th><th>Total</th></tr></thead><tbody>' +
         c.orders.map(function (o) {
           var items = (o.items || []).map(function (i) { return esc(i.name) + ' x' + i.qty; }).join(', ');
-          return '<tr><td>#' + esc(o.orderNumber || o.id) + '</td><td>' + fmtDate(o.createdAt) + '</td><td>' + esc(o.status || 'pending') + '</td><td>' + items + '</td><td>' + money(o.total) + '</td></tr>';
+          return '<tr><td>#' + esc(o.orderNumber || o.id) + (o.site === 'budget' ? ' <span class="site-badge">Budget</span>' : '') + '</td><td>' + fmtDate(o.createdAt) + '</td><td>' + esc(o.status || 'pending') + '</td><td>' + items + '</td><td>' + money(o.total) + '</td></tr>';
         }).join('') + '</tbody></table></div>'
       : '<p style="color:var(--text-light);">No orders yet.</p>';
 
