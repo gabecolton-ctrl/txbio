@@ -7,6 +7,7 @@ const LocalDelivery = require('./local-delivery');
 const FreeShipping = require('./free-shipping');
 const Loyalty = require('./loyalty');
 const Attestation = require('./attestation');
+const PriceBook = require('./price-book');
 
 const PAYMENT_METHODS = ['inquiry', 'bitcoin', 'bank', 'venmo', 'cashapp'];
 const PaymentApps = require('./payment-apps');
@@ -24,6 +25,12 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
   data = data || {};
   const userEmail = String(email || '').toLowerCase();
   const nowIso = (now || new Date()).toISOString();
+
+  // Prices and shipping options set on Admin → Pricing (settings/pricing).
+  const pricingSnap = await db.collection('settings').doc('pricing').get();
+  const pricing = pricingSnap.exists ? pricingSnap.data() : null;
+  catalog = PriceBook.applyToCatalog(catalog, pricing);
+  const freeShipping = PriceBook.freeShippingConfig(pricing);
 
   const familyShipping = String(data.shippingValue) === AtCost.FAMILY_SHIPPING_VALUE;
   const localShipping = String(data.shippingValue) === LocalDelivery.VALUE;
@@ -163,7 +170,8 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
       platinum,
       taxRate: catalog.taxRate,
       creditBalanceCents: credit ? (credit.balanceCents || 0) : 0,
-      useCredit: !!credit
+      useCredit: !!credit,
+      freeShipping
     });
     totals.paymentFee = PaymentApps.customerFee(feeSettings, paymentMethod, totals.total);
     totals.total = P.round2(totals.total + totals.paymentFee);

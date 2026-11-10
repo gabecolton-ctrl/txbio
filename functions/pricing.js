@@ -183,15 +183,16 @@ function isBogoLine(line, eligibleSlugs) {
 // but a leftover single vial is. The code is always recorded on the order so
 // affiliates are credited.
 // fixedDiscount (dollars) replaces the percentage promo, e.g. at-cost pricing.
-// shippingValue + family: free standard shipping at FreeShipping.MIN (js/free-shipping.js).
-function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, platinum, taxRate, creditBalanceCents, useCredit }) {
+// shippingValue + family: free shipping per freeShipping ({ min, option }, from
+// settings/pricing via js/price-book.js; js/free-shipping.js defaults if missing).
+function computeTotals({ lines, discountPercent, fixedDiscount, bogo, bogoSlugs, shippingPrice, shippingValue, family, platinum, taxRate, creditBalanceCents, useCredit, freeShipping }) {
   const subtotal = lines.reduce((n, l) => n + l.price * l.qty, 0);
   const promoBase = lines.reduce((n, l) => n + (l.quoteId || l.giftCard || l.bundleKey ? 0 : l.price * (isBogoLine(l, bogoSlugs) ? l.qty % 2 : l.qty)), 0);
   const discount = fixedDiscount != null ? round2(fixedDiscount) : round2(promoBase * ((discountPercent || 0) / 100));
   const discountedSubtotal = subtotal - discount - bogo;
   // Gift cards: no shipping on their own, and they don't count toward free shipping.
   const giftSubtotal = lines.reduce((n, l) => n + (l.giftCard ? l.price * l.qty : 0), 0);
-  if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal - giftSubtotal, !!family, !!platinum);
+  if (shippingValue != null) shippingPrice = FreeShipping.priceFor(shippingValue, shippingPrice, discountedSubtotal - giftSubtotal, !!family, !!platinum, freeShipping);
   if (lines.length && lines.every((l) => l.giftCard)) shippingPrice = 0;
   // Quoted items marked "no tax" (admin quotes, js/quotes.js) aren't taxed.
   const quotedSubtotal = lines.reduce((n, l) => n + (l.noTax ? l.price * l.qty : 0), 0);

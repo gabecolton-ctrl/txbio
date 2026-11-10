@@ -170,6 +170,17 @@ var CasePricing = (function () {
     };
   }
 
+  // Prices changed (Admin → Pricing, js/price-book.js): redo the saved dose
+  // labels from DOSE_PRICES and redraw.
+  function refresh() {
+    if (!ui) return;
+    if (ui.doseOptions && window.DOSE_PRICES) ui.doseOptions.forEach(function (o) {
+      var p = DOSE_PRICES[o.el.value];
+      if (p != null) o.original = o.original.replace(/\$[\d,.]+/, money(p));
+    });
+    render();
+  }
+
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
   } else {
@@ -184,6 +195,7 @@ var CasePricing = (function () {
     isCaseItem: isCaseItem,
     casePrice: casePrice,
     apply: apply,
-    setView: setView
+    setView: setView,
+    refresh: refresh
   };
 })();

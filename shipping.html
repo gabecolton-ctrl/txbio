@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611061519">
+<link rel="stylesheet" href="css/style.css?v=202611091842">
 <!-- seo:start -->
 <link rel="canonical" href="https://txbioresearch.com/shipping.html">
 <meta property="og:type" content="website">
@@ -46,7 +46,7 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/splash.js?v=202611061519"></script>
+<script src="js/splash.js?v=202611091842"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -87,6 +87,7 @@
               <li><a href="admin-carts.html" id="nav-admin-carts-link">Carts</a></li>
               <li><a href="admin-inventory.html" id="nav-admin-link">Inventory</a></li>
               <li><a href="admin-calculator.html">Calculator</a></li>
+              <li><a href="admin-pricing.html" id="nav-admin-pricing-link">Pricing</a></li>
               <li><a href="admin-incoming.html" id="nav-admin-incoming-link">Incoming</a></li>
               <li><a href="admin-promos.html" id="nav-admin-promos-link">Promo codes</a></li>
               <li><a href="admin-gift-cards.html" id="nav-admin-giftcards-link">Gift cards</a></li>
@@ -151,8 +152,10 @@
     <div class="catalog-wrap" style="margin-bottom:18px;">
       <table class="catalog-table">
         <thead><tr><th>Shipping option (as shown at checkout)</th><th>Cost</th></tr></thead>
-        <tbody>
-          <tr><td>2nd Day</td><td>$15 (free on orders $250+ after discounts)</td></tr>
+        <tbody id="ship-options-rows">
+          <tr><td>3&ndash;5 Business Days</td><td>$20 (free on orders $250+ after discounts)</td></tr>
+          <tr><td>3 Business Days</td><td>$25</td></tr>
+          <tr><td>2nd Day</td><td>$40</td></tr>
         </tbody>
       </table>
     </div>
@@ -229,15 +232,32 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611061519"></script>
-<script src="js/analytics.js?v=202611061519"></script>
-<script src="js/referral.js?v=202611061519"></script>
-<script src="js/paused.js?v=202611061519"></script>
-<script src="js/cart.js?v=202611061519"></script>
-<script src="js/staff.js?v=202611061519"></script>
-<script src="js/nav-auth.js?v=202611061519"></script>
-<script src="js/profile-gate.js?v=202611061519"></script>
-<script src="js/main.js?v=202611061519"></script>
-<script src="js/nav-toggle.js?v=202611061519"></script>
+<script src="js/firebase-config.js?v=202611091842"></script>
+<script src="js/analytics.js?v=202611091842"></script>
+<script src="js/referral.js?v=202611091842"></script>
+<script src="js/paused.js?v=202611091842"></script>
+<script src="js/cart.js?v=202611091842"></script>
+<script src="js/price-book.js?v=202611091842"></script>
+<script src="js/staff.js?v=202611091842"></script>
+<script src="js/nav-auth.js?v=202611091842"></script>
+<script src="js/profile-gate.js?v=202611091842"></script>
+<script src="js/main.js?v=202611091842"></script>
+<script src="js/nav-toggle.js?v=202611091842"></script>
+<script>
+  // Shipping options from Admin → Pricing (js/price-book.js).
+  (function () {
+    function esc(v) { return String(v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
+    function draw() {
+      if (!window.PriceBook) return;
+      var sh = PriceBook.shipping();
+      document.getElementById('ship-options-rows').innerHTML = sh.options.filter(function (o) { return o.enabled; }).map(function (o) {
+        var free = o.id === sh.freeOption ? ' (free on orders $' + sh.freeMin + '+ after discounts)' : '';
+        return '<tr><td>' + esc(o.label) + '</td><td>' + PriceBook.money(o.price) + free + '</td></tr>';
+      }).join('');
+    }
+    draw();
+    document.addEventListener('pricebook', draw);
+  })();
+</script>
 </body>
 </html>
