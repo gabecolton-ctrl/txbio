@@ -49,7 +49,12 @@ var Promos = (function () {
   }
   function isExpired(promo) { return !!(promo && promo.endsOn && todayCentral() > promo.endsOn); }
 
-  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail, endsOn, oncePerCustomer) {
+  // Which store a code works on (js/sites.js): 'main' (TXBio, the default for
+  // older codes), 'budget' (TexasBench) or 'both'.
+  function storeOf(promo) { return promo && (promo.store === 'budget' || promo.store === 'both') ? promo.store : 'main'; }
+  function worksOn(promo, site) { var s = storeOf(promo); return s === 'both' || s === (site === 'budget' ? 'budget' : 'main'); }
+
+  function createOrUpdateCode(code, discountPercent, type, active, affiliateEmail, endsOn, oncePerCustomer, store) {
     var normalized = normalizeCode(code);
     var ref = ensureDb().collection('promoCodes').doc(normalized);
     return ref.get().then(function (doc) {
@@ -61,6 +66,7 @@ var Promos = (function () {
         affiliateEmail: (affiliateEmail || '').trim().toLowerCase(),
         endsOn: /^\d{4}-\d{2}-\d{2}$/.test(endsOn || '') ? endsOn : '',
         oncePerCustomer: !!oncePerCustomer,
+        store: store === 'budget' || store === 'both' ? store : 'main',
         timesUsed: existing.timesUsed || 0,
         totalDiscounted: existing.totalDiscounted || 0,
         createdAt: existing.createdAt || new Date().toISOString()
@@ -79,6 +85,10 @@ var Promos = (function () {
   function validateCode(code, isFirstOrder) {
     return getCode(code).then(function (promo) {
       if (!promo) {
+        return { valid: false, reason: 'This promo code does not exist.' };
+      }
+      // A code for the other store doesn't exist here.
+      if (!worksOn(promo, window.Sites ? Sites.current() : 'main')) {
         return { valid: false, reason: 'This promo code does not exist.' };
       }
       if (!promo.active) {
@@ -172,7 +182,9 @@ var Promos = (function () {
     getCode: function (code) { return withRetry(getCode, [code], 10000, 15000, 'Checking promo code is taking too long. Please try again.'); },
     getAllCodes: function () { return withRetry(getAllCodes, [], 10000, 15000, 'Loading promo codes is taking too long. Please try again.'); },
     isExpired: isExpired,
-    createOrUpdateCode: function (code, pct, type, active, affiliateEmail, endsOn, once) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail, endsOn, once], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
+    createOrUpdateCode: function (code, pct, type, active, affiliateEmail, endsOn, once, store) { return withRetry(createOrUpdateCode, [code, pct, type, active, affiliateEmail, endsOn, once, store], 10000, 15000, 'Saving promo code is taking too long. Please try again.'); },
+    storeOf: storeOf,
+    worksOn: worksOn,
     deleteCode: function (code) { return withRetry(deleteCode, [code], 10000, 15000, 'Deleting promo code is taking too long. Please try again.'); },
     validateCode: function (code, isFirstOrder) { return withDoubleRetry(validateCode, [code, isFirstOrder], 8000, 8000, 12000, 'Validating promo code is taking too long. Please check your connection and try again.'); },
     recordUsage: recordUsage

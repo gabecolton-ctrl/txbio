@@ -118,7 +118,11 @@ async function placeOrderHandler({ db, FieldValue, uid, email, data, catalog, no
     ]);
     const roles = roleSnap && roleSnap.exists ? (roleSnap.data().roles || []) : [];
     const usedCodes = priorOrders.docs.filter((d) => d.data().status !== 'cancelled').map((d) => String(d.data().promoCode || '').toUpperCase());
-    const check = P.checkPromo(promoSnap.exists ? promoSnap.data() : null, promoCode, priorOrders.empty, now || new Date(), roles, usedCodes);
+    let promoDoc = promoSnap.exists ? promoSnap.data() : null;
+    // Codes belong to a store (js/promos.js storeOf): a code for the other store doesn't exist here.
+    const promoStore = promoDoc && (promoDoc.store === 'budget' || promoDoc.store === 'both') ? promoDoc.store : 'main';
+    if (promoDoc && promoStore !== 'both' && promoStore !== site) promoDoc = null;
+    const check = P.checkPromo(promoDoc, promoCode, priorOrders.empty, now || new Date(), roles, usedCodes);
     if (!check.valid) throw new HttpsError('failed-precondition', check.reason);
     promo = check;
   }
