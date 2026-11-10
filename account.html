@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611101436">
+<link rel="stylesheet" href="css/style.css?v=202611101616">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611101436"></script>
-<script src="js/splash.js?v=202611101436"></script>
+<script src="js/sites.js?v=202611101616"></script>
+<script src="js/splash.js?v=202611101616"></script>
 <script>
   // Inline, synchronous check: if the splash already played this session,
   // remove it immediately before paint to avoid any flash on internal nav.
@@ -285,22 +285,22 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611101436"></script>
-<script src="js/analytics.js?v=202611101436"></script>
-<script src="js/referral.js?v=202611101436"></script>
-<script src="js/paused.js?v=202611101436"></script>
-<script src="js/cart.js?v=202611101436"></script>
-<script src="js/price-book.js?v=202611101436"></script>
-<script src="js/account.js?v=202611101436"></script>
-<script src="js/tabs.js?v=202611101436"></script>
-<script src="js/credits.js?v=202611101436"></script>
-<script src="js/loyalty.js?v=202611101436"></script>
-<script src="js/staff.js?v=202611101436"></script>
-<script src="js/nav-auth.js?v=202611101436"></script>
-<script src="js/profile-gate.js?v=202611101436"></script>
-<script src="js/auth-guard.js?v=202611101436"></script>
-<script src="js/main.js?v=202611101436"></script>
-<script src="js/nav-toggle.js?v=202611101436"></script>
+<script src="js/firebase-config.js?v=202611101616"></script>
+<script src="js/analytics.js?v=202611101616"></script>
+<script src="js/referral.js?v=202611101616"></script>
+<script src="js/paused.js?v=202611101616"></script>
+<script src="js/cart.js?v=202611101616"></script>
+<script src="js/price-book.js?v=202611101616"></script>
+<script src="js/account.js?v=202611101616"></script>
+<script src="js/tabs.js?v=202611101616"></script>
+<script src="js/credits.js?v=202611101616"></script>
+<script src="js/loyalty.js?v=202611101616"></script>
+<script src="js/staff.js?v=202611101616"></script>
+<script src="js/nav-auth.js?v=202611101616"></script>
+<script src="js/profile-gate.js?v=202611101616"></script>
+<script src="js/auth-guard.js?v=202611101616"></script>
+<script src="js/main.js?v=202611101616"></script>
+<script src="js/nav-toggle.js?v=202611101616"></script>
 <script>
   var currentProfile = {};
 
@@ -538,7 +538,8 @@
       if (code === 'auth/weak-password') return 'Choose a stronger new password (at least 6 characters).';
       if (code === 'auth/too-many-requests') return 'Too many attempts. Wait a few minutes and try again, or use the reset link below.';
       if (code === 'auth/network-request-failed') return 'Network error. Check your connection and try again.';
-      return 'Could not change your password: ' + (err && err.message ? err.message : 'unknown error');
+      if (code === 'auth/requires-recent-login') return 'For security, sign out and back in, then change your password.';
+      return 'We couldn\u2019t change your password. Please try again.';
     }
     document.addEventListener('userReady', function (e) {
       document.getElementById('password-username').value = e.detail.user.email || '';
