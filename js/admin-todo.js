@@ -8,7 +8,7 @@
   var data = null;
   var role = null;
   // Sections about stock, suppliers and costs are the admin's, not a manager's.
-  var ADMIN_ONLY = { incoming: 1, lots: 1, stock: 1, cost: 1 };
+  var ADMIN_ONLY = { incoming: 1, lots: 1, stock: 1, cost: 1, wholesale: 1 };
   function $(id) { return document.getElementById(id); }
   function esc(v) { return String(v == null ? '' : v).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function money(n) { return '$' + Number(n || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
@@ -45,6 +45,13 @@
     var oldest = function (a, b) { return new Date(a.createdAt) - new Date(b.createdAt); };
 
     // 1. Payments to check
+    var ws = (data.wholesale || []).slice().sort(function (a, b) { return String(a.wholesale.requestedAt).localeCompare(String(b.wholesale.requestedAt)); });
+    add('wholesale', 'Wholesale accounts to review', 'Approved automatically at TexasBench sign-up, so they can already order. Give final approval or remove.',
+      ws.map(function (u) {
+        return row(['<a href="admin-customers.html?email=' + encodeURIComponent(u.email || '') + '">' + esc(u.name || u.email || u.uid) + '</a>', esc(u.institution || ''), esc(u.email || ''), '<span class="todo-age">' + age(u.wholesale.requestedAt) + '</span>'], false,
+          '<button type="button" class="btn todo-btn" data-ws-final="' + esc(u.uid) + '">Final approval</button>' +
+          '<button type="button" class="btn-outline-light todo-btn" data-ws-remove="' + esc(u.uid) + '">Remove</button>');
+      }), ['Customers', 'admin-customers.html']);
     var pending = orders.filter(function (o) { return (o.status || 'pending') === 'pending'; }).sort(oldest);
     add('pay', 'Payments to check', 'Look for these in Venmo, Cash App, your bank or wallet, then mark the order Confirmed. Highlighted orders have waited ' + STALE_DAYS + '+ days; consider cancelling them.',
       pending.map(function (o) {
@@ -140,6 +147,19 @@
     $('todo-sections').innerHTML = sections.join('');
     $('todo-clear').innerHTML = clear.length ? '<h2>All clear</h2><ul>' + clear.map(function (c) { return '<li>' + c + '</li>'; }).join('') + '</ul>' : '';
 
+    document.querySelectorAll('[data-ws-final], [data-ws-remove]').forEach(function (b) {
+      b.addEventListener('click', function () {
+        var uid = b.getAttribute('data-ws-final') || b.getAttribute('data-ws-remove');
+        var u = (data.wholesale || []).filter(function (x) { return x.uid === uid; })[0];
+        if (!u) return;
+        var next = Object.assign({}, u.wholesale, { status: b.hasAttribute('data-ws-final') ? 'approved' : 'removed', needsReview: false, reviewedAt: new Date().toISOString() });
+        b.disabled = true;
+        firebase.firestore().collection('users').doc(uid).update({ wholesale: next }).then(function () {
+          data.wholesale = data.wholesale.filter(function (x) { return x.uid !== uid; });
+          build();
+        }).catch(function (err) { b.disabled = false; alert('Could not save: ' + err.message); });
+      });
+    });
     document.querySelectorAll('[data-credit]').forEach(function (b) {
       b.addEventListener('click', function () { giveCredit(b); });
     });
@@ -175,8 +195,13 @@
       db.collection('costs').get().catch(function () { return null; }),
       db.collection('incoming').get().catch(function () { return null; }),
       db.collection('lots').get().catch(function () { return null; }),
-      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); })
+      fetch('functions/catalog.json', { cache: 'no-cache' }).then(function (r) { return r.json(); }),
+      db.collection('users').get().catch(function () { return null; })
     ]).then(function (r) {
+      // TexasBench wholesale sign-ups waiting for final approval.
+      var wholesale = [];
+      if (r[7]) r[7].forEach(function (d) { var u = d.data(); if (u.wholesale && u.wholesale.status === 'approved' && u.wholesale.needsReview) wholesale.push(Object.assign({ uid: d.id }, u)); });
+      r.pop();
       var incoming = [];
       if (r[4]) r[4].forEach(function (d) { incoming.push(Object.assign({ id: d.id }, d.data())); });
       var lots = [];
@@ -194,7 +219,7 @@
         else units.push(slug);
       });
       units.sort(function (a, b) { return String(names[a]).localeCompare(String(names[b])); });
-      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming, lots: lots };
+      data = { orders: r[0], stock: stock, promos: promos, costs: costs, names: names, units: units, incoming: incoming, lots: lots, wholesale: wholesale };
       $('todo-loading').style.display = 'none';
       $('todo-body').style.display = '';
       build();
