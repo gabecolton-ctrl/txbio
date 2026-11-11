@@ -86,7 +86,7 @@ def main():
         for base, _, names in os.walk(os.path.join(ROOT, d)):
             for n in names:
                 rel = os.path.relpath(os.path.join(base, n), ROOT)
-                if SKIP_JS.match(rel) or '/launch' in rel or n == 'label-template.svg':
+                if SKIP_JS.match(rel) or n == 'label-template.svg':
                     continue
                 files.append(rel)
     files.append('functions/catalog.json')
@@ -127,6 +127,10 @@ def icons():
     src = os.path.join(ROOT, 'budget', 'icons')
     for n in (os.listdir(src) if os.path.isdir(src) else []):
         shutil.copyfile(os.path.join(src, n), os.path.join(OUT, 'images', n))
+    # iPhone launch screens in the budget look (budget/make-icons.js).
+    launch = os.path.join(ROOT, 'budget', 'launch')
+    for n in (os.listdir(launch) if os.path.isdir(launch) else []):
+        shutil.copyfile(os.path.join(launch, n), os.path.join(OUT, 'images', 'launch', n))
     # Product labels with the budget name (budget/make-labels.js).
     labels = os.path.join(ROOT, 'budget', 'product-labels')
     for n in (os.listdir(labels) if os.path.isdir(labels) else []):
