@@ -124,7 +124,7 @@ var OrderEmails = (function () {
 
   // Neutral wording for the payment method line.
   function methodText(pm) {
-    return ({ venmo: 'Payment app', cashapp: 'Payment app', bitcoin: 'Digital payment', bank: 'Bank transfer', cash: 'Cash', inquiry: 'We’ll follow up' })[pm] || '';
+    return ({ venmo: 'Payment app', cashapp: 'Payment app', bitcoin: 'Digital payment', bank: 'Bank transfer', cash: 'Cash', inquiry: 'Emailed invoice' })[pm] || '';
   }
 
   function discountsText(order) {
