@@ -59,7 +59,16 @@ service cloud.firestore {
     // they and the admin (Customers page) can read it.
     match /users/{userId} {
       allow read: if signedIn() && (request.auth.uid == userId || isStaff());
-      allow write: if signedIn() && request.auth.uid == userId;
+      // Owners can't approve their own wholesale access: they may only add the
+      // TexasBench sign-up request (approved, flagged for the admin's review)
+      // or leave it as it is (Admin → Customers / To-do decide).
+      allow write: if signedIn() && request.auth.uid == userId && (
+        (resource == null && request.resource.data.get('wholesale', null) == null)
+        || (resource != null && request.resource.data.get('wholesale', null) == resource.data.get('wholesale', null))
+        || ((resource == null || resource.data.get('wholesale', null) == null)
+            && request.resource.data.wholesale.status == 'approved'
+            && request.resource.data.wholesale.needsReview == true)
+      );
       // Admin → Customers: the admin can edit a customer's profile (never create or delete).
       allow update: if isAdmin();
     }
@@ -96,7 +105,10 @@ service cloud.firestore {
     // Promo codes — anyone signed in can read (to preview a code at
     // checkout); only the admin (and the server checkout) can change them.
     match /promoCodes/{code} {
-      allow read: if signedIn();
+      // Checkout looks a code up by name; only staff can list them all.
+      // Affiliates can list their own (Referrals page, account menu).
+      allow get: if signedIn();
+      allow list: if isStaff() || (signedIn() && resource.data.affiliateEmail == myEmail());
       allow write: if isAdmin();
       // Managers manage ordinary codes, but not the ones behind customer roles.
       allow create, update: if isManager() && !('roleOnly' in request.resource.data) && (resource == null || !('roleOnly' in resource.data));
@@ -119,7 +131,8 @@ service cloud.firestore {
     // Site settings (e.g. settings/bankTransfer with payment details).
     // Signed-in buyers can read them at checkout; only the admin can edit.
     match /settings/{docId} {
-      allow read: if signedIn();
+      // Supplier codes (Admin → Inventory) are staff-only.
+      allow read: if (signedIn() && docId != 'supplierCodes') || isStaff();
       allow write: if isAdmin();
     }
 

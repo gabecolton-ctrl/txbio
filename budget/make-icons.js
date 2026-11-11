@@ -16,6 +16,15 @@ const SIZES = { 'logo-icon.png': [380, 0], 'icon-192.png': [192, 0], 'icon-512.p
       svg.replace('<svg ', '<svg width="' + inner + '" height="' + inner + '" ') + '</body></html>');
     await pg.screenshot({ path: path.join(out, name), omitBackground: !pad });
   }
+  // iPhone launch screens (same sizes as images/launch/): white with the mark.
+  fs.mkdirSync(path.join(__dirname, 'launch'), { recursive: true });
+  for (const f of fs.readdirSync(path.join(__dirname, '..', 'images', 'launch'))) {
+    const m = f.match(/(\d+)x(\d+)/); if (!m) continue;
+    const w = +m[1], h = +m[2], mark = Math.round(w * 0.28);
+    await pg.setViewportSize({ width: w, height: h });
+    await pg.setContent('<html><body style="margin:0;width:' + w + 'px;height:' + h + 'px;background:#ffffff;display:grid;place-items:center">' + svg.replace('<svg ', '<svg width="' + mark + '" height="' + mark + '" ') + '</body></html>');
+    await pg.screenshot({ path: path.join(__dirname, 'launch', f) });
+  }
   // Wide logo: mark + name
   const site = JSON.parse(fs.readFileSync(path.join(__dirname, 'site.json'), 'utf8'));
   await pg.setViewportSize({ width: 1800, height: 640 });

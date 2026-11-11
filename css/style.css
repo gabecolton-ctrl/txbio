@@ -1625,3 +1625,10 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .cust-tools select { width: auto; margin: 0; }
 .cust-tools .checkbox-row { margin: 0; }
 .active-dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; background: #22c55e; box-shadow: 0 0 0 3px rgba(34,197,94,0.2); margin-right: 7px; vertical-align: 1px; }
+
+/* Admin → Orders: price check (js/order-check.js) */
+.price-flag { display: inline-block; margin-left: 6px; padding: 1px 8px; border-radius: 999px; background: #fef3c7; color: #78350f; font-size: 0.72rem; font-weight: 700; vertical-align: 2px; cursor: help; }
+.price-flag.is-bad { background: #fee2e2; color: #991b1b; }
+.price-check { margin: 0 0 10px; padding: 10px 14px; border: 1px solid #f2c46d; border-radius: var(--radius); background: rgba(242,196,109,0.08); font-size: 0.85rem; }
+.price-check.is-bad { border-color: var(--alert); background: var(--alert-wash); }
+.price-check ul { margin: 6px 0 0; padding-left: 18px; }
