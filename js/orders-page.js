@@ -153,6 +153,21 @@
     } catch (e) {}
   }
 
+  // "Add items" while the order is still pending (js/order-addon.js).
+  function addItemsHtml(order) {
+    var giftOnly = (order.items || []).length && order.items.every(function (i) { return i.giftCard; });
+    if ((order.status || 'pending') !== 'pending' || order.addOnTo || giftOnly || !window.OrderAddon) return '';
+    return '<button type="button" class="btn-outline-light addon-btn">Add items</button>';
+  }
+  function wireAddItems(box, order) {
+    var btn = box.querySelector('.addon-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      OrderAddon.start(order);
+      location.href = 'services.html';
+    });
+  }
+
   function wireReorder(box, order) {
     var btn = box.querySelector('.reorder-btn');
     var msg = box.querySelector('.reorder-msg');
@@ -277,15 +292,19 @@
         }
         box.innerHTML =
           '<p style="margin-bottom:8px;"><strong>' + (order.orderNumber ? 'Order #' + order.orderNumber + ' — ' : '') + date + '</strong>' + (order.paymentMethod ? ' &middot; Payment: ' + ((window.PaymentApps && PaymentApps.LABELS[order.paymentMethod]) || order.paymentMethod) : '') + '</p>' +
-          orderStatusHtml(order) + payHtml +
+          orderStatusHtml(order) +
+          (order.addOnTo ? '<p class="addon-hint">Added to order #' + escHtml(order.addOnToNumber || '') + '; ships in the same box.</p>' : '') +
+          payHtml +
           addressHtml +
           '<table class="cart-table" style="margin-bottom:10px;"><thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead><tbody>' + itemsHtml + '</tbody></table>' +
           breakdownHtml +
           '<div class="order-actions"><button type="button" class="btn reorder-btn">Reorder</button>' +
-          '<span class="reorder-hint">Adds these items to your cart at today’s prices.</span>' + cancelHtml(order) + '</div>' +
+          '<span class="reorder-hint">Adds these items to your cart at today’s prices.</span>' + addItemsHtml(order) + cancelHtml(order) + '</div>' +
+          (addItemsHtml(order) ? '<p class="addon-hint">Forgot something? Add items until we confirm this order; they ship in the same box with no extra shipping.</p>' : '') +
           '<div class="cancel-panel" style="display:none;"></div>' +
           '<div class="reorder-msg" role="status" style="display:none;"></div>';
         wireReorder(box, order);
+        wireAddItems(box, order);
         wireCancel(box, order);
         list.appendChild(box);
       });
