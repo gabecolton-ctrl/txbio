@@ -1632,3 +1632,29 @@ html.season-autumn .egg-hint { color: #f2c14e; }
 .price-check { margin: 0 0 10px; padding: 10px 14px; border: 1px solid #f2c46d; border-radius: var(--radius); background: rgba(242,196,109,0.08); font-size: 0.85rem; }
 .price-check.is-bad { border-color: var(--alert); background: var(--alert-wash); }
 .price-check ul { margin: 6px 0 0; padding-left: 18px; }
+
+/* Admin → Orders: edit items (js/order-edit.js) */
+.oe-wrap { margin: 4px 0 12px; }
+.oe-log { margin: 0 0 8px; padding-left: 18px; font-size: 0.82rem; color: var(--muted); }
+.oe-box { margin-top: 10px; padding: 14px; border: 1px solid var(--mint); border-radius: var(--radius); background: var(--mint-wash); }
+.oe-hint { color: var(--muted); font-size: 0.82rem; }
+.oe-table { margin: 10px 0; }
+.oe-table input.oe-qty { width: 70px; margin: 0; padding: 6px 8px; }
+.oe-removed td { opacity: 0.45; text-decoration: line-through; }
+.oe-removed td:nth-child(2) { text-decoration: none; opacity: 1; }
+.oe-pack { color: var(--muted); font-size: 0.85em; }
+.oe-add { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 12px; }
+.oe-add select { flex: 1 1 260px; margin: 0; }
+.oe-add input { width: 80px; margin: 0; }
+.oe-add .btn-outline-light { margin: 0; }
+.oe-totals { max-width: 420px; margin: 0 0 10px auto; }
+.oe-email { margin: 6px 0 10px; }
+.oe-actions { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.oe-actions .btn, .oe-actions .btn-outline-light { margin: 0; }
+
+/* Add items to an unconfirmed order (js/order-addon.js) */
+.addon-banner { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; margin: 0 0 18px; padding: 12px 16px; border: 1px solid var(--mint); border-radius: var(--radius); background: var(--mint-wash); }
+.addon-banner.is-problem { border-color: #d9a441; background: rgba(217, 164, 65, 0.12); }
+.addon-banner .btn-outline-light { margin: 0; }
+.addon-hint { font-size: 0.85rem; color: var(--text-light); margin: 6px 0 0; }
+.addon-badge { background: #fef3c7; color: #78350f; }

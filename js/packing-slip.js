@@ -61,6 +61,7 @@
         (!a.addressLine1 ? '<br><em>No address on the order</em>' : '') + '</div></div>' +
       '<div class="facts"><div class="label">Order</div>' +
         '<div><span>Order number</span><span>' + esc(o.orderNumber || o.id) + '</span></div>' +
+        (o.addOnTo ? '<div><span>Ships with</span><span>Order #' + esc(o.addOnToNumber || o.addOnTo) + ' (same box)</span></div>' : '') +
         '<div><span>Order date</span><span>' + esc(date) + '</span></div>' +
         (ship ? '<div><span>Shipping</span><span>' + esc(ship) + '</span></div>' : '') +
         '<div><span>Items</span><span>' + items.length + ' line' + (items.length === 1 ? '' : 's') + ', ' + units + ' unit' + (units === 1 ? '' : 's') + '</span></div>' +

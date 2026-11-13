@@ -29,7 +29,7 @@
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="theme-color" content="#0b1210">
-<link rel="stylesheet" href="css/style.css?v=202611110832">
+<link rel="stylesheet" href="css/style.css?v=202611131544">
 <!-- seo:start -->
 <meta name="robots" content="noindex">
 <!-- seo:end -->
@@ -39,8 +39,8 @@
   <img src="images/logo-icon.png" alt="TXBioResearch">
   <div class="splash-wordmark">Texas Advanced BioResearch</div>
 </div>
-<script src="js/sites.js?v=202611110832"></script>
-<script src="js/splash.js?v=202611110832"></script>
+<script src="js/sites.js?v=202611131544"></script>
+<script src="js/splash.js?v=202611131544"></script>
 <script>
   if (sessionStorage.getItem('txbio_splash_shown')) {
     document.write('<style>#splash-screen{display:none!important}</style>');
@@ -182,30 +182,32 @@
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-<script src="js/firebase-config.js?v=202611110832"></script>
-<script src="js/paused.js?v=202611110832"></script>
-<script src="js/cart.js?v=202611110832"></script>
-<script src="js/price-book.js?v=202611110832"></script>
-<script src="js/site-config.js?v=202611110832"></script>
-<script src="js/payment-apps.js?v=202611110832"></script>
-<script src="js/account.js?v=202611110832"></script>
-<script src="js/inventory.js?v=202611110832"></script>
-<script src="js/promos.js?v=202611110832"></script>
-<script src="js/tabs.js?v=202611110832"></script>
-<script src="js/referral-attribution.js?v=202611110832"></script>
-<script src="js/credits.js?v=202611110832"></script>
-<script src="js/affiliate-tiers.js?v=202611110832"></script>
-<script src="js/loyalty.js?v=202611110832"></script>
-<script src="js/lots.js?v=202611110832"></script>
-<script src="js/order-emails.js?v=202611110832"></script>
-<script src="js/gift-cards.js?v=202611110832"></script>
-<script src="js/order-check.js?v=202611110832"></script>
-<script src="js/staff.js?v=202611110832"></script>
-<script src="js/nav-auth.js?v=202611110832"></script>
-<script src="js/profile-gate.js?v=202611110832"></script>
-<script src="js/auth-guard.js?v=202611110832"></script>
-<script src="js/main.js?v=202611110832"></script>
-<script src="js/nav-toggle.js?v=202611110832"></script>
+<script src="js/firebase-config.js?v=202611131544"></script>
+<script src="js/paused.js?v=202611131544"></script>
+<script src="js/cart.js?v=202611131544"></script>
+<script src="js/price-book.js?v=202611131544"></script>
+<script src="js/site-config.js?v=202611131544"></script>
+<script src="js/payment-apps.js?v=202611131544"></script>
+<script src="js/account.js?v=202611131544"></script>
+<script src="js/inventory.js?v=202611131544"></script>
+<script src="js/promos.js?v=202611131544"></script>
+<script src="js/tabs.js?v=202611131544"></script>
+<script src="js/referral-attribution.js?v=202611131544"></script>
+<script src="js/credits.js?v=202611131544"></script>
+<script src="js/affiliate-tiers.js?v=202611131544"></script>
+<script src="js/loyalty.js?v=202611131544"></script>
+<script src="js/lots.js?v=202611131544"></script>
+<script src="js/order-emails.js?v=202611131544"></script>
+<script src="js/gift-cards.js?v=202611131544"></script>
+<script src="js/order-check.js?v=202611131544"></script>
+<script src="js/bogo.js?v=202611131544"></script>
+<script src="js/order-edit.js?v=202611131544"></script>
+<script src="js/staff.js?v=202611131544"></script>
+<script src="js/nav-auth.js?v=202611131544"></script>
+<script src="js/profile-gate.js?v=202611131544"></script>
+<script src="js/auth-guard.js?v=202611131544"></script>
+<script src="js/main.js?v=202611131544"></script>
+<script src="js/nav-toggle.js?v=202611131544"></script>
 <script>
   var ADMIN_EMAIL = 'gabecolton@gmail.com';
   var allOrders = [];
@@ -754,9 +756,39 @@
     });
   }
   function priceIssues(order) {
-    if (!priceCtx || !window.OrderCheck || order.placedBy === 'admin') return [];
-    try { return OrderCheck.check(order, priceCtx).issues; } catch (e) { return []; }
+    var extra = addOnIssues(order);
+    if (!priceCtx || !window.OrderCheck || order.placedBy === 'admin') return extra;
+    try { return OrderCheck.check(order, priceCtx).issues.concat(extra); } catch (e) { return extra; }
   }
+  // Add-ons (js/order-addon.js): a second order that ships free in the same
+  // box as an unconfirmed first order.
+  function addOnIssues(order) {
+    if (!order.addOnTo || (order.status || 'pending') === 'cancelled') return [];
+    var first = allOrders.filter(function (o) { return o.id === order.addOnTo; })[0];
+    var num = '#' + (order.addOnToNumber || order.addOnTo);
+    if (!first) return [{ level: 'bad', text: 'Ships free with order ' + num + ', but that order wasn\u2019t found. Charge shipping or cancel.' }];
+    if (first.userId !== order.userId) return [{ level: 'bad', text: 'Ships free with order ' + num + ', but that order is another customer\u2019s. Charge shipping or cancel.' }];
+    if ((first.status || 'pending') === 'cancelled') return [{ level: 'bad', text: 'Order ' + num + ' was cancelled, so this add-on has no box to ride in. Charge shipping or cancel.' }];
+    if (PRE_SHIP.indexOf(first.status || 'pending') === -1) return [{ level: 'note', text: 'Order ' + num + ' has already shipped; this add-on ships on its own.' }];
+    return [];
+  }
+  function addOnBadgeHtml(order) {
+    if (order.addOnTo) return ' <span class="site-badge addon-badge" title="Pack with order #' + escapeAttr(order.addOnToNumber || '') + '">Add-on to #' + escapeAttr(order.addOnToNumber || order.addOnTo) + '</span>';
+    var kids = allOrders.filter(function (o) { return o.addOnTo === order.id && (o.status || 'pending') !== 'cancelled'; });
+    return kids.map(function (k) { return ' <span class="site-badge addon-badge" title="Pack these together">Has add-on #' + escapeAttr(k.orderNumber || k.id) + '</span>'; }).join('');
+  }
+  // Edit items (js/order-edit.js): until the order ships.
+  function editItemsHtml(order) {
+    var log = (order.editLog || []).map(function (e) {
+      return '<li>' + new Date(e.at).toLocaleString(undefined, { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) + ': ' + escapeAttr(e.change) +
+        (e.totalFrom != null ? ' (total $' + Number(e.totalFrom).toFixed(2) + ' → $' + Number(e.totalTo).toFixed(2) + ')' : '') + '</li>';
+    }).join('');
+    var canEdit = PRE_SHIP.indexOf(order.status || 'pending') !== -1 && window.OrderEdit;
+    if (!canEdit && !log) return '';
+    return '<div class="oe-wrap">' + (log ? '<p class="tracking-status" style="margin:0 0 4px;"><strong>Changes</strong></p><ul class="oe-log">' + log + '</ul>' : '') +
+      (canEdit ? '<button type="button" class="btn-outline-light" data-edit-items-for="' + order.id + '">Edit items</button><div data-edit-host-for="' + order.id + '"></div>' : '') + '</div>';
+  }
+
   function priceBadgeHtml(order) {
     var iss = priceIssues(order);
     if (!iss.length) return '';
@@ -845,7 +877,7 @@
         '<div style="display:flex; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:10px;">' +
           '<div>' +
             '<strong>Order #' + (order.orderNumber || order.id) + '</strong>' +
-            (order.site === 'budget' ? ' <span class="site-badge">' + (window.Sites ? Sites.info('budget').badge : 'Budget') + '</span>' : '') + priceBadgeHtml(order) + '<br>' +
+            (order.site === 'budget' ? ' <span class="site-badge">' + (window.Sites ? Sites.info('budget').badge : 'Budget') + '</span>' : '') + addOnBadgeHtml(order) + priceBadgeHtml(order) + '<br>' +
             '<span style="color:var(--text-light); font-size:0.9rem;">' + date + '</span>' +
           '</div>' +
           '<div style="text-align:right;">' +
@@ -889,7 +921,7 @@
             '<thead><tr><th>Product</th><th>Pack Size</th><th>Qty</th><th>Subtotal</th></tr></thead>' +
             '<tbody>' + itemsHtml + '</tbody>' +
           '</table>' +
-        '</div>' + giftPanel(order) +
+        '</div>' + editItemsHtml(order) + giftPanel(order) +
         '<table class="spec-table" style="max-width:320px; margin-left:auto; margin-bottom:0;">' +
           '<tr><td>Subtotal</td><td>$' + (order.subtotal || 0).toFixed(2) + '</td></tr>' +
           '<tr><td>Shipping' + (order.shippingOption ? ' <span style="color:var(--text-light);">(' + escapeAttr(order.shippingOption) + ')</span>' : '') + '</td><td>' + ((order.shipping || 0) === 0 && !order.giftOnly ? 'FREE' : '$' + (order.shipping || 0).toFixed(2)) + '</td></tr>' +
@@ -942,6 +974,21 @@
       btn.addEventListener('click', function () { linkEmail(btn.getAttribute('data-link-email-for')); });
     });
 
+    listEl.querySelectorAll('button[data-edit-items-for]').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        var id = btn.getAttribute('data-edit-items-for');
+        var order = allOrders.filter(function (o) { return o.id === id; })[0];
+        var host = listEl.querySelector('[data-edit-host-for="' + id + '"]');
+        if (!order || !host) return;
+        OrderEdit.open(host, order, function (updated) {
+          allOrders = allOrders.map(function (o) { return o.id === id ? updated : o; });
+          setTimeout(function () {
+            var box = document.getElementById('order-search-input');
+            if (box && box.value) box.dispatchEvent(new Event('input')); else renderOrders(allOrders);
+          }, 1200);
+        });
+      });
+    });
     listEl.querySelectorAll('button[data-save-tracking-for]').forEach(function (btn) {
       btn.addEventListener('click', function () {
         var orderId = btn.getAttribute('data-save-tracking-for');
