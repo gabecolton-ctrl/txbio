@@ -3,9 +3,9 @@
 # the shipment tracker. Code: tools/shipment-tracker/cart-reminders*.js
 name: Cart reminders
 
+# Reminders now go out with every shipment-tracker run (every 10 minutes);
+# GitHub ran this hourly schedule only every 4–7 hours. Kept for a manual run.
 on:
-  schedule:
-    - cron: '23 * * * *'     # hourly (GitHub may run it late when busy)
   workflow_dispatch: {}      # "Run workflow" button for a manual run
 
 permissions:
@@ -13,7 +13,7 @@ permissions:
   actions: write             # lets the keep-alive step re-enable this workflow
 
 concurrency:
-  group: cart-reminders
+  group: track-shipments     # never at the same time as the tracker (no double emails)
   cancel-in-progress: false
 
 jobs:

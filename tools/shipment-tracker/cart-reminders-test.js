@@ -11,7 +11,7 @@ function fakeDb(seed) {
     data,
     collection: (c) => ({
       get: async () => ({ docs: Object.keys(data).filter((k) => k.startsWith(c + '/')).map(snap) }),
-      doc: (id) => ({ update: async (f) => { Object.assign(data[c + '/' + id], f); } })
+      doc: (id) => ({ update: async (f) => { Object.assign(data[c + '/' + id], f); }, set: async (f) => { data[c + '/' + id] = Object.assign(data[c + '/' + id] || {}, f); } })
     })
   };
 }
@@ -68,6 +68,16 @@ const line = { slug: 'bpc-157-10mg', name: 'BPC 157', price: 73, qty: 2 };
     assert.strictEqual(tb[1].reply_to, 'orders@texasbench.com');
     assert.strictEqual(tb[2], OrderEmails.BUDGET_CONFIG.serviceId);
     assert.ok(db.data['users/u1'].budgetCartReminderAt && db.data['users/u1'].cartReminderAt);
+  });
+
+  await test('run: account with no saved email uses the sign-in email and saves it', async () => {
+    const db = fakeDb({ 'carts/u1': { items: [line], updatedAt: ago(5) }, 'users/u1': { lastSeenAt: ago(1) }, 'carts/u2': { items: [line], updatedAt: ago(5) } });
+    const auth = { getUser: async (uid) => { if (uid === 'u1') return { email: 'Kim@X.com' }; throw new Error('user-not-found'); } };
+    const sent = [];
+    const r = await run({ db, email: { send: async (t, p) => { sent.push(p.to_email); } }, auth, now: NOW, log: () => {} });
+    assert.deepStrictEqual(sent, ['kim@x.com']);
+    assert.strictEqual(db.data['users/u1'].email, 'kim@x.com');
+    assert.strictEqual(r.skipped['no email'], 1);
   });
 
   await test('run: no template ID yet sends nothing', async () => {

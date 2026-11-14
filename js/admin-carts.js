@@ -44,7 +44,7 @@
         rows.push({
           uid: d.id, budget: x.budget, items: items, updatedAt: d.data().updatedAt || '',
           email: u.email || '', name: u.name || dn[0] || '', institution: u.institution || dn[1] || '',
-          remindedAt: u.cartReminderAt || '', optedOut: u.cartReminders === false,
+          remindedAt: (x.budget ? u.budgetCartReminderAt : u.cartReminderAt) || '', optedOut: u.cartReminders === false,
           value: items.reduce(function (s, i) { return s + Number(i.price) * Number(i.qty); }, 0),
           units: items.reduce(function (s, i) { return s + Number(i.qty) * (Number(i.caseOf) || 1); }, 0)
         });
@@ -81,9 +81,22 @@
         '<td data-label="Customer"><strong>' + esc(c.name || '(no name yet)') + '</strong>' + (c.budget ? ' <span class="site-badge">Budget</span>' : '') + '<br><span class="cart-sub">' + esc(c.email || c.uid) + '</span></td>' +
         '<td data-label="Items">' + items + '</td>' +
         '<td data-label="Value"><strong>' + money(c.value) + '</strong><br><span class="cart-sub">' + c.units + ' unit' + (c.units === 1 ? '' : 's') + '</span></td>' +
-        '<td data-label="Last change">' + esc(age(c.updatedAt)) + (c.optedOut ? '<br><span class="cart-sub">reminders off</span>' : c.remindedAt && c.remindedAt >= c.updatedAt ? '<br><span class="cart-sub">&#10003; reminder emailed ' + esc(age(c.remindedAt)) + '</span>' : '') + '</td>' +
+        '<td data-label="Last change">' + esc(age(c.updatedAt)) + reminderNote(c) + '</td>' +
         '<td>' + mail + '</td></tr>';
     }).join('') || '<tr><td colspan="5">' + (all ? 'No carts match.' : 'No one has anything in their cart right now.') + '</td></tr>';
+  }
+  // Why a cart did or didn't get the automatic reminder (same rules as
+  // tools/shipment-tracker/cart-reminders-core.js).
+  function reminderNote(c) {
+    var sub = function (t) { return '<br><span class="cart-sub">' + t + '</span>'; };
+    if (c.optedOut) return sub('reminders off');
+    if (c.remindedAt && c.remindedAt >= c.updatedAt) return sub('&#10003; reminder emailed ' + esc(age(c.remindedAt)));
+    var idle = hoursSince(c.updatedAt);
+    if (idle < IDLE_HOURS) return '';
+    if (!c.email) return sub('no reminder: no email saved yet (fills in on the next run)');
+    if (idle > 7 * 24) return sub('no reminder: older than 7 days');
+    if (c.remindedAt && hoursSince(c.remindedAt) < 7 * 24) return sub('no reminder: already got one ' + esc(age(c.remindedAt)) + ' (one a week)');
+    return sub('reminder going out shortly');
   }
   function stat(v, label) { return '<div class="carts-stat"><span class="carts-stat-v">' + v + '</span><span class="carts-stat-l">' + label + '</span></div>'; }
 })();
