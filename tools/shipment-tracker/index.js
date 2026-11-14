@@ -13,6 +13,7 @@ const { run } = require('./tracker');
 const { updateLeaderboard } = require('./leaderboard-job');
 const { backfillReferrals } = require('./referral-backfill');
 const { processAccountDeletes } = require('./account-deletes');
+const cartReminders = require('./cart-reminders-core');
 
 function need(name) {
   const v = process.env[name];
@@ -41,6 +42,10 @@ function need(name) {
   try { const n = await processAccountDeletes({ db: admin.firestore(), auth: admin.auth() }); if (n) console.log('Deleted ' + n + ' account(s)'); }
   catch (err) { console.log('Account deletes failed: ' + err.message); }
   const tally = await run({ db: admin.firestore(), carrier, email });
+  // Cart reminders, 3 hours after a cart stops changing. Here (every 10
+  // minutes) because GitHub runs hourly schedules hours late.
+  try { await cartReminders.run({ db: admin.firestore(), email, auth: admin.auth() }); }
+  catch (err) { console.log('Cart reminders failed: ' + err.message); }
   // Monthly affiliate leaderboard (Admin → Promo codes turns it on).
   try { const r = await updateLeaderboard({ db: admin.firestore() }); if (r !== 'off') console.log('Leaderboard: ' + r + ' affiliates with sales this month'); }
   catch (err) { console.log('Leaderboard update failed: ' + err.message); }

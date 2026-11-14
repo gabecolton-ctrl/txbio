@@ -4,6 +4,10 @@
 // A signed-in customer whose cart has items and hasn't changed for 3 hours
 // (but less than 7 days) gets one email, at most once a week, unless they
 // turned reminders off on their Account page (users/{uid}.cartReminders === false).
+// A cart whose account has no email saved on users/{uid} uses the sign-in
+// email (Firebase Auth) and saves it there, so Admin → Carts shows it too.
+// Runs with every shipment-tracker run (every 10 minutes) and from
+// .github/workflows/cart-reminders.yml when run by hand.
 // The email gives the item count, not product names (names trip spam filters).
 // users/{uid}.cartReminderAt records when the last one went out.
 const path = require('path');
@@ -58,7 +62,7 @@ function params(user, p, site = 'main') {
   };
 }
 
-async function run({ db, email, now = Date.now(), log = console.log }) {
+async function run({ db, email, auth = null, now = Date.now(), log = console.log }) {
   const templateId = OrderEmails.CONFIG.cartReminderTemplateId;
   if (!templateId) { log('Cart reminders: no "Cart reminder" template ID in js/order-emails.js yet. Nothing sent.'); return { sent: 0 }; }
   const users = await db.collection('users').get();
@@ -70,7 +74,17 @@ async function run({ db, email, now = Date.now(), log = console.log }) {
     if (!cfg.serviceId) continue; // that store's emails aren't set up
     const carts = await db.collection(st.carts).get().catch(() => ({ docs: [] }));
     for (const c of carts.docs) {
-      const user = byUid[c.id];
+      let user = byUid[c.id];
+      if ((!user || !user.email) && auth && (c.data().items || []).some((i) => Number(i.qty) > 0)) {
+        try {
+          const a = await auth.getUser(c.id);
+          if (a && a.email) {
+            user = Object.assign({}, user, { email: String(a.email).toLowerCase() });
+            byUid[c.id] = user;
+            await db.collection('users').doc(c.id).set({ email: user.email }, { merge: true });
+          }
+        } catch (e) { /* no sign-in for this cart: skipped as "no email" */ }
+      }
       const p = plan(c.data(), user, now, st.field);
       if (!p.send) { tally.skipped[p.skip] = (tally.skipped[p.skip] || 0) + 1; continue; }
       try {

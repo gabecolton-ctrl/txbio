@@ -46,7 +46,9 @@ document.addEventListener('DOMContentLoaded', function () {
       if (Date.now() - last < SEEN_EVERY) return;
       localStorage.setItem(key, String(Date.now()));
       firebase.firestore().collection('users').doc(user.uid).set({
-        lastSeenAt: new Date().toISOString(), lastSeenSite: window.Sites ? Sites.current() : 'main'
+        lastSeenAt: new Date().toISOString(), lastSeenSite: window.Sites ? Sites.current() : 'main',
+        // Some older accounts never saved their email; cart reminders need it.
+        email: String(user.email || '').toLowerCase()
       }, { merge: true }).catch(function () {});
     } catch (e) {}
   }
